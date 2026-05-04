@@ -76,4 +76,52 @@ public class ErrorHandlerException {
 public ResponseEntity<Map<String, Object>> handlePartidoNotFound(PartidoNotFoundException e) {
     return buildResponse(HttpStatus.NOT_FOUND, e.getMessage());
 }
+@ExceptionHandler(EntradaNotFoundException.class)
+public ResponseEntity<Map<String, Object>> handleEntradaNotFound(EntradaNotFoundException e) {
+    return buildResponse(HttpStatus.NOT_FOUND, e.getMessage());
+}
+
+@ExceptionHandler(CupoNoDisponibleException.class)
+public ResponseEntity<Map<String, Object>> handleCupoNoDisponible(CupoNoDisponibleException e) {
+    return buildResponse(HttpStatus.CONFLICT, e.getMessage());
+}
+
+@ExceptionHandler(LimiteSuperadoException.class)
+public ResponseEntity<Map<String, Object>> handleLimiteSuperado(LimiteSuperadoException e) {
+    return buildResponse(HttpStatus.TOO_MANY_REQUESTS, e.getMessage());
+}
+
+@ExceptionHandler(EstadoInvalidoException.class)
+public ResponseEntity<Map<String, Object>> handleEstadoInvalido(EstadoInvalidoException e) {
+    return buildResponse(HttpStatus.BAD_REQUEST, e.getMessage());
+}
+
+@ExceptionHandler(PagoStripeException.class)
+public ResponseEntity<Map<String, Object>> handlePagoStripe(PagoStripeException e) {
+    return buildResponse(HttpStatus.PAYMENT_REQUIRED, e.getMessage());
+}
+
+@ExceptionHandler(MetodoPagoNotFoundException.class)
+public ResponseEntity<Map<String, Object>> handleMetodoPagoNotFound(MetodoPagoNotFoundException e) {
+    return buildResponse(HttpStatus.NOT_FOUND, e.getMessage());
+}
+@ExceptionHandler(ProductoNotFoundException.class)
+public ResponseEntity<Map<String, Object>> handleProductoNotFound(ProductoNotFoundException e) {
+    return buildResponse(HttpStatus.NOT_FOUND, e.getMessage());
+}
+
+@ExceptionHandler(OrdenNotFoundException.class)
+public ResponseEntity<Map<String, Object>> handleOrdenNotFound(OrdenNotFoundException e) {
+    return buildResponse(HttpStatus.NOT_FOUND, e.getMessage());
+}
+
+@ExceptionHandler(StockInsuficienteException.class)
+public ResponseEntity<Map<String, Object>> handleStockInsuficiente(StockInsuficienteException e) {
+    return buildResponse(HttpStatus.CONFLICT, e.getMessage());
+}
+
+@ExceptionHandler(CategoriaNotFoundException.class)
+public ResponseEntity<Map<String, Object>> handleCategoriaNotFound(CategoriaNotFoundException e) {
+    return buildResponse(HttpStatus.NOT_FOUND, e.getMessage());
+}
 }

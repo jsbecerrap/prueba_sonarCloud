@@ -64,12 +64,17 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(final HttpSecurity http,
             final AuthenticationManager authManager) throws Exception {
         return http.authorizeHttpRequests(authz -> authz
-                .requestMatchers(HttpMethod.GET, "/api/usuarios/listar").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/estadios").authenticated()
-                .requestMatchers(HttpMethod.GET, "/api/ciudades").authenticated()
-                .requestMatchers(HttpMethod.POST, "/api/usuarios/registrar").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/auth/logout").authenticated()
-                .anyRequest().authenticated())
+        .requestMatchers(HttpMethod.GET, "/api/usuarios/listar").permitAll()
+        .requestMatchers(HttpMethod.POST, "/api/usuarios/registrar").permitAll()
+        .requestMatchers(HttpMethod.POST, "/api/auth/logout").authenticated()
+        .requestMatchers(HttpMethod.POST, "/api/entradas/**").authenticated()
+        .requestMatchers(HttpMethod.GET, "/api/entradas/**").authenticated()
+        .requestMatchers(HttpMethod.PATCH, "/api/entradas/**").authenticated()
+        .requestMatchers(HttpMethod.GET, "/payments/**").authenticated()
+        .requestMatchers(HttpMethod.POST, "/payments/**").authenticated()
+        .requestMatchers(HttpMethod.PATCH, "/payments/**").authenticated()
+        .requestMatchers(HttpMethod.GET, "/api/auditoria/**").authenticated()
+        .anyRequest().authenticated())
                 .addFilter(new JwtAuthenticationFilter(authManager, usuarioRepository))
                 .addFilter(new JwtValidationFilter(authManager, tokenBlacklist))
                 .csrf(config -> config.disable())
@@ -83,7 +88,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         final CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOriginPatterns(Arrays.asList("*"));
-        config.setAllowedMethods(Arrays.asList("GET", "POST", "DELETE", "PUT"));
+        config.setAllowedMethods(Arrays.asList("GET", "POST", "DELETE", "PUT", "PATCH"));
         config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
         config.setAllowCredentials(true);
 

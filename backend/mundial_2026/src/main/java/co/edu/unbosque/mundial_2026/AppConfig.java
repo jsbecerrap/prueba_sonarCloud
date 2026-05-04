@@ -141,4 +141,12 @@ public CommandLineRunner cargarCiudadesYEstadios(
         }
     };
 }
+@Bean
+public com.fasterxml.jackson.databind.ObjectMapper objectMapper() {
+    com.fasterxml.jackson.databind.ObjectMapper mapper = 
+        new com.fasterxml.jackson.databind.ObjectMapper();
+    mapper.disable(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    mapper.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+    return mapper;
+}
 }

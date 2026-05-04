@@ -7,9 +7,12 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClient;
 
 import java.util.logging.Logger;
+
+import co.edu.unbosque.mundial_2026.dto.PartidoCapacidadDTO;
 import co.edu.unbosque.mundial_2026.dto.response.EquipoMundialDTO;
 import co.edu.unbosque.mundial_2026.dto.response.EquipoMundialResponseDTO;
 import co.edu.unbosque.mundial_2026.dto.response.JugadorDTO;
@@ -38,10 +41,8 @@ public class PartidoServiceImpl implements PartidoService {
 
     private final RestClient footballClient;
     private final PartidoRepository partidoRepository;
-    private final UsuarioRepository usuarioRepository;
+    private final UsuarioService usuarioService;
     private final SeleccionRepository seleccionRepository;
-    private final EstadioRepository estadioRepository;
-    private final CiudadRepository ciudadRepository;
     private static final java.util.Map<String, String> ESTADIO_CIUDAD = new java.util.HashMap<>();
 
 static {
@@ -62,16 +63,14 @@ static {
 }
     private static final Logger logger = Logger.getLogger(PartidoServiceImpl.class.getName());
 
+   
     public PartidoServiceImpl(RestClient footballClient, PartidoRepository partidoRepository,
-            UsuarioRepository usuarioRepository, SeleccionRepository seleccionRepository,
-            EstadioRepository estadioRepository, CiudadRepository ciudadRepository) {
-        this.footballClient = footballClient;
-        this.partidoRepository = partidoRepository;
-        this.usuarioRepository = usuarioRepository;
-        this.seleccionRepository = seleccionRepository;
-        this.estadioRepository = estadioRepository;
-        this.ciudadRepository = ciudadRepository;
-    }
+        UsuarioService usuarioService, SeleccionRepository seleccionRepository) {
+    this.footballClient = footballClient;
+    this.partidoRepository = partidoRepository;
+    this.usuarioService = usuarioService;
+    this.seleccionRepository = seleccionRepository;
+}
 
     @Override
     public List<PartidoDTO> obtenerPartidos() {
@@ -208,8 +207,7 @@ public List<EquipoMundialDTO> obtenerSelecciones() {
 
  @Override
 public List<PartidoDTO> obtenerPartidosPorSeleccionesFav(String correo) {
-    final Usuario usuario = usuarioRepository.findByCorreoUsuario(correo)
-            .orElseThrow(() -> new UsuarioNotFoundException("Usuario no encontrado"));
+final Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
     final List<PartidoDTO> listaPartidos = new ArrayList<>();
     for (int i = 0; i < usuario.getSeleccionesU().size(); i++) {
         List<PartidoDTO> partidos = obtenerPartidosPorEquipo(usuario.getSeleccionesU().get(i).getId());
@@ -220,8 +218,7 @@ public List<PartidoDTO> obtenerPartidosPorSeleccionesFav(String correo) {
 
     @Override
     public List<PartidoDTO> obtenerPartidosPorEstadiosFav(final String correo) {
-        final Usuario usuario = usuarioRepository.findByCorreoUsuario(correo)
-                .orElseThrow(() -> new UsuarioNotFoundException("Usuario no encontrado"));
+        final Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
         final List<PartidoDTO> listaPartidos = new ArrayList<>();
         final PartidoResponseDTO response = footballClient.get()
                 .uri(BASE_FIXTURES)
@@ -241,8 +238,7 @@ public List<PartidoDTO> obtenerPartidosPorSeleccionesFav(String correo) {
 
   @Override
 public List<PartidoDTO> obtenerPartidosPorCiudadesFav(final String correo) {
-    final Usuario usuario = usuarioRepository.findByCorreoUsuario(correo)
-            .orElseThrow(() -> new UsuarioNotFoundException("Usuario no encontrado"));
+final Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
     final List<PartidoDTO> listaPartidos = new ArrayList<>();
     final PartidoResponseDTO response = footballClient.get()
             .uri(BASE_FIXTURES)
@@ -308,5 +304,38 @@ public List<PreferenciaDTO> obtenerCatalogoSelecciones() {
     return seleccionRepository.findAll().stream()
         .map(s -> new PreferenciaDTO(s.getId(), s.getNombre()))
         .toList();
+}
+@Override
+@Transactional(readOnly = true)
+public Partido obtenerPartidoEntidadPorId(final Long partidoId) {
+    return partidoRepository.findById(partidoId)
+            .orElseThrow(() -> new PartidoNotFoundException(
+                    "Partido no encontrado en base de datos con id: " + partidoId));
+}
+@Override
+@Transactional
+public void actualizarCapacidad(final Long partidoId, final int cantidad) {
+    final Partido partido = partidoRepository.findById(partidoId)
+            .orElseThrow(() -> new PartidoNotFoundException(
+                    "Partido no encontrado con id: " + partidoId));
+    partido.setCapacidadDisponible(partido.getCapacidadDisponible() + cantidad);
+    partidoRepository.save(partido);
+}
+@Override
+@Transactional(readOnly = true)
+public List<PartidoCapacidadDTO> listarPartidosConCapacidad() {
+    final List<Partido> partidos = partidoRepository.findAll();
+    final List<PartidoCapacidadDTO> dtos = new ArrayList<>();
+    for (final Partido p : partidos) {
+        final PartidoCapacidadDTO dto = new PartidoCapacidadDTO();
+        dto.setId(p.getId());
+        dto.setLocal(p.getSeleccionLocal());
+        dto.setVisitante(p.getSeleccionVisitante());
+        dto.setEstadio(p.getEstadio());
+        dto.setCiudad(ESTADIO_CIUDAD.getOrDefault(p.getEstadio(), "Por confirmar")); // ✅ usa la constante
+        dto.setCapacidadDisponible(p.getCapacidadDisponible() != null ? p.getCapacidadDisponible() : 60000);
+        dtos.add(dto);
+    }
+    return dtos;
 }
 }

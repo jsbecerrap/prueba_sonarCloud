@@ -6,6 +6,7 @@ import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -42,11 +43,12 @@ public class UsuarioRestController {
     }
 
 
-    @GetMapping("/usuarios/listar")
+    @PreAuthorize("hasRole('ADMIN')")
+@GetMapping("/usuarios/listar")
     public ResponseEntity<List<UsuarioResponseDTO>> listarTodos() {
         return ResponseEntity.ok(service.listarTodos());
     }
-
+@PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/usuarios/{idUsuario}")
     public ResponseEntity<UsuarioResponseDTO> obtenerUsuario(@PathVariable final Long idUsuario) {
         return ResponseEntity.ok(service.obtenerUsuario(idUsuario));
@@ -63,7 +65,7 @@ public class UsuarioRestController {
             @Valid @RequestBody final UsuarioRequestDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.registrarUsuario(dto));
     }
-
+@PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/usuarios/{idUsuario}")
     public ResponseEntity<Void> eliminarUsuario(@PathVariable final Long idUsuario) {
         service.eliminarUsuario(idUsuario);
@@ -174,4 +176,10 @@ public class UsuarioRestController {
     public ResponseEntity<List<PreferenciaDTO>> listarCiudades() {
         return ResponseEntity.ok(service.listarCiudades());
     }
+    @PutMapping("/usuarios/fcm-token")
+public ResponseEntity<Void> actualizarFcmToken(@RequestBody Map<String, String> body) {
+    String correo = SecurityContextHolder.getContext().getAuthentication().getName();
+    service.actualizarFcmToken(correo, body.get("fcmToken"));
+    return ResponseEntity.noContent().build();
+}
 }
