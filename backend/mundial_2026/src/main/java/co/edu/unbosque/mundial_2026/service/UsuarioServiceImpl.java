@@ -5,9 +5,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import co.edu.unbosque.mundial_2026.dto.request.UsuarioActualizarRequestDTO;
 import co.edu.unbosque.mundial_2026.dto.request.UsuarioRequestDTO;
@@ -40,16 +44,20 @@ public class UsuarioServiceImpl implements UsuarioService {
     private final EstadioRepository estadioRepository;
     private final CiudadRepository ciudadRepository;
 
-    public UsuarioServiceImpl(UsuarioRepository repository, RolRepository rolRepository,
-            PasswordEncoder passwordEncoder, SeleccionRepository seleccionRepository,
-            EstadioRepository estadioRepository, CiudadRepository ciudadRepository) {
-        this.repository = repository;
-        this.rolRepository = rolRepository;
-        this.passwordEncoder = passwordEncoder;
-        this.seleccionRepository = seleccionRepository;
-        this.estadioRepository = estadioRepository;
-        this.ciudadRepository = ciudadRepository;
-    }
+   private final NotificacionService notificacionService;
+
+public UsuarioServiceImpl(UsuarioRepository repository, RolRepository rolRepository,
+        PasswordEncoder passwordEncoder, SeleccionRepository seleccionRepository,
+        EstadioRepository estadioRepository, CiudadRepository ciudadRepository,
+        NotificacionService notificacionService) {
+    this.repository = repository;
+    this.rolRepository = rolRepository;
+    this.passwordEncoder = passwordEncoder;
+    this.seleccionRepository = seleccionRepository;
+    this.estadioRepository = estadioRepository;
+    this.ciudadRepository = ciudadRepository;
+    this.notificacionService = notificacionService;
+}
 //retorna el dto de los usuarios que estan registrados en el aplicativo
     @Override
     @Transactional(readOnly = true)
@@ -75,7 +83,9 @@ public class UsuarioServiceImpl implements UsuarioService {
         usuario.setRol(rol);
         usuario.setNombre(dto.getNombre());
         usuario.setApellido(dto.getApellido());
-        return toResponseDTO(repository.save(usuario));
+        Usuario guardado = repository.save(usuario);
+notificacionService.notificarRegistro(guardado);
+return toResponseDTO(guardado);
     }
 
     @Override
@@ -113,10 +123,11 @@ public class UsuarioServiceImpl implements UsuarioService {
         actualizarContrasena(usuario, dto, contrasenaOrig);
         final boolean correoCambio = actualizarCorreo(usuario, dto, contrasenaOrig);
         final Usuario usuarioGuardado = repository.save(usuario);
-        final Map<String, Object> resultado = new HashMap<>();
-        resultado.put("usuario", toResponseDTO(usuarioGuardado));
-        resultado.put("correocambio", correoCambio);
-        return resultado;
+notificacionService.notificarActualizacionPerfil(usuarioGuardado);
+final Map<String, Object> resultado = new HashMap<>();
+resultado.put("usuario", toResponseDTO(usuarioGuardado));
+resultado.put("correocambio", correoCambio);
+return resultado;
     }
 
 
@@ -304,4 +315,25 @@ public class UsuarioServiceImpl implements UsuarioService {
         dto.setApellido(usuario.getApellido());
         return dto;
     }
+    @Override
+@Transactional(readOnly = true)
+public Usuario obtenerEntidadPorId(final Long usuarioId) {
+    return repository.findById(usuarioId)
+            .orElseThrow(() -> new UsuarioNotFoundException("Usuario no encontrado con id: " + usuarioId));
+}
+@Override
+@Transactional(readOnly = true)
+public Usuario obtenerEntidadPorCorreo(final String correo) {
+    return repository.findByCorreoUsuario(correo)
+            .orElseThrow(() -> new UsuarioNotFoundException(
+                    "Usuario no encontrado con correo: " + correo));
+}
+@Override
+@Transactional
+public void actualizarFcmToken(String correo, String fcmToken) {
+    Usuario usuario = repository.findByCorreoUsuario(correo)
+            .orElseThrow(() -> new UsuarioNotFoundException("Usuario no encontrado"));
+    usuario.setFcmtoken(fcmToken);
+    repository.save(usuario);
+}
 }

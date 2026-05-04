@@ -1,0 +1,98 @@
+package co.edu.unbosque.mundial_2026.service;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import co.edu.unbosque.mundial_2026.dto.request.MetodoPagoRequestDTO;
+import co.edu.unbosque.mundial_2026.dto.response.MetodoPagoResponseDTO;
+import co.edu.unbosque.mundial_2026.entity.MetodoPago;
+import co.edu.unbosque.mundial_2026.entity.Usuario;
+import co.edu.unbosque.mundial_2026.exception.MetodoPagoNotFoundException;
+import co.edu.unbosque.mundial_2026.exception.UsuarioNotFoundException;
+import co.edu.unbosque.mundial_2026.repository.MetodoPagoRepository;
+import co.edu.unbosque.mundial_2026.repository.UsuarioRepository;
+
+@Service
+public class MetodoPagoServiceImpl implements MetodoPagoService {
+
+    private final MetodoPagoRepository metodoPagoRepository;
+    private final UsuarioService usuarioService;
+    
+
+    public MetodoPagoServiceImpl(MetodoPagoRepository metodoPagoRepository, UsuarioService usuarioService) {
+    this.metodoPagoRepository = metodoPagoRepository;
+    this.usuarioService = usuarioService;
+}
+
+   @Override
+public MetodoPagoResponseDTO agregar(MetodoPagoRequestDTO dto) {
+ Usuario usuario = usuarioService.obtenerEntidadPorId(dto.getUsuarioId());
+List<MetodoPago> existentes = metodoPagoRepository.findByUsuarioId(dto.getUsuarioId());
+    boolean esElPrimero = existentes.isEmpty();
+
+    MetodoPago metodo = new MetodoPago();
+    metodo.setUsuario(usuario);
+    metodo.setTipo(dto.getType());
+    metodo.setLabel(dto.getLabel());
+    metodo.setDetails(dto.getDetails());
+    metodo.setDefault(esElPrimero);
+    metodo.setCreatedAt(LocalDateTime.now().toString());
+
+    metodoPagoRepository.save(metodo);
+    return toDTO(metodo);
+}
+
+    @Override
+    public List<MetodoPagoResponseDTO> listarPorUsuario(Long usuarioId) {
+        List<MetodoPago> lista = metodoPagoRepository.findByUsuarioIdOrderByCreatedAtDesc(usuarioId);
+        List<MetodoPagoResponseDTO> dtos = new ArrayList<>();
+        for (int i = 0; i < lista.size(); i++) {
+            dtos.add(toDTO(lista.get(i)));
+        }
+        return dtos;
+    }
+
+    @Override
+    public boolean setDefault(Long usuarioId, Long metodoPagoId) {
+        List<MetodoPago> todos = metodoPagoRepository.findByUsuarioId(usuarioId);
+        MetodoPago target = null;
+
+        for (int i = 0; i < todos.size(); i++) {
+            todos.get(i).setDefault(false);
+            if (todos.get(i).getId().equals(metodoPagoId)) {
+                target = todos.get(i);
+            }
+        }
+
+        if (target == null) {
+            throw new MetodoPagoNotFoundException("Método de pago no encontrado");
+        }
+
+        target.setDefault(true);
+        metodoPagoRepository.saveAll(todos);
+        return true;
+    }
+
+    private MetodoPagoResponseDTO toDTO(MetodoPago metodo) {
+    MetodoPagoResponseDTO dto = new MetodoPagoResponseDTO();
+    dto.setUserId(String.valueOf(metodo.getUsuario().getId()));
+    dto.setUserId(String.valueOf(metodo.getUsuario().getId()));
+    dto.setType(metodo.getTipo());
+    dto.setLabel(metodo.getLabel());
+    dto.setDetails(metodo.getDetails());
+    dto.setDefault(metodo.isDefault());
+    dto.setCreatedAt(metodo.getCreatedAt());
+    return dto;
+}
+@Override
+@Transactional(readOnly = true)
+public MetodoPago obtenerEntidadPorId(final Long id) {
+    return metodoPagoRepository.findById(id)
+            .orElseThrow(() -> new MetodoPagoNotFoundException(
+                    "Método de pago no encontrado con id: " + id));
+}
+}

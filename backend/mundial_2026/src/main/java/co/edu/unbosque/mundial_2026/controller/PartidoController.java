@@ -3,6 +3,7 @@ package co.edu.unbosque.mundial_2026.controller;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -79,14 +80,14 @@ public class PartidoController {
         final String correo = SecurityContextHolder.getContext().getAuthentication().getName();
         return ResponseEntity.ok(partidoService.obtenerPartidosPorCiudadesFav(correo));
     }
-
-    @GetMapping("/sincronizar/{liga}/{temporada}/{fecha}")
-    public ResponseEntity<Integer> sincronizarPorFechaYLiga(
-            @PathVariable int liga,
-            @PathVariable int temporada,
-            @PathVariable String fecha) {
-        return ResponseEntity.ok(partidoService.sincronizarPorFechaYLiga(fecha, liga, temporada));
-    }
+@PreAuthorize("hasRole('ADMIN')")
+@GetMapping("/sincronizar/{liga}/{temporada}/{fecha}")
+public ResponseEntity<Integer> sincronizarPorFechaYLiga(
+        @PathVariable int liga,
+        @PathVariable int temporada,
+        @PathVariable String fecha) {
+    return ResponseEntity.ok(partidoService.sincronizarPorFechaYLiga(fecha, liga, temporada));
+}
 
     @PutMapping("/{id}/resultado/{gol1}/{gol2}/{estado}")
     public ResponseEntity<Integer> actualizarResultado(
@@ -105,4 +106,5 @@ public class PartidoController {
 public ResponseEntity<List<PreferenciaDTO>> obtenerCatalogoSelecciones() {
     return ResponseEntity.ok(partidoService.obtenerCatalogoSelecciones());
 }
+
 }
