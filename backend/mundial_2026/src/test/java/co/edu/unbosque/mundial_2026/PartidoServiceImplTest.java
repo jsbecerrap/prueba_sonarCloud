@@ -21,7 +21,7 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClient.RequestHeadersUriSpec;
 import org.springframework.web.client.RestClient.RequestHeadersSpec;
 import org.springframework.web.client.RestClient.ResponseSpec;
-
+import co.edu.unbosque.mundial_2026.service.UsuarioService;
 import co.edu.unbosque.mundial_2026.dto.response.EquipoConEstadioDTO;
 import co.edu.unbosque.mundial_2026.dto.response.EquipoDTO;
 import co.edu.unbosque.mundial_2026.dto.response.EstadioDTO;
@@ -67,7 +67,8 @@ public class PartidoServiceImplTest {
     private EstadioRepository estadioRepository;
     @Mock
     private CiudadRepository ciudadRepository;
-
+@Mock
+private UsuarioService usuarioService;
     @InjectMocks
     private PartidoServiceImpl service;
 
