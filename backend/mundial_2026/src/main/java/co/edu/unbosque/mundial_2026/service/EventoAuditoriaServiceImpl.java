@@ -11,7 +11,7 @@ import co.edu.unbosque.mundial_2026.dto.EventoAuditoriaDTO;
 import co.edu.unbosque.mundial_2026.entity.EventoAuditoria;
 import co.edu.unbosque.mundial_2026.entity.Usuario;
 import co.edu.unbosque.mundial_2026.repository.EventoAuditoriaRepository;
-
+import org.springframework.context.annotation.Lazy;
 @Service
 public class EventoAuditoriaServiceImpl implements EventoAuditoriaService {
 
@@ -19,7 +19,7 @@ public class EventoAuditoriaServiceImpl implements EventoAuditoriaService {
     private final UsuarioService usuarioService;
    
 
-    public EventoAuditoriaServiceImpl(EventoAuditoriaRepository repository, UsuarioService usuarioService) {
+   public EventoAuditoriaServiceImpl(EventoAuditoriaRepository repository, @Lazy UsuarioService usuarioService) {
     this.repository = repository;
     this.usuarioService = usuarioService;
 }
