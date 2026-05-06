@@ -282,63 +282,63 @@ private UsuarioService usuarioService;
                 () -> service.obtenerPartidosPorSeleccionesFav("noexiste@test.com"));
     }
 
+  @Test
+void obtenerPartidosPorEstadiosFav_usuarioExistente_retornaLista() {
+    EstadioFavorito estadio = new EstadioFavorito();
+    estadio.setId(1L);
+    estadio.setNombre("MetLife Stadium");
+
+    Usuario usuario = crearUsuario("seb@test.com");
+    usuario.setPreferenciasu(List.of(estadio));
+
+    PartidoResponseDTO response = new PartidoResponseDTO();
+    response.setPartidos(List.of(crearPartidoDTO()));
+
+    when(usuarioService.obtenerEntidadPorCorreo("seb@test.com")).thenReturn(usuario);
+    mockRestClient(response);
+
+    List<PartidoDTO> resultado = service.obtenerPartidosPorEstadiosFav("seb@test.com");
+
+    assertNotNull(resultado);
+    assertEquals(1, resultado.size());
+}
+
+   @Test
+void obtenerPartidosPorEstadiosFav_usuarioNoExistente_lanzaExcepcion() {
+    when(usuarioService.obtenerEntidadPorCorreo("noexiste@test.com")).thenThrow(new UsuarioNotFoundException("no existe"));
+
+    assertThrows(UsuarioNotFoundException.class,
+            () -> service.obtenerPartidosPorEstadiosFav("noexiste@test.com"));
+}
+
+ @Test
+void obtenerPartidosPorCiudadesFav_usuarioExistente_retornaLista() {
+    CiudadFavorita ciudad = new CiudadFavorita();
+    ciudad.setId(1L);
+    ciudad.setNombre("East Rutherford");
+
+    Usuario usuario = crearUsuario("seb@test.com");
+    usuario.setCiudadFavoritas(List.of(ciudad));
+
+    PartidoResponseDTO response = new PartidoResponseDTO();
+    response.setPartidos(List.of(crearPartidoDTO()));
+
+    when(usuarioService.obtenerEntidadPorCorreo("seb@test.com")).thenReturn(usuario);
+    mockRestClient(response);
+
+    List<PartidoDTO> resultado = service.obtenerPartidosPorCiudadesFav("seb@test.com");
+
+    assertNotNull(resultado);
+    assertEquals(1, resultado.size());
+}
+
     @Test
-    void obtenerPartidosPorEstadiosFav_usuarioExistente_retornaLista() {
-        EstadioFavorito estadio = new EstadioFavorito();
-        estadio.setId(1L);
-        estadio.setNombre("MetLife Stadium");
+void obtenerPartidosPorCiudadesFav_usuarioNoExistente_lanzaExcepcion() {
+    when(usuarioService.obtenerEntidadPorCorreo("noexiste@test.com")).thenThrow(new UsuarioNotFoundException("no existe"));
 
-        Usuario usuario = crearUsuario("seb@test.com");
-        usuario.setPreferenciasu(List.of(estadio));
-
-        PartidoResponseDTO response = new PartidoResponseDTO();
-        response.setPartidos(List.of(crearPartidoDTO()));
-
-        when(usuarioRepository.findByCorreoUsuario("seb@test.com")).thenReturn(Optional.of(usuario));
-        mockRestClient(response);
-
-        List<PartidoDTO> resultado = service.obtenerPartidosPorEstadiosFav("seb@test.com");
-
-        assertNotNull(resultado);
-        assertEquals(1, resultado.size());
-    }
-
-    @Test
-    void obtenerPartidosPorEstadiosFav_usuarioNoExistente_lanzaExcepcion() {
-        when(usuarioRepository.findByCorreoUsuario("noexiste@test.com")).thenReturn(Optional.empty());
-
-        assertThrows(UsuarioNotFoundException.class,
-                () -> service.obtenerPartidosPorEstadiosFav("noexiste@test.com"));
-    }
-
-    @Test
-    void obtenerPartidosPorCiudadesFav_usuarioExistente_retornaLista() {
-        CiudadFavorita ciudad = new CiudadFavorita();
-        ciudad.setId(1L);
-        ciudad.setNombre("East Rutherford");
-
-        Usuario usuario = crearUsuario("seb@test.com");
-        usuario.setCiudadFavoritas(List.of(ciudad));
-
-        PartidoResponseDTO response = new PartidoResponseDTO();
-        response.setPartidos(List.of(crearPartidoDTO()));
-
-        when(usuarioRepository.findByCorreoUsuario("seb@test.com")).thenReturn(Optional.of(usuario));
-        mockRestClient(response);
-
-        List<PartidoDTO> resultado = service.obtenerPartidosPorCiudadesFav("seb@test.com");
-
-        assertNotNull(resultado);
-        assertEquals(1, resultado.size());
-    }
-
-    @Test
-    void obtenerPartidosPorCiudadesFav_usuarioNoExistente_lanzaExcepcion() {
-        when(usuarioRepository.findByCorreoUsuario("noexiste@test.com")).thenReturn(Optional.empty());
-
-        assertThrows(UsuarioNotFoundException.class,
-                () -> service.obtenerPartidosPorCiudadesFav("noexiste@test.com"));
-    }
+    assertThrows(UsuarioNotFoundException.class,
+            () -> service.obtenerPartidosPorCiudadesFav("noexiste@test.com"));
+}
 
     @Test
     void filtrarPorSeleccion_retornaLista() {
