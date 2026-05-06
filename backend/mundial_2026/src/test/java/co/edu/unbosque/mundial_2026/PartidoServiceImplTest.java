@@ -265,7 +265,7 @@ private UsuarioService usuarioService;
         PartidoResponseDTO response = new PartidoResponseDTO();
         response.setPartidos(List.of(crearPartidoDTO()));
 
-        when(usuarioRepository.findByCorreoUsuario("seb@test.com")).thenReturn(Optional.of(usuario));
+      when(usuarioService.obtenerEntidadPorCorreo("seb@test.com")).thenReturn(usuario);
         mockRestClient(response);
 
         List<PartidoDTO> resultado = service.obtenerPartidosPorSeleccionesFav("seb@test.com");
@@ -276,7 +276,7 @@ private UsuarioService usuarioService;
 
     @Test
     void obtenerPartidosPorSeleccionesFav_usuarioNoExistente_lanzaExcepcion() {
-        when(usuarioRepository.findByCorreoUsuario("noexiste@test.com")).thenReturn(Optional.empty());
+      when(usuarioService.obtenerEntidadPorCorreo("noexiste@test.com")).thenThrow(new UsuarioNotFoundException("no existe"));
 
         assertThrows(UsuarioNotFoundException.class,
                 () -> service.obtenerPartidosPorSeleccionesFav("noexiste@test.com"));
