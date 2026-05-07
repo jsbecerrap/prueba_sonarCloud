@@ -25,12 +25,9 @@ import co.edu.unbosque.mundial_2026.dto.response.StandingResponseDTO;
 import co.edu.unbosque.mundial_2026.entity.Partido;
 import co.edu.unbosque.mundial_2026.entity.Usuario;
 import co.edu.unbosque.mundial_2026.exception.PartidoNotFoundException;
-import co.edu.unbosque.mundial_2026.exception.UsuarioNotFoundException;
-import co.edu.unbosque.mundial_2026.repository.CiudadRepository;
-import co.edu.unbosque.mundial_2026.repository.EstadioRepository;
 import co.edu.unbosque.mundial_2026.repository.PartidoRepository;
 import co.edu.unbosque.mundial_2026.repository.SeleccionRepository;
-import co.edu.unbosque.mundial_2026.repository.UsuarioRepository;
+
 
 @Service
 public class PartidoServiceImpl implements PartidoService {
@@ -39,6 +36,7 @@ public class PartidoServiceImpl implements PartidoService {
     private static final int TEMPORADA_MUNDIAL = 2026;
     private static final String BASE_FIXTURES = "/fixtures?league=" + LIGA_MUNDIAL + "&season=" + TEMPORADA_MUNDIAL;
 
+    private static final String SEASON_PARAM = "&season=";
     private final RestClient footballClient;
     private final PartidoRepository partidoRepository;
     private final UsuarioService usuarioService;
@@ -105,7 +103,7 @@ static {
     @Override
     public List<List<PosicionDTO>> obtenerStandings() {
         final StandingResponseDTO response = footballClient.get()
-                .uri("/standings?league=" + LIGA_MUNDIAL + "&season=" + TEMPORADA_MUNDIAL)
+                .uri("/standings?league=" + LIGA_MUNDIAL + SEASON_PARAM + TEMPORADA_MUNDIAL)
                 .retrieve()
                 .body(StandingResponseDTO.class);
         return response.getRespuesta().get(0).getTablas().getTablas();
@@ -114,7 +112,7 @@ static {
     @Override
 public List<EquipoMundialDTO> obtenerSelecciones() {
     final EquipoMundialResponseDTO response = footballClient.get()
-            .uri("/teams?league=" + LIGA_MUNDIAL + "&season=" + TEMPORADA_MUNDIAL)
+            .uri("/teams?league=" + LIGA_MUNDIAL + SEASON_PARAM + TEMPORADA_MUNDIAL)
             .retrieve()
             .body(EquipoMundialResponseDTO.class);
     return response.getEquipos();
@@ -141,7 +139,7 @@ public List<EquipoMundialDTO> obtenerSelecciones() {
     @Override
     public List<PartidoDTO> obtenerPartidosEnVivo() {
         final PartidoResponseDTO response = footballClient.get()
-                .uri("/fixtures?live=all&league=" + LIGA_MUNDIAL + "&season=" + TEMPORADA_MUNDIAL)
+                .uri("/fixtures?live=all&league=" + LIGA_MUNDIAL + SEASON_PARAM + TEMPORADA_MUNDIAL)
                 .retrieve()
                 .body(PartidoResponseDTO.class);
         return response.getPartidos();
@@ -180,7 +178,7 @@ public List<EquipoMundialDTO> obtenerSelecciones() {
     @Override
     public int sincronizarPorFechaYLiga(String fecha, int liga, int temporada) {
         final PartidoResponseDTO response = footballClient.get()
-                .uri("/fixtures?league=" + liga + "&season=" + temporada + "&date=" + fecha)
+                .uri("/fixtures?league=" + liga + SEASON_PARAM + temporada + "&date=" + fecha)
                 .retrieve()
                 .body(PartidoResponseDTO.class);
 

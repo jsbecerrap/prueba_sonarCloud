@@ -19,7 +19,7 @@ public class EventoAuditoriaServiceImpl implements EventoAuditoriaService {
     private final UsuarioService usuarioService;
    
 
-   public EventoAuditoriaServiceImpl(EventoAuditoriaRepository repository, @Lazy UsuarioService usuarioService) {
+    public EventoAuditoriaServiceImpl(EventoAuditoriaRepository repository, @Lazy UsuarioService usuarioService) {
     this.repository = repository;
     this.usuarioService = usuarioService;
 }

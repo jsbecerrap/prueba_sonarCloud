@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import co.edu.unbosque.mundial_2026.dto.request.AgregarItemDTO;
 import co.edu.unbosque.mundial_2026.dto.request.ConfirmarOrdenDTO;
 import co.edu.unbosque.mundial_2026.dto.response.OrdenResponseDTO;
+import co.edu.unbosque.mundial_2026.exception.UsuarioNotFoundException;
 import co.edu.unbosque.mundial_2026.repository.UsuarioRepository;
 import co.edu.unbosque.mundial_2026.service.OrdenService;
 import jakarta.validation.Valid;
@@ -32,41 +33,42 @@ public class OrdenController {
         this.usuarioRepository = usuarioRepository;
     }
 
+    private Long obtenerUsuarioId(UserDetails userDetails) {
+        return usuarioRepository.findByCorreoUsuario(userDetails.getUsername())
+                .orElseThrow(() -> new UsuarioNotFoundException("Usuario no encontrado"))
+                .getId();
+    }
+
     @PostMapping("/carrito/agregar")
     public ResponseEntity<OrdenResponseDTO> agregar(@AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody AgregarItemDTO dto) {
-        Long usuarioId = usuarioRepository.findByCorreoUsuario(userDetails.getUsername()).get().getId();
-        return ResponseEntity.ok(ordenService.agregarItem(usuarioId, dto));
+        return ResponseEntity.ok(ordenService.agregarItem(obtenerUsuarioId(userDetails), dto));
     }
 
     @GetMapping("/carrito")
     public ResponseEntity<OrdenResponseDTO> carrito(@AuthenticationPrincipal UserDetails userDetails) {
-        Long usuarioId = usuarioRepository.findByCorreoUsuario(userDetails.getUsername()).get().getId();
-        return ResponseEntity.ok(ordenService.obtenerCarrito(usuarioId));
+        return ResponseEntity.ok(ordenService.obtenerCarrito(obtenerUsuarioId(userDetails)));
     }
 
     @DeleteMapping("/carrito/item/{itemId}")
     public ResponseEntity<OrdenResponseDTO> eliminarItem(@AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long itemId) {
-        Long usuarioId = usuarioRepository.findByCorreoUsuario(userDetails.getUsername()).get().getId();
-        return ResponseEntity.ok(ordenService.eliminarItem(usuarioId, itemId));
+        return ResponseEntity.ok(ordenService.eliminarItem(obtenerUsuarioId(userDetails), itemId));
     }
 
     @PostMapping("/carrito/confirmar")
     public ResponseEntity<OrdenResponseDTO> confirmar(@AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody ConfirmarOrdenDTO dto) {
-        Long usuarioId = usuarioRepository.findByCorreoUsuario(userDetails.getUsername()).get().getId();
-        return ResponseEntity.ok(ordenService.confirmarOrden(usuarioId, dto));
+        return ResponseEntity.ok(ordenService.confirmarOrden(obtenerUsuarioId(userDetails), dto));
     }
 
     @GetMapping("/historial")
     public ResponseEntity<List<OrdenResponseDTO>> historial(@AuthenticationPrincipal UserDetails userDetails) {
-        Long usuarioId = usuarioRepository.findByCorreoUsuario(userDetails.getUsername()).get().getId();
-        return ResponseEntity.ok(ordenService.historial(usuarioId));
+        return ResponseEntity.ok(ordenService.historial(obtenerUsuarioId(userDetails)));
     }
+
     @DeleteMapping("/carrito")
-public ResponseEntity<OrdenResponseDTO> cancelar(@AuthenticationPrincipal UserDetails userDetails) {
-    Long usuarioId = usuarioRepository.findByCorreoUsuario(userDetails.getUsername()).get().getId();
-    return ResponseEntity.ok(ordenService.cancelarOrden(usuarioId));
-}
+    public ResponseEntity<OrdenResponseDTO> cancelar(@AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(ordenService.cancelarOrden(obtenerUsuarioId(userDetails)));
+    }
 }

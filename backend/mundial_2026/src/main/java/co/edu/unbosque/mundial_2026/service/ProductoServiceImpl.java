@@ -10,9 +10,7 @@ import co.edu.unbosque.mundial_2026.dto.request.ProductoRequestDTO;
 import co.edu.unbosque.mundial_2026.dto.response.ProductoResponseDTO;
 import co.edu.unbosque.mundial_2026.entity.Categoria;
 import co.edu.unbosque.mundial_2026.entity.Producto;
-import co.edu.unbosque.mundial_2026.exception.CategoriaNotFoundException;
 import co.edu.unbosque.mundial_2026.exception.ProductoNotFoundException;
-import co.edu.unbosque.mundial_2026.repository.CategoriaRepository;
 import co.edu.unbosque.mundial_2026.repository.ProductoRepository;
 
 @Service
@@ -26,6 +24,7 @@ public class ProductoServiceImpl implements ProductoService {
 
     private final CategoriaService categoriaService;
 
+    private static final String PRODUCTO_NO_ENCONTRADO = "No existe ese producto";
     
 
     @Override
@@ -39,7 +38,7 @@ public class ProductoServiceImpl implements ProductoService {
 
     @Override
     public ProductoResponseDTO actualizar(Long id, ProductoActualizarRequestDTO dto) {
-        Producto productoActualizar = productoRepository.findById(id).orElseThrow(() -> new ProductoNotFoundException("No existe ese producto"));
+        Producto productoActualizar = productoRepository.findById(id).orElseThrow(() -> new ProductoNotFoundException(PRODUCTO_NO_ENCONTRADO));
         if (dto.getPrecio() != null) {
     productoActualizar.setPrecio(dto.getPrecio());
 }
@@ -61,7 +60,7 @@ productoRepository.save(productoActualizar);
    @Override
 public void eliminar(Long id) {
     Producto producto = productoRepository.findById(id)
-            .orElseThrow(() -> new ProductoNotFoundException("No existe ese producto"));
+            .orElseThrow(() -> new ProductoNotFoundException(PRODUCTO_NO_ENCONTRADO));
     producto.setActivo(false);
     productoRepository.save(producto);
 }
@@ -94,7 +93,7 @@ public List<ProductoResponseDTO> listarPorCategoria(Long categoriaId) {
 @Override
 public ProductoResponseDTO obtenerPorId(Long id) {
     Producto producto = productoRepository.findById(id)
-            .orElseThrow(() -> new ProductoNotFoundException("No existe ese producto"));
+            .orElseThrow(() -> new ProductoNotFoundException(PRODUCTO_NO_ENCONTRADO));
     if (!producto.getActivo()) {
         throw new ProductoNotFoundException("Este producto no está disponible");
     }
@@ -145,7 +144,7 @@ public void actualizarStock(final Long productoId, final int cantidad) {
 @Transactional
 public void reactivar(Long id) {
     Producto producto = productoRepository.findById(id)
-            .orElseThrow(() -> new ProductoNotFoundException("No existe ese producto"));
+            .orElseThrow(() -> new ProductoNotFoundException(PRODUCTO_NO_ENCONTRADO));
     producto.setActivo(true);
     productoRepository.save(producto);
 }

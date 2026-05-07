@@ -10,6 +10,7 @@ import co.edu.unbosque.mundial_2026.dto.response.CategoriaResponseDTO;
 import co.edu.unbosque.mundial_2026.entity.Categoria;
 import co.edu.unbosque.mundial_2026.entity.Producto;
 import co.edu.unbosque.mundial_2026.exception.CategoriaNotFoundException;
+import co.edu.unbosque.mundial_2026.exception.CategoriaYaExisteException;
 import co.edu.unbosque.mundial_2026.repository.CategoriaRepository;
 import co.edu.unbosque.mundial_2026.repository.ProductoRepository;
 
@@ -18,6 +19,7 @@ public class CategoriaServiceImpl implements CategoriaService {
 
     private final CategoriaRepository categoriaRepository;
     private final ProductoRepository productoRepository;
+    private static final String CATEGORIA_NO_ENCONTRADA = "Categoría no encontrada con id: ";
 
     public CategoriaServiceImpl(CategoriaRepository categoriaRepository,
             ProductoRepository productoRepository) {
@@ -29,7 +31,7 @@ public class CategoriaServiceImpl implements CategoriaService {
     public CategoriaResponseDTO crear(CategoriaRequestDTO dto) {
         Optional<Categoria> existente = categoriaRepository.findByNombre(dto.getNombre());
         if (existente.isPresent()) {
-            throw new IllegalStateException("Ya existe un nombre de esa categoria");
+   throw new CategoriaYaExisteException("Ya existe un nombre de esa categoria");
         }
         Categoria categoria = toEntity(dto);
         categoriaRepository.save(categoria);
@@ -52,11 +54,11 @@ public class CategoriaServiceImpl implements CategoriaService {
     @Transactional
     public CategoriaResponseDTO actualizar(Long id, CategoriaRequestDTO dto) {
         Categoria categoria = categoriaRepository.findById(id)
-                .orElseThrow(() -> new CategoriaNotFoundException("Categoría no encontrada con id: " + id));
+                .orElseThrow(() -> new CategoriaNotFoundException(CATEGORIA_NO_ENCONTRADA + id));
         if (dto.getNombre() != null && !dto.getNombre().isBlank()) {
             Optional<Categoria> existente = categoriaRepository.findByNombre(dto.getNombre());
             if (existente.isPresent() && !existente.get().getId().equals(id)) {
-                throw new IllegalStateException("Ya existe una categoría con ese nombre");
+                throw new CategoriaYaExisteException("Ya existe una categoría con ese nombre");
             }
             categoria.setNombre(dto.getNombre());
         }
@@ -71,7 +73,7 @@ public class CategoriaServiceImpl implements CategoriaService {
 @Transactional
 public void eliminar(Long id) {
     Categoria categoria = categoriaRepository.findById(id)
-            .orElseThrow(() -> new CategoriaNotFoundException("Categoría no encontrada con id: " + id));
+            .orElseThrow(() -> new CategoriaNotFoundException(CATEGORIA_NO_ENCONTRADA + id));
     List<Producto> productos = productoRepository.findByCategoriaIdAndActivoTrue(id);
     for (int i = 0; i < productos.size(); i++) {
         productos.get(i).setActivo(false);
@@ -85,7 +87,7 @@ public void eliminar(Long id) {
     public Categoria obtenerEntidadPorId(final Long id) {
         return categoriaRepository.findById(id)
                 .orElseThrow(() -> new CategoriaNotFoundException(
-                        "Categoría no encontrada con id: " + id));
+                        CATEGORIA_NO_ENCONTRADA + id));
     }
 
     private CategoriaResponseDTO toDTO(Categoria categoria) {

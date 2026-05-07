@@ -124,4 +124,50 @@ public ResponseEntity<Map<String, Object>> handleStockInsuficiente(StockInsufici
 public ResponseEntity<Map<String, Object>> handleCategoriaNotFound(CategoriaNotFoundException e) {
     return buildResponse(HttpStatus.NOT_FOUND, e.getMessage());
 }
+@ExceptionHandler(ApuestaNotFoundException.class)
+public ResponseEntity<Map<String, Object>> handleApuestaNotFound(ApuestaNotFoundException e) {
+    return buildResponse(HttpStatus.NOT_FOUND, e.getMessage());
+}
+
+@ExceptionHandler(PronosticoNotFoundException.class)
+public ResponseEntity<Map<String, Object>> handlePronosticoNotFound(PronosticoNotFoundException e) {
+    return buildResponse(HttpStatus.NOT_FOUND, e.getMessage());
+}
+@ExceptionHandler(CodigoInvalidoException.class)
+public ResponseEntity<Map<String, Object>> handleCodigoInvalido(CodigoInvalidoException e) {
+    return buildResponse(HttpStatus.BAD_REQUEST, e.getMessage());
+}
+
+@ExceptionHandler(ParticipacionNotFoundException.class)
+public ResponseEntity<Map<String, Object>> handleParticipacionNotFound(ParticipacionNotFoundException e) {
+    return buildResponse(HttpStatus.NOT_FOUND, e.getMessage());
+}
+
+@ExceptionHandler(UsuarioYaEnApuestaException.class)
+public ResponseEntity<Map<String, Object>> handleUsuarioYaEnApuesta(UsuarioYaEnApuestaException e) {
+    return buildResponse(HttpStatus.CONFLICT, e.getMessage());
+}
+
+@ExceptionHandler(ApuestaCerradaException.class)
+public ResponseEntity<Map<String, Object>> handleApuestaCerrada(ApuestaCerradaException e) {
+    return buildResponse(HttpStatus.BAD_REQUEST, e.getMessage());
+}
+@ExceptionHandler(CarritoVacioException.class)
+public ResponseEntity<Map<String, Object>> handleCarritoVacio(CarritoVacioException e) {
+    return buildResponse(HttpStatus.BAD_REQUEST, e.getMessage());
+}
+
+@ExceptionHandler(MetodoPagoInvalidoException.class)
+public ResponseEntity<Map<String, Object>> handleMetodoPagoInvalido(MetodoPagoInvalidoException e) {
+    return buildResponse(HttpStatus.BAD_REQUEST, e.getMessage());
+}
+
+@ExceptionHandler(ItemNotFoundException.class)
+public ResponseEntity<Map<String, Object>> handleItemNotFound(ItemNotFoundException e) {
+    return buildResponse(HttpStatus.NOT_FOUND, e.getMessage());
+}
+@ExceptionHandler(CategoriaYaExisteException.class)
+public ResponseEntity<Map<String, Object>> handleCategoriaYaExiste(CategoriaYaExisteException e) {
+    return buildResponse(HttpStatus.CONFLICT, e.getMessage());
+}
 }

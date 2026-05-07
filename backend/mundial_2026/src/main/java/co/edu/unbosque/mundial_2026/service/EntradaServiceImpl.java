@@ -1,7 +1,6 @@
 package co.edu.unbosque.mundial_2026.service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -31,11 +30,8 @@ import co.edu.unbosque.mundial_2026.exception.EntradaNotFoundException;
 import co.edu.unbosque.mundial_2026.exception.EstadoInvalidoException;
 import co.edu.unbosque.mundial_2026.exception.LimiteSuperadoException;
 import co.edu.unbosque.mundial_2026.exception.PagoStripeException;
-import co.edu.unbosque.mundial_2026.exception.PartidoNotFoundException;
-import co.edu.unbosque.mundial_2026.exception.UsuarioNotFoundException;
 import co.edu.unbosque.mundial_2026.repository.EntradaRepository;
-import co.edu.unbosque.mundial_2026.repository.PartidoRepository;
-import co.edu.unbosque.mundial_2026.repository.UsuarioRepository;
+
 
 
 @Service
@@ -44,7 +40,12 @@ public class EntradaServiceImpl implements EntradaService {
     private final EntradaRepository entradaRepository;
     private final UsuarioService usuarioService;
 private final PartidoService partidoService;
-    private final EventoAuditoriaService auditoriaService;
+    private final EventoAuditoriaService auditoriaService;private static final String ESTADO_RESERVADA = "RESERVADA";
+private static final String ESTADO_PAGADA = "PAGADA";
+private static final String ESTADO_TRANSFERIDA = "TRANSFERIDA";
+private static final String ENTRADA_NO_ENCONTRADA = "Entrada no encontrada";
+private static final String TIPO_ENTRADA = "ENTRADA";
+private static final String PREFIJO_USUARIO = "Usuario ";
 
     @Value("${stripe.api.key}")
     private String stripeApiKey;
@@ -109,7 +110,7 @@ static {
         int compradasHoy = 0;
 for (int i = 0; i < entradasHoy.size(); i++) {
     Entrada entrada = entradasHoy.get(i);
-    if (entrada.getEstado().equals("RESERVADA") || entrada.getEstado().equals("PAGADA")) {
+    if (entrada.getEstado().equals(ESTADO_RESERVADA) || entrada.getEstado().equals(ESTADO_PAGADA)) {
         compradasHoy += entrada.getCantidad();
     }
 }
@@ -123,7 +124,7 @@ for (int i = 0; i < entradasHoy.size(); i++) {
         Entrada entrada = new Entrada();
         entrada.setUsuario(u);
         entrada.setCantidad(dto.getCantidad());
-        entrada.setEstado("RESERVADA");
+        entrada.setEstado(ESTADO_RESERVADA);
         entrada.setPartido(partido);
        entrada.setPrecio(calcularPrecio(partido) * dto.getCantidad());
         entrada.setFechaCompra(LocalDateTime.now());
@@ -135,10 +136,10 @@ for (int i = 0; i < entradasHoy.size(); i++) {
 
         auditoriaService.registrar(
             "ENTRADA_RESERVADA",
-            "Usuario " + usuarioId + " reservó " + dto.getCantidad() + " entrada(s) para el partido " + partido.getId(),
+            PREFIJO_USUARIO + usuarioId + " reservó " + dto.getCantidad() + " entrada(s) para el partido " + partido.getId(),
             usuarioId,
             String.valueOf(entrada.getId()),
-            "ENTRADA"
+            TIPO_ENTRADA
         );
 
         return toDTO(entrada);
@@ -146,9 +147,9 @@ for (int i = 0; i < entradasHoy.size(); i++) {
 
     @Override
     public EntradaResponseDTO confirmarPago(Long entradaId, String paymentRef) {
-        Entrada entrada = entradaRepository.findById(entradaId).orElseThrow(() -> new EntradaNotFoundException("Entrada no encontrada"));
+        Entrada entrada = entradaRepository.findById(entradaId).orElseThrow(() -> new EntradaNotFoundException(ENTRADA_NO_ENCONTRADA));
 
-        if (!entrada.getEstado().equals("RESERVADA")) {
+        if (!entrada.getEstado().equals(ESTADO_RESERVADA)) {
             throw new EstadoInvalidoException("La entrada no está en estado RESERVADA");
         }
 
@@ -173,7 +174,7 @@ PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
 
             PaymentIntent intent = PaymentIntent.create(params);
 
-            entrada.setEstado("PAGADA");
+            entrada.setEstado(ESTADO_PAGADA);
             entrada.setPaymentRef(intent.getId());
             entrada.setFechaPago(LocalDateTime.now());
             entrada.setTtlReserva(null);
@@ -184,7 +185,7 @@ PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
                 "Pago confirmado para entrada " + entradaId + " con ref " + intent.getId(),
                 entrada.getUsuario().getId(),
                 String.valueOf(entradaId),
-                "ENTRADA"
+                TIPO_ENTRADA
             );
 
         } catch (StripeException e) {
@@ -193,7 +194,7 @@ PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
                 "Fallo en pago de entrada " + entradaId + ": " + e.getMessage(),
                 entrada.getUsuario().getId(),
                 String.valueOf(entradaId),
-                "ENTRADA"
+                TIPO_ENTRADA
             );
           throw new PagoStripeException("Error al procesar el pago: " + e.getMessage());
         }
@@ -203,13 +204,13 @@ PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
 
     @Override
     public EntradaResponseDTO cancelarReserva(Long usuarioId, Long entradaId) {
-        Entrada entrada = entradaRepository.findById(entradaId).orElseThrow(() -> new EntradaNotFoundException("Entrada no encontrada"));
+        Entrada entrada = entradaRepository.findById(entradaId).orElseThrow(() -> new EntradaNotFoundException(ENTRADA_NO_ENCONTRADA));
 
         if (!entrada.getUsuario().getId().equals(usuarioId)) {
             throw new EstadoInvalidoException("Esta entrada no pertenece al usuario");
         }
 
-        if (!entrada.getEstado().equals("RESERVADA")) {
+        if (!entrada.getEstado().equals(ESTADO_RESERVADA)) {
        throw new EstadoInvalidoException("Solo se pueden cancelar entradas en estado RESERVADA");
         }
 
@@ -221,10 +222,10 @@ PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
 
         auditoriaService.registrar(
             "ENTRADA_CANCELADA",
-            "Usuario " + usuarioId + " canceló la entrada " + entradaId,
+            PREFIJO_USUARIO + usuarioId + " canceló la entrada " + entradaId,
             usuarioId,
             String.valueOf(entradaId),
-            "ENTRADA"
+            TIPO_ENTRADA
         );
 
         return toDTO(entrada);
@@ -232,13 +233,13 @@ PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
 
     @Override
     public EntradaResponseDTO transferirEntrada(Long entradaId, TransferenciaRequestDTO dto, Long usuarioId) {
-        Entrada entrada = entradaRepository.findById(entradaId).orElseThrow(() ->  new EntradaNotFoundException("Entrada no encontrada"));
+        Entrada entrada = entradaRepository.findById(entradaId).orElseThrow(() ->  new EntradaNotFoundException(ENTRADA_NO_ENCONTRADA));
 
         if (!entrada.getUsuario().getId().equals(usuarioId)) {
             throw new EstadoInvalidoException("Esta entrada no pertenece al usuario");
         }
 
-        if (!entrada.getEstado().equals("PAGADA")) {
+        if (!entrada.getEstado().equals(ESTADO_PAGADA)) {
             throw new EstadoInvalidoException("Solo se pueden transferir entradas pagadas");
         }
 
@@ -249,7 +250,7 @@ PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
         int totalTransferidas = 0;
 for (int i = 0; i < transferenciasHoy.size(); i++) {
     Entrada entradaActual = transferenciasHoy.get(i);
-    if (entradaActual.getEstado().equals("TRANSFERIDA")) {
+    if (entradaActual.getEstado().equals(ESTADO_TRANSFERIDA)) {
         totalTransferidas += entradaActual.getCantidad();
     }
 }
@@ -259,7 +260,7 @@ for (int i = 0; i < transferenciasHoy.size(); i++) {
         }
 
         Usuario usuarioRecibe = usuarioService.obtenerEntidadPorCorreo(dto.getCorreoDestino());
-        entrada.setEstado("TRANSFERIDA");
+        entrada.setEstado(ESTADO_TRANSFERIDA);
         entradaRepository.save(entrada);
 
         Entrada nuevaEntrada = new Entrada();
@@ -267,16 +268,16 @@ for (int i = 0; i < transferenciasHoy.size(); i++) {
         nuevaEntrada.setUsuario(usuarioRecibe);
         nuevaEntrada.setPartido(entrada.getPartido());
         nuevaEntrada.setPrecio(entrada.getPrecio());
-        nuevaEntrada.setEstado("PAGADA");
+        nuevaEntrada.setEstado(ESTADO_PAGADA);
         nuevaEntrada.setFechaCompra(LocalDateTime.now());
         entradaRepository.save(nuevaEntrada);
 
         auditoriaService.registrar(
             "ENTRADA_TRANSFERIDA",
-            "Usuario " + usuarioId + " transfirió entrada " + entradaId + " a " + dto.getCorreoDestino(),
+            PREFIJO_USUARIO+ usuarioId + " transfirió entrada " + entradaId + " a " + dto.getCorreoDestino(),
             usuarioId,
             String.valueOf(entradaId),
-            "ENTRADA"
+            TIPO_ENTRADA
         );
 
         return toDTO(nuevaEntrada);
@@ -284,13 +285,13 @@ for (int i = 0; i < transferenciasHoy.size(); i++) {
 
     @Override
     public EntradaResponseDTO reembolsarEntrada(Long usuarioId, Long entradaId) {
-        Entrada entrada = entradaRepository.findById(entradaId).orElseThrow(() ->new EntradaNotFoundException("Entrada no encontrada"));
+        Entrada entrada = entradaRepository.findById(entradaId).orElseThrow(() ->new EntradaNotFoundException(ENTRADA_NO_ENCONTRADA));
 
         if (!entrada.getUsuario().getId().equals(usuarioId)) {
             throw new EstadoInvalidoException("Esta entrada no pertenece al usuario");
         }
 
-        if (!entrada.getEstado().equals("PAGADA")) {
+        if (!entrada.getEstado().equals(ESTADO_PAGADA)) {
           throw new EstadoInvalidoException("Solo se pueden reembolsar entradas pagadas");
         }
 
@@ -311,10 +312,10 @@ for (int i = 0; i < transferenciasHoy.size(); i++) {
 
             auditoriaService.registrar(
                 "ENTRADA_REEMBOLSADA",
-                "Usuario " + usuarioId + " reembolsó la entrada " + entradaId,
+                PREFIJO_USUARIO + usuarioId + " reembolsó la entrada " + entradaId,
                 usuarioId,
                 String.valueOf(entradaId),
-                "ENTRADA"
+                TIPO_ENTRADA
             );
 
         } catch (StripeException e) {
@@ -323,7 +324,7 @@ for (int i = 0; i < transferenciasHoy.size(); i++) {
                 "Fallo en reembolso de entrada " + entradaId + ": " + e.getMessage(),
                 usuarioId,
                 String.valueOf(entradaId),
-                "ENTRADA"
+                TIPO_ENTRADA
             );
             throw new PagoStripeException("Error al procesar el reembolso: " + e.getMessage());
         }
@@ -341,13 +342,13 @@ for (int i = 0; i < transferenciasHoy.size(); i++) {
 
     @Override
     public EntradaResponseDTO obtenerEntrada(Long entradaId) {
-        Entrada entrada = entradaRepository.findById(entradaId).orElseThrow(() -> new RuntimeException("Entrada no encontrada"));
+        Entrada entrada = entradaRepository.findById(entradaId).orElseThrow(() -> new RuntimeException(ENTRADA_NO_ENCONTRADA));
         return toDTO(entrada);
     }
 
     @Override
     public void expirarReservasVencidas() {
-        List<Entrada> vencidas = entradaRepository.findByEstadoAndTtlReservaLessThan("RESERVADA", LocalDateTime.now());
+        List<Entrada> vencidas = entradaRepository.findByEstadoAndTtlReservaLessThan(ESTADO_RESERVADA, LocalDateTime.now());
 
         for (int i = 0; i < vencidas.size(); i++) {
             Entrada entrada = vencidas.get(i);
@@ -361,7 +362,7 @@ for (int i = 0; i < transferenciasHoy.size(); i++) {
                 "Entrada " + entrada.getId() + " expiró por TTL",
                 entrada.getUsuario().getId(),
                 String.valueOf(entrada.getId()),
-                "ENTRADA"
+                TIPO_ENTRADA
             );
         }
     }

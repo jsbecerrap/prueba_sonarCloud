@@ -22,17 +22,17 @@ import co.edu.unbosque.mundial_2026.entity.MetodoPago;
 import co.edu.unbosque.mundial_2026.entity.Orden;
 import co.edu.unbosque.mundial_2026.entity.Producto;
 import co.edu.unbosque.mundial_2026.entity.Usuario;
-import co.edu.unbosque.mundial_2026.exception.MetodoPagoNotFoundException;
+import co.edu.unbosque.mundial_2026.exception.CarritoVacioException;
+import co.edu.unbosque.mundial_2026.exception.ItemNotFoundException;
+import co.edu.unbosque.mundial_2026.exception.MetodoPagoInvalidoException;
 import co.edu.unbosque.mundial_2026.exception.OrdenNotFoundException;
 import co.edu.unbosque.mundial_2026.exception.PagoStripeException;
 import co.edu.unbosque.mundial_2026.exception.ProductoNotFoundException;
 import co.edu.unbosque.mundial_2026.exception.StockInsuficienteException;
-import co.edu.unbosque.mundial_2026.exception.UsuarioNotFoundException;
 import co.edu.unbosque.mundial_2026.repository.ItemOrdenRepository;
-import co.edu.unbosque.mundial_2026.repository.MetodoPagoRepository;
+
 import co.edu.unbosque.mundial_2026.repository.OrdenRepository;
-import co.edu.unbosque.mundial_2026.repository.ProductoRepository;
-import co.edu.unbosque.mundial_2026.repository.UsuarioRepository;
+
 
 @Service
 public class OrdenServiceImpl implements OrdenService {
@@ -43,6 +43,13 @@ public class OrdenServiceImpl implements OrdenService {
 private final ProductoService productoService;
 private final MetodoPagoService metodoPagoService;
     private final EventoAuditoriaService auditoriaService;
+    private static final String ESTADO_PENDIENTE = "PENDIENTE";
+private static final String ESTADO_PAGADA = "PAGADA";
+private static final String ESTADO_CANCELADA = "CANCELADA";
+private static final String TIPO_ORDEN = "Orden";
+private static final String PREFIJO_ORDEN = "ORDEN-";
+private static final String CARRITO_NO_ACTIVO = "No tienes un carrito activo";
+private static final String PREFIJO_USUARIO = "Usuario ";
 
     @Value("${stripe.api.key}")
     private String stripeApiKey;
@@ -72,14 +79,14 @@ Producto producto = productoService.obtenerEntidadPorId(dto.getProductoId());
         if (!producto.getActivo()) {
     throw new ProductoNotFoundException("Este producto no está disponible");
 }
-        Optional<Orden> orden = ordenRepository.findByUsuarioIdAndEstado(usuarioId, "PENDIENTE");
+        Optional<Orden> orden = ordenRepository.findByUsuarioIdAndEstado(usuarioId, ESTADO_PENDIENTE );
         Orden ordenActual;
 if (orden.isPresent()) {
     ordenActual = orden.get();
 } else {
     Orden ordenNueva = new Orden();
     ordenNueva.setUsuario(usuario);
-    ordenNueva.setEstado("PENDIENTE");
+    ordenNueva.setEstado(ESTADO_PENDIENTE );
     ordenNueva.setFechaCreacion(LocalDateTime.now());
     ordenNueva.setTotal(0.0);
     ordenActual = ordenRepository.save(ordenNueva);
@@ -108,10 +115,10 @@ ordenActual.setTotal(total);
 ordenRepository.save(ordenActual);
        auditoriaService.registrar(
     "ITEM_AGREGADO_CARRITO",
-    "Usuario " + usuarioId + " agregó " + dto.getCantidad() + " x " + producto.getNombre(),
+    PREFIJO_USUARIO + usuarioId + " agregó " + dto.getCantidad() + " x " + producto.getNombre(),
     usuarioId,
-    "ORDEN-" + ordenActual.getId(),
-    "Orden"
+    PREFIJO_ORDEN + ordenActual.getId(),
+    TIPO_ORDEN 
 );
 
 return toOrdenDTO(ordenActual, items);
@@ -119,16 +126,16 @@ return toOrdenDTO(ordenActual, items);
 
     @Override
 public OrdenResponseDTO obtenerCarrito(Long usuarioId) {
-    Orden orden = ordenRepository.findByUsuarioIdAndEstado(usuarioId, "PENDIENTE")
-            .orElseThrow(() -> new OrdenNotFoundException("No tienes un carrito activo"));
+    Orden orden = ordenRepository.findByUsuarioIdAndEstado(usuarioId, ESTADO_PENDIENTE )
+            .orElseThrow(() -> new OrdenNotFoundException(CARRITO_NO_ACTIVO));
     List<ItemOrden> items = itemOrdenRepository.findByOrdenId(orden.getId());
     return toOrdenDTO(orden, items);
 }
     @Override
     public OrdenResponseDTO eliminarItem(Long usuarioId, Long itemId) {
-        Orden ordenActual = ordenRepository.findByUsuarioIdAndEstado(usuarioId, "PENDIENTE").orElseThrow(() -> new OrdenNotFoundException("Usuario no tiene orden activa"));
+        Orden ordenActual = ordenRepository.findByUsuarioIdAndEstado(usuarioId, ESTADO_PENDIENTE ).orElseThrow(() -> new OrdenNotFoundException("Usuario no tiene orden activa"));
       ItemOrden itemaEliminar = itemOrdenRepository.findById(itemId)
-        .orElseThrow(() -> new OrdenNotFoundException("No existe ese item"));
+        .orElseThrow(() -> new ItemNotFoundException("No existe ese item"));
         itemOrdenRepository.delete(itemaEliminar);
         ordenActual.setTotal(ordenActual.getTotal()-(itemaEliminar.getCantidad()*itemaEliminar.getPrecioUnitario()));
         List<ItemOrden> itemsRestantes = itemOrdenRepository.findByOrdenId(ordenActual.getId());
@@ -142,18 +149,18 @@ return toOrdenDTO(ordenActual, itemsRestantes);
 
    @Override
 public OrdenResponseDTO confirmarOrden(Long usuarioId, ConfirmarOrdenDTO dto) {
-    Orden ordenAPagar = ordenRepository.findByUsuarioIdAndEstado(usuarioId, "PENDIENTE")
-            .orElseThrow(() -> new OrdenNotFoundException("No tienes un carrito activo"));
+    Orden ordenAPagar = ordenRepository.findByUsuarioIdAndEstado(usuarioId, ESTADO_PENDIENTE )
+            .orElseThrow(() -> new OrdenNotFoundException(CARRITO_NO_ACTIVO));
 
     List<ItemOrden> items = itemOrdenRepository.findByOrdenId(ordenAPagar.getId());
     if (items.isEmpty()) {
-        throw new IllegalStateException("El carrito está vacío");
+        throw new CarritoVacioException("El carrito está vacío");
     }
 
    MetodoPago metodoPago = metodoPagoService.obtenerEntidadPorId(dto.getMetodoPagoId());
 
     if (!metodoPago.getUsuario().getId().equals(usuarioId)) {
-        throw new IllegalStateException("El método de pago no pertenece al usuario");
+        throw new MetodoPagoInvalidoException("El método de pago no pertenece al usuario");
     }
 
     for (int i = 0; i < items.size(); i++) {
@@ -179,7 +186,7 @@ public OrdenResponseDTO confirmarOrden(Long usuarioId, ConfirmarOrdenDTO dto) {
                 .build();
         PaymentIntent paymentIntent = PaymentIntent.create(params);
 
-        ordenAPagar.setEstado("PAGADA");
+        ordenAPagar.setEstado(ESTADO_PAGADA);
         ordenAPagar.setFechaPago(LocalDateTime.now());
         ordenAPagar.setPaymentRef(paymentIntent.getId());
         ordenAPagar.setMetodoPago(metodoPago);
@@ -195,10 +202,10 @@ public OrdenResponseDTO confirmarOrden(Long usuarioId, ConfirmarOrdenDTO dto) {
 
         auditoriaService.registrar(
                 "ORDEN_PAGADA",
-                "Usuario " + usuarioId + " pagó la orden " + ordenAPagar.getId() + " por $" + ordenAPagar.getTotal(),
+                PREFIJO_USUARIO + usuarioId + " pagó la orden " + ordenAPagar.getId() + " por $" + ordenAPagar.getTotal(),
                 usuarioId,
-                "ORDEN-" + ordenAPagar.getId(),
-                "Orden"
+              PREFIJO_ORDEN + ordenAPagar.getId(),
+                TIPO_ORDEN 
         );
 
     } catch (StripeException e) {
@@ -210,7 +217,7 @@ public OrdenResponseDTO confirmarOrden(Long usuarioId, ConfirmarOrdenDTO dto) {
 
    @Override
 public List<OrdenResponseDTO> historial(Long usuarioId) {
-    List<Orden> ordenes = ordenRepository.findByUsuarioIdAndEstadoNot(usuarioId, "PENDIENTE");
+    List<Orden> ordenes = ordenRepository.findByUsuarioIdAndEstadoNot(usuarioId, ESTADO_PENDIENTE );
     List<OrdenResponseDTO> responseDTOs = new ArrayList<>();
     for (int i = 0; i < ordenes.size(); i++) {
         Orden orden = ordenes.get(i);
@@ -251,17 +258,17 @@ private OrdenResponseDTO toOrdenDTO(Orden orden, List<ItemOrden> items) {
 }
 @Override
 public OrdenResponseDTO cancelarOrden(Long usuarioId) {
-    Orden orden = ordenRepository.findByUsuarioIdAndEstado(usuarioId, "PENDIENTE")
-            .orElseThrow(() -> new OrdenNotFoundException("No tienes un carrito activo"));
+    Orden orden = ordenRepository.findByUsuarioIdAndEstado(usuarioId, ESTADO_PENDIENTE )
+            .orElseThrow(() -> new OrdenNotFoundException(CARRITO_NO_ACTIVO));
     List<ItemOrden> items = itemOrdenRepository.findByOrdenId(orden.getId());
-    orden.setEstado("CANCELADA");
+    orden.setEstado(ESTADO_CANCELADA);
     ordenRepository.save(orden);
     auditoriaService.registrar(
             "ORDEN_CANCELADA",
-            "Usuario " + usuarioId + " canceló la orden " + orden.getId(),
+            PREFIJO_USUARIO+ usuarioId + " canceló la orden " + orden.getId(),
             usuarioId,
-            "ORDEN-" + orden.getId(),
-            "Orden"
+            PREFIJO_ORDEN + orden.getId(),
+            TIPO_ORDEN 
     );
     return toOrdenDTO(orden, items);
 }

@@ -12,9 +12,7 @@ import co.edu.unbosque.mundial_2026.dto.response.MetodoPagoResponseDTO;
 import co.edu.unbosque.mundial_2026.entity.MetodoPago;
 import co.edu.unbosque.mundial_2026.entity.Usuario;
 import co.edu.unbosque.mundial_2026.exception.MetodoPagoNotFoundException;
-import co.edu.unbosque.mundial_2026.exception.UsuarioNotFoundException;
 import co.edu.unbosque.mundial_2026.repository.MetodoPagoRepository;
-import co.edu.unbosque.mundial_2026.repository.UsuarioRepository;
 
 @Service
 public class MetodoPagoServiceImpl implements MetodoPagoService {

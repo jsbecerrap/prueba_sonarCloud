@@ -29,6 +29,8 @@ public class NotificacionServiceImpl implements NotificacionService {
 
     private static final String ESTADO_ENVIADA = "ENVIADA";
     private static final String CANAL_SISTEMA = "SISTEMA";
+    private static final String USUARIO_NO_ENCONTRADO = "Usuario no encontrado";
+private static final String TIPO_NOTIFICACION = "NOTIFICACION";
 
     private final NotificacionRepository notificacionRepository;
     private final UsuarioRepository usuarioRepository;
@@ -49,7 +51,7 @@ public class NotificacionServiceImpl implements NotificacionService {
     @Transactional
     public void enviarNotificacion(NotificacionRequestDTO dto) {
         Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
-                .orElseThrow(() -> new UsuarioNotFoundException("Usuario no encontrado"));
+                .orElseThrow(() -> new UsuarioNotFoundException(USUARIO_NO_ENCONTRADO));
         Notificacion notificacion = new Notificacion(
                 dto.getTipo(), dto.getTitulo(), dto.getMensaje(),
                 dto.getCanal(), ESTADO_ENVIADA, usuario);
@@ -58,7 +60,7 @@ public class NotificacionServiceImpl implements NotificacionService {
         eventoAuditoriaService.registrar(
                 "NOTIFICACION_ENVIADA",
                 "Se envió notificación tipo " + dto.getTipo() + " al usuario " + usuario.getCorreoUsuario(),
-                usuario.getId(), UUID.randomUUID().toString(), "NOTIFICACION");
+                usuario.getId(), UUID.randomUUID().toString(), TIPO_NOTIFICACION);
     }
 
     @Override
@@ -90,14 +92,14 @@ public class NotificacionServiceImpl implements NotificacionService {
         eventoAuditoriaService.registrar(
                 "NOTIFICACION_MASIVA",
                 "Notificación masiva enviada a " + destinatarios.size() + " usuarios",
-                null, UUID.randomUUID().toString(), "NOTIFICACION");
+                null, UUID.randomUUID().toString(), TIPO_NOTIFICACION);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<NotificacionDTO> listarPorUsuario(Long usuarioId) {
         Usuario usuario = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new UsuarioNotFoundException("Usuario no encontrado"));
+                .orElseThrow(() -> new UsuarioNotFoundException(USUARIO_NO_ENCONTRADO));
         List<Notificacion> lista = notificacionRepository.findByUsuario(usuario);
         List<NotificacionDTO> resultado = new ArrayList<>();
         for (Notificacion n : lista) {
@@ -119,7 +121,7 @@ public class NotificacionServiceImpl implements NotificacionService {
     @Transactional
     public void marcarTodasLeidas(Long usuarioId) {
         Usuario usuario = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new UsuarioNotFoundException("Usuario no encontrado"));
+                .orElseThrow(() -> new UsuarioNotFoundException(USUARIO_NO_ENCONTRADO));
         List<Notificacion> lista = notificacionRepository.findByUsuario(usuario);
         for (Notificacion n : lista) {
             n.setLeida(true);
@@ -158,7 +160,7 @@ public class NotificacionServiceImpl implements NotificacionService {
         eventoAuditoriaService.registrar(
                 "NOTIFICACION_POR_PARTIDO",
                 "Se notificó a " + destinatarios.size() + " usuarios por el partido " + partidoId,
-                null, UUID.randomUUID().toString(), "NOTIFICACION");
+                null, UUID.randomUUID().toString(), TIPO_NOTIFICACION);
     }
 
     @Override
@@ -174,7 +176,7 @@ public class NotificacionServiceImpl implements NotificacionService {
         eventoAuditoriaService.registrar(
                 "NOTIFICACION_REGISTRO",
                 "Se envió notificación de bienvenida al usuario " + usuario.getCorreoUsuario(),
-                usuario.getId(), UUID.randomUUID().toString(), "NOTIFICACION");
+                usuario.getId(), UUID.randomUUID().toString(), TIPO_NOTIFICACION);
     }
 
     @Override
@@ -190,7 +192,7 @@ public class NotificacionServiceImpl implements NotificacionService {
         eventoAuditoriaService.registrar(
                 "NOTIFICACION_PERFIL_ACTUALIZADO",
                 "Se envió notificación de perfil actualizado al usuario " + usuario.getCorreoUsuario(),
-                usuario.getId(), UUID.randomUUID().toString(), "NOTIFICACION");
+                usuario.getId(), UUID.randomUUID().toString(), TIPO_NOTIFICACION);
     }
 
     private void enviarPush(Usuario usuario, String titulo, String mensaje) {
@@ -209,12 +211,12 @@ public class NotificacionServiceImpl implements NotificacionService {
             eventoAuditoriaService.registrar(
                     "PUSH_FCM_EXITOSO",
                     "Push enviado correctamente a " + usuario.getCorreoUsuario(),
-                    usuario.getId(), UUID.randomUUID().toString(), "NOTIFICACION");
+                    usuario.getId(), UUID.randomUUID().toString(), TIPO_NOTIFICACION);
         } catch (FirebaseMessagingException e) {
             eventoAuditoriaService.registrar(
                     "PUSH_FCM_FALLIDO",
                     "Error al enviar push a " + usuario.getCorreoUsuario() + ": " + e.getMessage(),
-                    usuario.getId(), UUID.randomUUID().toString(), "NOTIFICACION");
+                    usuario.getId(), UUID.randomUUID().toString(), TIPO_NOTIFICACION);
         }
     }
 

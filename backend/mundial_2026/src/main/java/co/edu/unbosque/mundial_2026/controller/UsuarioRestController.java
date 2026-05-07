@@ -35,6 +35,7 @@ public class UsuarioRestController {
 
     private final UsuarioService service;
     private final TokenBlacklist tokenBlacklist;
+    private static final String KEY_USUARIO = "usuario";
 
     public UsuarioRestController(final UsuarioService service,
             final TokenBlacklist tokenBlacklist) {
@@ -85,11 +86,11 @@ public class UsuarioRestController {
                 tokenBlacklist.agregar(header.replace(PREFIX_TOKEN, ""));
             }
             final Map<String, Object> response = new HashMap<>();
-            response.put("usuario", resultado.get("usuario"));
+            response.put(KEY_USUARIO, resultado.get(KEY_USUARIO));
             response.put("mensaje", "Correo actualizado, inicia sesión nuevamente");
             return ResponseEntity.ok(response);
         }
-        return ResponseEntity.ok(resultado.get("usuario"));
+        return ResponseEntity.ok(resultado.get(KEY_USUARIO));
     }
 //Cuando cierra sesion añade el token a la lista negra para que nadie mas lo pueda usar
     @PostMapping("/auth/logout")
