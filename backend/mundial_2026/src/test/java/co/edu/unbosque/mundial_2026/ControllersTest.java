@@ -136,4 +136,71 @@ class ControllersTest {
         ResponseEntity<?> res = partidoController.obtenerCatalogoSelecciones();
         assertEquals(200, res.getStatusCode().value());
     }
+    // ── más tests de EntradaRestController ───────────────────────────────
+
+@Test
+void entrada_listar_retornaOk() {
+    org.springframework.security.core.userdetails.UserDetails user =
+        org.springframework.security.core.userdetails.User
+            .withUsername("test@test.com").password("pass").roles("USUARIO").build();
+    when(entradaService.listarEntradasUsuario("test@test.com")).thenReturn(List.of());
+    ResponseEntity<?> res = entradaController.listar(user);
+    assertEquals(200, res.getStatusCode().value());
+}
+
+@Test
+void entrada_pagar_retornaOk() {
+    when(entradaService.confirmarPago(1L, "ref123")).thenReturn(new EntradaResponseDTO());
+    ResponseEntity<?> res = entradaController.pagar(1L, "ref123");
+    assertEquals(200, res.getStatusCode().value());
+}
+
+@Test
+void entrada_cancelar_retornaOk() {
+    org.springframework.security.core.userdetails.UserDetails user =
+        org.springframework.security.core.userdetails.User
+            .withUsername("test@test.com").password("pass").roles("USUARIO").build();
+    when(entradaService.cancelarReserva("test@test.com", 1L)).thenReturn(new EntradaResponseDTO());
+    ResponseEntity<?> res = entradaController.cancelar(user, 1L);
+    assertEquals(200, res.getStatusCode().value());
+}
+
+// ── más tests de ApuestaRestController ───────────────────────────────
+
+@Test
+void apuesta_misPronosticos_retornaOk() {
+    when(apuestaService.misPronosticos(1L, 1L)).thenReturn(List.of());
+    ResponseEntity<?> res = apuestaController.misPronosticos(1L, 1L);
+    assertEquals(200, res.getStatusCode().value());
+}
+
+@Test
+void apuesta_calcularPuntosParciales_retornaOk() {
+    when(apuestaService.calcularPuntosParciales(1L)).thenReturn(List.of());
+    ResponseEntity<?> res = apuestaController.calcularPuntosParciales(1L);
+    assertEquals(200, res.getStatusCode().value());
+}
+
+// ── más tests de PartidoController ───────────────────────────────────
+
+@Test
+void partido_listarDesdeBD_retornaOk() {
+    when(partidoService.listarDesdeBD()).thenReturn(List.of());
+    ResponseEntity<?> res = partidoController.listarDesdeBD();
+    assertEquals(200, res.getStatusCode().value());
+}
+
+
+
+// ── más tests de OrdenController ─────────────────────────────────────
+
+@Test
+void orden_cancelar_retornaOk() {
+    org.springframework.security.core.userdetails.UserDetails user =
+        org.springframework.security.core.userdetails.User
+            .withUsername("test@test.com").password("pass").roles("USUARIO").build();
+    when(ordenService.cancelarOrden("test@test.com")).thenReturn(new OrdenResponseDTO());
+    ResponseEntity<?> res = ordenController.cancelar(user);
+    assertEquals(200, res.getStatusCode().value());
+}
 }
