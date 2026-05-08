@@ -278,4 +278,5 @@ void notificarPorPartido_partidoNoExistente_lanzaExcepcion() {
     assertThrows(PartidoNotFoundException.class,
             () -> service.notificarPorPartido(99L, "INFO", "Titulo", "Mensaje"));
 }
+
 }
