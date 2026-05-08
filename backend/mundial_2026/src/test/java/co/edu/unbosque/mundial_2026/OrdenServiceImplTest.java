@@ -279,4 +279,67 @@ class OrdenServiceImplTest {
         assertNotNull(resultado);
         assertTrue(resultado.isEmpty());
     }
+    @Test
+void confirmarOrden_carritoVacio_lanzaExcepcion() {
+    Usuario usuario = crearUsuario(1L);
+    Orden orden = crearOrden(1L, "PENDIENTE", usuario);
+
+    when(usuarioService.obtenerEntidadPorCorreo("user@test.com")).thenReturn(usuario);
+    when(ordenRepository.findByUsuarioIdAndEstado(1L, "PENDIENTE")).thenReturn(Optional.of(orden));
+    when(itemOrdenRepository.findByOrdenId(1L)).thenReturn(List.of());
+
+    co.edu.unbosque.mundial_2026.dto.request.ConfirmarOrdenDTO dto =
+            new co.edu.unbosque.mundial_2026.dto.request.ConfirmarOrdenDTO();
+    dto.setMetodoPagoId(1L);
+
+    assertThrows(co.edu.unbosque.mundial_2026.exception.CarritoVacioException.class,
+            () -> service.confirmarOrden("user@test.com", dto));
+}
+
+@Test
+void confirmarOrden_metodoPagoDeOtroUsuario_lanzaExcepcion() {
+    Usuario usuario = crearUsuario(1L);
+    Usuario otroUsuario = crearUsuario(2L);
+    Orden orden = crearOrden(1L, "PENDIENTE", usuario);
+    Producto producto = crearProducto(1L, 10, true);
+    ItemOrden item = crearItem(1L, orden, producto, 2);
+    MetodoPago metodoPago = new MetodoPago();
+    metodoPago.setId(1L);
+    metodoPago.setUsuario(otroUsuario);
+
+    when(usuarioService.obtenerEntidadPorCorreo("user@test.com")).thenReturn(usuario);
+    when(ordenRepository.findByUsuarioIdAndEstado(1L, "PENDIENTE")).thenReturn(Optional.of(orden));
+    when(itemOrdenRepository.findByOrdenId(1L)).thenReturn(List.of(item));
+    when(metodoPagoService.obtenerEntidadPorId(1L)).thenReturn(metodoPago);
+
+    co.edu.unbosque.mundial_2026.dto.request.ConfirmarOrdenDTO dto =
+            new co.edu.unbosque.mundial_2026.dto.request.ConfirmarOrdenDTO();
+    dto.setMetodoPagoId(1L);
+
+    assertThrows(co.edu.unbosque.mundial_2026.exception.MetodoPagoInvalidoException.class,
+            () -> service.confirmarOrden("user@test.com", dto));
+}
+
+@Test
+void confirmarOrden_stockInsuficiente_lanzaExcepcion() {
+    Usuario usuario = crearUsuario(1L);
+    Orden orden = crearOrden(1L, "PENDIENTE", usuario);
+    Producto producto = crearProducto(1L, 1, true);
+    ItemOrden item = crearItem(1L, orden, producto, 5);
+    MetodoPago metodoPago = new MetodoPago();
+    metodoPago.setId(1L);
+    metodoPago.setUsuario(usuario);
+
+    when(usuarioService.obtenerEntidadPorCorreo("user@test.com")).thenReturn(usuario);
+    when(ordenRepository.findByUsuarioIdAndEstado(1L, "PENDIENTE")).thenReturn(Optional.of(orden));
+    when(itemOrdenRepository.findByOrdenId(1L)).thenReturn(List.of(item));
+    when(metodoPagoService.obtenerEntidadPorId(1L)).thenReturn(metodoPago);
+
+    co.edu.unbosque.mundial_2026.dto.request.ConfirmarOrdenDTO dto =
+            new co.edu.unbosque.mundial_2026.dto.request.ConfirmarOrdenDTO();
+    dto.setMetodoPagoId(1L);
+
+    assertThrows(co.edu.unbosque.mundial_2026.exception.StockInsuficienteException.class,
+            () -> service.confirmarOrden("user@test.com", dto));
+}
 }

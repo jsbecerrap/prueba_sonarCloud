@@ -166,4 +166,19 @@ import co.edu.unbosque.mundial_2026.service.CategoriaServiceImpl;
 
         assertThrows(CategoriaNotFoundException.class, () -> service.obtenerEntidadPorId(99L));
     }
+    @Test
+void actualizar_nombreDuplicadoDeOtraCategoria_lanzaExcepcion() {
+    Categoria categoria = crearCategoria(1L, "Ropa");
+    Categoria otraCategoria = crearCategoria(2L, "Ropa Oficial");
+
+    CategoriaRequestDTO dto = new CategoriaRequestDTO();
+    dto.setNombre("Ropa Oficial");
+
+    when(categoriaRepository.findById(1L)).thenReturn(Optional.of(categoria));
+    when(categoriaRepository.findByNombre("Ropa Oficial"))
+            .thenReturn(Optional.of(otraCategoria)); // existe pero es otra categoría
+
+    assertThrows(CategoriaYaExisteException.class,
+            () -> service.actualizar(1L, dto));
+}
 }
