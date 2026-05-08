@@ -361,4 +361,27 @@ void apuesta_eliminarPronostico_retornaNoContent() {
     ResponseEntity<?> res = apuestaController.eliminarPronostico(1L);
     assertEquals(204, res.getStatusCode().value());
 }
+@Test
+void entrada_transferir_retornaOk() {
+    org.springframework.security.core.userdetails.UserDetails user =
+        org.springframework.security.core.userdetails.User
+            .withUsername("test@test.com").password("pass").roles("USUARIO").build();
+    co.edu.unbosque.mundial_2026.dto.request.TransferenciaRequestDTO dto =
+        new co.edu.unbosque.mundial_2026.dto.request.TransferenciaRequestDTO();
+    when(entradaService.transferirEntrada(1L, dto, "test@test.com"))
+        .thenReturn(new EntradaResponseDTO());
+    ResponseEntity<?> res = entradaController.transferir(user, 1L, dto);
+    assertEquals(200, res.getStatusCode().value());
+}
+
+@Test
+void entrada_reembolsar_retornaOk() {
+    org.springframework.security.core.userdetails.UserDetails user =
+        org.springframework.security.core.userdetails.User
+            .withUsername("test@test.com").password("pass").roles("USUARIO").build();
+    when(entradaService.reembolsarEntrada("test@test.com", 1L))
+        .thenReturn(new EntradaResponseDTO());
+    ResponseEntity<?> res = entradaController.reembolsar(user, 1L);
+    assertEquals(200, res.getStatusCode().value());
+}
 }
