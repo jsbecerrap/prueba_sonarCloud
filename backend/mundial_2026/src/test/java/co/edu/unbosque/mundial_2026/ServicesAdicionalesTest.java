@@ -388,4 +388,98 @@ void determinarResultado_empate_retornaEmpate() {
     List<PronosticoDTO> resultado = apuestaService.calcularPuntos(1L);
     assertNotNull(resultado);
 }
+@Test
+void calcularPuntosAutomatico_sinApuestas_noHaceNada() {
+    when(apuestaRepository.findByEstado("CERRADA")).thenReturn(List.of());
+    apuestaService.calcularPuntosAutomatico();
+    verify(apuestaRepository).findByEstado("CERRADA");
+}
+
+@Test
+void cerrarApuestasVencidas_sinApuestas_noHaceNada() {
+    when(apuestaRepository.findByEstadoAndFechaCierreBefore(
+            eq("ABIERTA"), any())).thenReturn(List.of());
+    apuestaService.cerrarApuestasVencidas();
+    verify(apuestaRepository).findByEstadoAndFechaCierreBefore(eq("ABIERTA"), any());
+}
+@Test
+void calcularPuntosParciales_conPartidoSinResultado_ignoraPartido() {
+    Usuario usuario = crearUsuario(1L);
+    Apuesta apuesta = crearApuesta(1L, "ABIERTA", usuario);
+    Partido partido = crearPartido(1L, null, null); // sin resultado
+    Pronostico pronostico = crearPronostico(1L, usuario, apuesta, partido, "LOCAL", 1, 0);
+    Participacion participacion = crearParticipacion(1L, usuario, apuesta);
+
+    when(apuestaRepository.findById(1L)).thenReturn(Optional.of(apuesta));
+    when(participacionRepository.findByApuestaId(1L)).thenReturn(List.of(participacion));
+    when(participacionRepository.save(any())).thenReturn(participacion);
+    when(pronosticoRepository.findByApuestaId(1L)).thenReturn(List.of(pronostico));
+    when(participacionRepository.findByApuestaIdOrderByPuntosDesc(1L)).thenReturn(List.of(participacion));
+
+    List<PronosticoDTO> resultado = apuestaService.calcularPuntosParciales(1L);
+
+    assertNotNull(resultado);
+    assertTrue(resultado.isEmpty());
+}
+
+@Test
+void calcularPuntosParciales_conPartidoConResultado_calculaPuntos() {
+    Usuario usuario = crearUsuario(1L);
+    Apuesta apuesta = crearApuesta(1L, "ABIERTA", usuario);
+    Partido partido = crearPartido(1L, 2, 1); // con resultado
+    Pronostico pronostico = crearPronostico(1L, usuario, apuesta, partido, "LOCAL", 2, 1);
+    Participacion participacion = crearParticipacion(1L, usuario, apuesta);
+
+    when(apuestaRepository.findById(1L)).thenReturn(Optional.of(apuesta));
+    when(participacionRepository.findByApuestaId(1L)).thenReturn(List.of(participacion));
+    when(participacionRepository.save(any())).thenReturn(participacion);
+    when(pronosticoRepository.findByApuestaId(1L)).thenReturn(List.of(pronostico));
+    when(participacionRepository.findByUsuarioIdAndApuestaId(1L, 1L)).thenReturn(Optional.of(participacion));
+    when(pronosticoRepository.save(any())).thenReturn(pronostico);
+    when(participacionRepository.findByApuestaIdOrderByPuntosDesc(1L)).thenReturn(List.of(participacion));
+
+    List<PronosticoDTO> resultado = apuestaService.calcularPuntosParciales(1L);
+
+    assertNotNull(resultado);
+    assertEquals(1, resultado.size());
+}
+@Test
+void calcularPuntosAutomatico_conApuestasCerradas_llamaCalcularPuntos() {
+    Usuario usuario = crearUsuario(1L);
+    Apuesta apuesta = crearApuesta(1L, "CERRADA", usuario);
+    Partido partido = crearPartido(1L, 2, 1);
+    Pronostico pronostico = crearPronostico(1L, usuario, apuesta, partido, "LOCAL", 2, 1);
+    Participacion participacion = crearParticipacion(1L, usuario, apuesta);
+
+    when(apuestaRepository.findByEstado("CERRADA")).thenReturn(List.of(apuesta));
+    when(apuestaRepository.findById(1L)).thenReturn(Optional.of(apuesta));
+    when(participacionRepository.findByApuestaId(1L)).thenReturn(List.of(participacion));
+    when(participacionRepository.save(any())).thenReturn(participacion);
+    when(pronosticoRepository.findByApuestaId(1L)).thenReturn(List.of(pronostico));
+    when(partidoService.sincronizarPorFechaYLiga(any(), anyInt(), anyInt())).thenReturn(1);
+    when(participacionRepository.findByUsuarioIdAndApuestaId(1L, 1L)).thenReturn(Optional.of(participacion));
+    when(pronosticoRepository.save(any())).thenReturn(pronostico);
+    when(participacionRepository.findByApuestaIdOrderByPuntosDesc(1L)).thenReturn(List.of(participacion));
+
+    apuestaService.calcularPuntosAutomatico();
+
+    verify(apuestaRepository).findByEstado("CERRADA");
+    verify(apuestaRepository).findById(1L);
+}
+
+@Test
+void cerrarApuestasVencidas_conApuestasAbiertas_cierraCorrectamente() {
+    Usuario usuario = crearUsuario(1L);
+    Apuesta apuesta = crearApuesta(1L, "ABIERTA", usuario);
+
+    when(apuestaRepository.findByEstadoAndFechaCierreBefore(eq("ABIERTA"), any()))
+            .thenReturn(List.of(apuesta));
+    when(apuestaRepository.findById(1L)).thenReturn(Optional.of(apuesta));
+    when(apuestaRepository.save(any())).thenReturn(apuesta);
+
+    apuestaService.cerrarApuestasVencidas();
+
+    verify(apuestaRepository).findByEstadoAndFechaCierreBefore(eq("ABIERTA"), any());
+    assertEquals("CERRADA", apuesta.getEstado());
+}
 }
