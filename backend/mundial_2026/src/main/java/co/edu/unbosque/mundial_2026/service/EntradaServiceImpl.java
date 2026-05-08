@@ -86,64 +86,61 @@ static {
     this.partidoService = partidoService;
     this.auditoriaService = auditoriaService;
 }
+@Override
+public EntradaResponseDTO reservarEntrada(String correo, EntradaRequestDTO dto) {
+    Usuario u = usuarioService.obtenerEntidadPorCorreo(correo); // ← cambio
+    Long usuarioId = u.getId();
 
-    @Override
-    public EntradaResponseDTO reservarEntrada(Long usuarioId, EntradaRequestDTO dto) {
+    Partido partido = partidoService.obtenerPartidoEntidadPorId(dto.getPartidoId());
 
-        Partido partido = partidoService.obtenerPartidoEntidadPorId(dto.getPartidoId());
-
-
-
-        if (partido.getCapacidadDisponible() < dto.getCantidad()) {
-            throw new CupoNoDisponibleException("No hay cupo disponible para este partido");
-        }
-
-        if (dto.getCantidad() > 4) {
-            throw new LimiteSuperadoException("Máximo 4 entradas por transacción");
-        }
-
-        LocalDateTime inicioDia = LocalDateTime.now().toLocalDate().atStartOfDay();
-        LocalDateTime finDia = inicioDia.plusDays(1);
-
-        List<Entrada> entradasHoy = entradaRepository.findByUsuarioIdAndFechaCompraBetween(usuarioId, inicioDia, finDia);
-
-        int compradasHoy = 0;
-for (int i = 0; i < entradasHoy.size(); i++) {
-    Entrada entrada = entradasHoy.get(i);
-    if (entrada.getEstado().equals(ESTADO_RESERVADA) || entrada.getEstado().equals(ESTADO_PAGADA)) {
-        compradasHoy += entrada.getCantidad();
+    if (partido.getCapacidadDisponible() < dto.getCantidad()) {
+        throw new CupoNoDisponibleException("No hay cupo disponible para este partido");
     }
+
+    if (dto.getCantidad() > 4) {
+        throw new LimiteSuperadoException("Máximo 4 entradas por transacción");
+    }
+
+    LocalDateTime inicioDia = LocalDateTime.now().toLocalDate().atStartOfDay();
+    LocalDateTime finDia = inicioDia.plusDays(1);
+
+    List<Entrada> entradasHoy = entradaRepository.findByUsuarioIdAndFechaCompraBetween(usuarioId, inicioDia, finDia);
+
+    int compradasHoy = 0;
+    for (int i = 0; i < entradasHoy.size(); i++) {
+        Entrada entrada = entradasHoy.get(i);
+        if (entrada.getEstado().equals(ESTADO_RESERVADA) || entrada.getEstado().equals(ESTADO_PAGADA)) {
+            compradasHoy += entrada.getCantidad();
+        }
+    }
+
+    if (compradasHoy + dto.getCantidad() > 12) {
+        throw new LimiteSuperadoException("Límite diario de 12 entradas alcanzado");
+    }
+
+    Entrada entrada = new Entrada();
+    entrada.setUsuario(u);
+    entrada.setCantidad(dto.getCantidad());
+    entrada.setEstado(ESTADO_RESERVADA);
+    entrada.setPartido(partido);
+    entrada.setPrecio(calcularPrecio(partido) * dto.getCantidad());
+    entrada.setFechaCompra(LocalDateTime.now());
+    entrada.setTtlReserva(LocalDateTime.now().plusMinutes(15));
+
+    entradaRepository.save(entrada);
+
+    partidoService.actualizarCapacidad(partido.getId(), -dto.getCantidad());
+
+    auditoriaService.registrar(
+        "ENTRADA_RESERVADA",
+        PREFIJO_USUARIO + usuarioId + " reservó " + dto.getCantidad() + " entrada(s) para el partido " + partido.getId(),
+        usuarioId,
+        String.valueOf(entrada.getId()),
+        TIPO_ENTRADA
+    );
+
+    return toDTO(entrada);
 }
-
-        if (compradasHoy + dto.getCantidad() > 12) {
-          throw new LimiteSuperadoException("Límite diario de 12 entradas alcanzado");
-        }
-
-       Usuario u = usuarioService.obtenerEntidadPorId(usuarioId);
-
-        Entrada entrada = new Entrada();
-        entrada.setUsuario(u);
-        entrada.setCantidad(dto.getCantidad());
-        entrada.setEstado(ESTADO_RESERVADA);
-        entrada.setPartido(partido);
-       entrada.setPrecio(calcularPrecio(partido) * dto.getCantidad());
-        entrada.setFechaCompra(LocalDateTime.now());
-        entrada.setTtlReserva(LocalDateTime.now().plusMinutes(15));
-
-        entradaRepository.save(entrada);
-
-        partidoService.actualizarCapacidad(partido.getId(), -dto.getCantidad());
-
-        auditoriaService.registrar(
-            "ENTRADA_RESERVADA",
-            PREFIJO_USUARIO + usuarioId + " reservó " + dto.getCantidad() + " entrada(s) para el partido " + partido.getId(),
-            usuarioId,
-            String.valueOf(entrada.getId()),
-            TIPO_ENTRADA
-        );
-
-        return toDTO(entrada);
-    }
 
     @Override
     public EntradaResponseDTO confirmarPago(Long entradaId, String paymentRef) {
@@ -202,144 +199,155 @@ PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
         return toDTO(entrada);
     }
 
-    @Override
-    public EntradaResponseDTO cancelarReserva(Long usuarioId, Long entradaId) {
-        Entrada entrada = entradaRepository.findById(entradaId).orElseThrow(() -> new EntradaNotFoundException(ENTRADA_NO_ENCONTRADA));
+ @Override
+public EntradaResponseDTO cancelarReserva(String correo, Long entradaId) {
+    Usuario u = usuarioService.obtenerEntidadPorCorreo(correo); // ← cambio
+    Long usuarioId = u.getId();
 
-        if (!entrada.getUsuario().getId().equals(usuarioId)) {
-            throw new EstadoInvalidoException("Esta entrada no pertenece al usuario");
+    Entrada entrada = entradaRepository.findById(entradaId)
+            .orElseThrow(() -> new EntradaNotFoundException(ENTRADA_NO_ENCONTRADA));
+
+    if (!entrada.getUsuario().getId().equals(usuarioId)) {
+        throw new EstadoInvalidoException("Esta entrada no pertenece al usuario");
+    }
+
+    if (!entrada.getEstado().equals(ESTADO_RESERVADA)) {
+        throw new EstadoInvalidoException("Solo se pueden cancelar entradas en estado RESERVADA");
+    }
+
+    entrada.setEstado("CANCELADA");
+    entradaRepository.save(entrada);
+
+    partidoService.actualizarCapacidad(entrada.getPartido().getId(), entrada.getCantidad());
+
+    auditoriaService.registrar(
+        "ENTRADA_CANCELADA",
+        PREFIJO_USUARIO + usuarioId + " canceló la entrada " + entradaId,
+        usuarioId,
+        String.valueOf(entradaId),
+        TIPO_ENTRADA
+    );
+
+    return toDTO(entrada);
+}
+
+   @Override
+public EntradaResponseDTO transferirEntrada(Long entradaId, TransferenciaRequestDTO dto, String correo) {
+    Usuario u = usuarioService.obtenerEntidadPorCorreo(correo); // ← cambio
+    Long usuarioId = u.getId();
+
+    Entrada entrada = entradaRepository.findById(entradaId)
+            .orElseThrow(() -> new EntradaNotFoundException(ENTRADA_NO_ENCONTRADA));
+
+    if (!entrada.getUsuario().getId().equals(usuarioId)) {
+        throw new EstadoInvalidoException("Esta entrada no pertenece al usuario");
+    }
+
+    if (!entrada.getEstado().equals(ESTADO_PAGADA)) {
+        throw new EstadoInvalidoException("Solo se pueden transferir entradas pagadas");
+    }
+
+    LocalDateTime inicioDia = LocalDateTime.now().toLocalDate().atStartOfDay();
+    LocalDateTime finDia = inicioDia.plusDays(1);
+
+    List<Entrada> transferenciasHoy = entradaRepository.findByUsuarioIdAndFechaCompraBetween(usuarioId, inicioDia, finDia);
+    int totalTransferidas = 0;
+    for (int i = 0; i < transferenciasHoy.size(); i++) {
+        Entrada entradaActual = transferenciasHoy.get(i);
+        if (entradaActual.getEstado().equals(ESTADO_TRANSFERIDA)) {
+            totalTransferidas += entradaActual.getCantidad();
         }
+    }
 
-        if (!entrada.getEstado().equals(ESTADO_RESERVADA)) {
-       throw new EstadoInvalidoException("Solo se pueden cancelar entradas en estado RESERVADA");
-        }
+    if (totalTransferidas + entrada.getCantidad() > 12) {
+        throw new LimiteSuperadoException("Límite diario de transferencias alcanzado");
+    }
 
-        entrada.setEstado("CANCELADA");
+    Usuario usuarioRecibe = usuarioService.obtenerEntidadPorCorreo(dto.getCorreoDestino());
+    entrada.setEstado(ESTADO_TRANSFERIDA);
+    entradaRepository.save(entrada);
+
+    Entrada nuevaEntrada = new Entrada();
+    nuevaEntrada.setCantidad(entrada.getCantidad());
+    nuevaEntrada.setUsuario(usuarioRecibe);
+    nuevaEntrada.setPartido(entrada.getPartido());
+    nuevaEntrada.setPrecio(entrada.getPrecio());
+    nuevaEntrada.setEstado(ESTADO_PAGADA);
+    nuevaEntrada.setFechaCompra(LocalDateTime.now());
+    entradaRepository.save(nuevaEntrada);
+
+    auditoriaService.registrar(
+        "ENTRADA_TRANSFERIDA",
+        PREFIJO_USUARIO + usuarioId + " transfirió entrada " + entradaId + " a " + dto.getCorreoDestino(),
+        usuarioId,
+        String.valueOf(entradaId),
+        TIPO_ENTRADA
+    );
+
+    return toDTO(nuevaEntrada);
+}
+
+   @Override
+public EntradaResponseDTO reembolsarEntrada(String correo, Long entradaId) {
+    Usuario u = usuarioService.obtenerEntidadPorCorreo(correo); // ← cambio
+    Long usuarioId = u.getId();
+
+    Entrada entrada = entradaRepository.findById(entradaId)
+            .orElseThrow(() -> new EntradaNotFoundException(ENTRADA_NO_ENCONTRADA));
+
+    if (!entrada.getUsuario().getId().equals(usuarioId)) {
+        throw new EstadoInvalidoException("Esta entrada no pertenece al usuario");
+    }
+
+    if (!entrada.getEstado().equals(ESTADO_PAGADA)) {
+        throw new EstadoInvalidoException("Solo se pueden reembolsar entradas pagadas");
+    }
+
+    try {
+        Stripe.apiKey = stripeApiKey;
+
+        RefundCreateParams params = RefundCreateParams.builder()
+            .setPaymentIntent(entrada.getPaymentRef())
+            .build();
+
+        Refund.create(params);
+
+        entrada.setEstado("REEMBOLSADA");
+        entrada.setFechaReembolso(LocalDateTime.now());
         entradaRepository.save(entrada);
 
-        
         partidoService.actualizarCapacidad(entrada.getPartido().getId(), entrada.getCantidad());
 
         auditoriaService.registrar(
-            "ENTRADA_CANCELADA",
-            PREFIJO_USUARIO + usuarioId + " canceló la entrada " + entradaId,
+            "ENTRADA_REEMBOLSADA",
+            PREFIJO_USUARIO + usuarioId + " reembolsó la entrada " + entradaId,
             usuarioId,
             String.valueOf(entradaId),
             TIPO_ENTRADA
         );
 
-        return toDTO(entrada);
+    } catch (StripeException e) {
+        auditoriaService.registrar(
+            "ENTRADA_REEMBOLSO_FALLIDO",
+            "Fallo en reembolso de entrada " + entradaId + ": " + e.getMessage(),
+            usuarioId,
+            String.valueOf(entradaId),
+            TIPO_ENTRADA
+        );
+        throw new PagoStripeException("Error al procesar el reembolso: " + e.getMessage());
     }
 
-    @Override
-    public EntradaResponseDTO transferirEntrada(Long entradaId, TransferenciaRequestDTO dto, Long usuarioId) {
-        Entrada entrada = entradaRepository.findById(entradaId).orElseThrow(() ->  new EntradaNotFoundException(ENTRADA_NO_ENCONTRADA));
-
-        if (!entrada.getUsuario().getId().equals(usuarioId)) {
-            throw new EstadoInvalidoException("Esta entrada no pertenece al usuario");
-        }
-
-        if (!entrada.getEstado().equals(ESTADO_PAGADA)) {
-            throw new EstadoInvalidoException("Solo se pueden transferir entradas pagadas");
-        }
-
-        LocalDateTime inicioDia = LocalDateTime.now().toLocalDate().atStartOfDay();
-        LocalDateTime finDia = inicioDia.plusDays(1);
-
-        List<Entrada> transferenciasHoy = entradaRepository.findByUsuarioIdAndFechaCompraBetween(usuarioId, inicioDia, finDia);
-        int totalTransferidas = 0;
-for (int i = 0; i < transferenciasHoy.size(); i++) {
-    Entrada entradaActual = transferenciasHoy.get(i);
-    if (entradaActual.getEstado().equals(ESTADO_TRANSFERIDA)) {
-        totalTransferidas += entradaActual.getCantidad();
-    }
+    return toDTO(entrada);
 }
 
-        if (totalTransferidas + entrada.getCantidad() > 12) {
-            throw new LimiteSuperadoException("Límite diario de transferencias alcanzado");
-        }
-
-        Usuario usuarioRecibe = usuarioService.obtenerEntidadPorCorreo(dto.getCorreoDestino());
-        entrada.setEstado(ESTADO_TRANSFERIDA);
-        entradaRepository.save(entrada);
-
-        Entrada nuevaEntrada = new Entrada();
-        nuevaEntrada.setCantidad(entrada.getCantidad());
-        nuevaEntrada.setUsuario(usuarioRecibe);
-        nuevaEntrada.setPartido(entrada.getPartido());
-        nuevaEntrada.setPrecio(entrada.getPrecio());
-        nuevaEntrada.setEstado(ESTADO_PAGADA);
-        nuevaEntrada.setFechaCompra(LocalDateTime.now());
-        entradaRepository.save(nuevaEntrada);
-
-        auditoriaService.registrar(
-            "ENTRADA_TRANSFERIDA",
-            PREFIJO_USUARIO+ usuarioId + " transfirió entrada " + entradaId + " a " + dto.getCorreoDestino(),
-            usuarioId,
-            String.valueOf(entradaId),
-            TIPO_ENTRADA
-        );
-
-        return toDTO(nuevaEntrada);
-    }
-
-    @Override
-    public EntradaResponseDTO reembolsarEntrada(Long usuarioId, Long entradaId) {
-        Entrada entrada = entradaRepository.findById(entradaId).orElseThrow(() ->new EntradaNotFoundException(ENTRADA_NO_ENCONTRADA));
-
-        if (!entrada.getUsuario().getId().equals(usuarioId)) {
-            throw new EstadoInvalidoException("Esta entrada no pertenece al usuario");
-        }
-
-        if (!entrada.getEstado().equals(ESTADO_PAGADA)) {
-          throw new EstadoInvalidoException("Solo se pueden reembolsar entradas pagadas");
-        }
-
-        try {
-            Stripe.apiKey = stripeApiKey;
-
-            RefundCreateParams params = RefundCreateParams.builder()
-                .setPaymentIntent(entrada.getPaymentRef())
-                .build();
-
-            Refund.create(params);
-
-            entrada.setEstado("REEMBOLSADA");
-            entrada.setFechaReembolso(LocalDateTime.now());
-            entradaRepository.save(entrada);
-
-            partidoService.actualizarCapacidad(entrada.getPartido().getId(), entrada.getCantidad());
-
-            auditoriaService.registrar(
-                "ENTRADA_REEMBOLSADA",
-                PREFIJO_USUARIO + usuarioId + " reembolsó la entrada " + entradaId,
-                usuarioId,
-                String.valueOf(entradaId),
-                TIPO_ENTRADA
-            );
-
-        } catch (StripeException e) {
-            auditoriaService.registrar(
-                "ENTRADA_REEMBOLSO_FALLIDO",
-                "Fallo en reembolso de entrada " + entradaId + ": " + e.getMessage(),
-                usuarioId,
-                String.valueOf(entradaId),
-                TIPO_ENTRADA
-            );
-            throw new PagoStripeException("Error al procesar el reembolso: " + e.getMessage());
-        }
-
-        return toDTO(entrada);
-    }
-
-    @Override
-    public List<EntradaResponseDTO> listarEntradasUsuario(Long usuarioId) {
-        return entradaRepository.findByUsuarioId(usuarioId)
-            .stream()
-            .map(e -> toDTO(e))
-            .collect(Collectors.toList());
-    }
-
+@Override
+public List<EntradaResponseDTO> listarEntradasUsuario(String correo) {
+    Usuario u = usuarioService.obtenerEntidadPorCorreo(correo); // ← cambio
+    return entradaRepository.findByUsuarioId(u.getId())
+        .stream()
+        .map(e -> toDTO(e))
+        .collect(Collectors.toList());
+}
     @Override
     public EntradaResponseDTO obtenerEntrada(Long entradaId) {
         Entrada entrada = entradaRepository.findById(entradaId).orElseThrow(() -> new RuntimeException(ENTRADA_NO_ENCONTRADA));

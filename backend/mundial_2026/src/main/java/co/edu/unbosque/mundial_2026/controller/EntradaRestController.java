@@ -3,6 +3,8 @@ package co.edu.unbosque.mundial_2026.controller;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -28,73 +30,55 @@ public class EntradaRestController {
         this.entradaService = entradaService;
     }
 
-    @PostMapping("/reservar/{usuarioId}")
+    @PostMapping("/reservar")
     public ResponseEntity<EntradaResponseDTO> reservar(
-            @PathVariable Long usuarioId,
+            @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody EntradaRequestDTO dto) {
-        EntradaResponseDTO resultado = entradaService.reservarEntrada(usuarioId, dto);
-        if (resultado == null) {
-            return ResponseEntity.badRequest().build();
-        }
-        return ResponseEntity.ok(resultado);
+        return ResponseEntity.ok(entradaService.reservarEntrada(userDetails.getUsername(), dto));
     }
 
     @PatchMapping("/pagar/{entradaId}")
     public ResponseEntity<EntradaResponseDTO> pagar(
             @PathVariable Long entradaId,
             @RequestParam String paymentRef) {
-        EntradaResponseDTO resultado = entradaService.confirmarPago(entradaId, paymentRef);
-        if (resultado == null) {
-            return ResponseEntity.badRequest().build();
-        }
-        return ResponseEntity.ok(resultado);
+        return ResponseEntity.ok(entradaService.confirmarPago(entradaId, paymentRef));
     }
 
-    @PatchMapping("/cancelar/{usuarioId}/{entradaId}")
+    @PatchMapping("/cancelar/{entradaId}")
     public ResponseEntity<EntradaResponseDTO> cancelar(
-            @PathVariable Long usuarioId,
+            @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long entradaId) {
-        EntradaResponseDTO resultado = entradaService.cancelarReserva(usuarioId, entradaId);
-        if (resultado == null) {
-            return ResponseEntity.badRequest().build();
-        }
-        return ResponseEntity.ok(resultado);
+        return ResponseEntity.ok(entradaService.cancelarReserva(userDetails.getUsername(), entradaId));
     }
 
-    @PatchMapping("/transferir/{usuarioId}/{entradaId}")
+    @PatchMapping("/transferir/{entradaId}")
     public ResponseEntity<EntradaResponseDTO> transferir(
-            @PathVariable Long usuarioId,
+            @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long entradaId,
             @RequestBody TransferenciaRequestDTO dto) {
-        EntradaResponseDTO resultado = entradaService.transferirEntrada(entradaId, dto, usuarioId);
-        if (resultado == null) {
-            return ResponseEntity.badRequest().build();
-        }
-        return ResponseEntity.ok(resultado);
+        return ResponseEntity.ok(entradaService.transferirEntrada(entradaId, dto, userDetails.getUsername()));
     }
 
-    @PatchMapping("/reembolsar/{usuarioId}/{entradaId}")
+    @PatchMapping("/reembolsar/{entradaId}")
     public ResponseEntity<EntradaResponseDTO> reembolsar(
-            @PathVariable Long usuarioId,
+            @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long entradaId) {
-        EntradaResponseDTO resultado = entradaService.reembolsarEntrada(usuarioId, entradaId);
-        if (resultado == null) {
-            return ResponseEntity.badRequest().build();
-        }
-        return ResponseEntity.ok(resultado);
+        return ResponseEntity.ok(entradaService.reembolsarEntrada(userDetails.getUsername(), entradaId));
     }
 
-    @GetMapping("/usuario/{usuarioId}")
-    public ResponseEntity<List<EntradaResponseDTO>> listar(@PathVariable Long usuarioId) {
-        return ResponseEntity.ok(entradaService.listarEntradasUsuario(usuarioId));
+    @GetMapping("/usuario")
+    public ResponseEntity<List<EntradaResponseDTO>> listar(
+            @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(entradaService.listarEntradasUsuario(userDetails.getUsername()));
     }
 
     @GetMapping("/{entradaId}")
     public ResponseEntity<EntradaResponseDTO> obtener(@PathVariable Long entradaId) {
         return ResponseEntity.ok(entradaService.obtenerEntrada(entradaId));
     }
+
     @GetMapping("/partidos")
-public ResponseEntity<List<PartidoCapacidadDTO>> listarPartidos() {
-    return ResponseEntity.ok(entradaService.listarPartidosConCapacidad());
-}
+    public ResponseEntity<List<PartidoCapacidadDTO>> listarPartidos() {
+        return ResponseEntity.ok(entradaService.listarPartidosConCapacidad());
+    }
 }

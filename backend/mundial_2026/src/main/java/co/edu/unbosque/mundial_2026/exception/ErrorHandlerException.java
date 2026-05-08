@@ -170,4 +170,5 @@ public ResponseEntity<Map<String, Object>> handleItemNotFound(ItemNotFoundExcept
 public ResponseEntity<Map<String, Object>> handleCategoriaYaExiste(CategoriaYaExisteException e) {
     return buildResponse(HttpStatus.CONFLICT, e.getMessage());
 }
+
 }

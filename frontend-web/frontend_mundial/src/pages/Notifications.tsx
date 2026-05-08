@@ -36,7 +36,7 @@ export default function Notifications() {
   };
 
   useEffect(() => { void refresh(); }, []);
-useEffect(() => { void refresh(); }, []);
+
 
 useEffect(() => {
   const registrarToken = async () => {

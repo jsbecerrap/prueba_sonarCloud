@@ -31,24 +31,19 @@ public class ApuestaRestController {
     }
 
     @PostMapping("/crear")
-    public ResponseEntity<ApuestaDTO> crearApuesta(@RequestBody ApuestaRequestDTO dto) {
-        ApuestaDTO resultado = apuestaService.crearApuesta(dto);
-        return resultado == null ? ResponseEntity.badRequest().build() : ResponseEntity.ok(resultado);
-    }
+public ResponseEntity<ApuestaDTO> crearApuesta(@RequestBody ApuestaRequestDTO dto) {
+    return ResponseEntity.ok(apuestaService.crearApuesta(dto));
+}
 
    @PostMapping("/unirse/{usuarioId}")
 public ResponseEntity<ApuestaDTO> unirseApuesta(@PathVariable Long usuarioId, @RequestBody String codigo) {
-    // limpiar comillas que JSON agrega al string
     String codigoLimpio = codigo.replace("\"", "").trim();
-    ApuestaDTO resultado = apuestaService.unirseApuesta(codigoLimpio, usuarioId);
-        return resultado == null ? ResponseEntity.badRequest().build() : ResponseEntity.ok(resultado);
-    }
-
+    return ResponseEntity.ok(apuestaService.unirseApuesta(codigoLimpio, usuarioId));
+}
     @PostMapping("/pronostico")
-    public ResponseEntity<PronosticoDTO> registrarPronostico(@RequestBody PronosticoRequestDTO dto) {
-        PronosticoDTO resultado = apuestaService.registrarPronostico(dto);
-        return resultado == null ? ResponseEntity.badRequest().build() : ResponseEntity.ok(resultado);
-    }
+public ResponseEntity<PronosticoDTO> registrarPronostico(@RequestBody PronosticoRequestDTO dto) {
+    return ResponseEntity.ok(apuestaService.registrarPronostico(dto));
+}
 
     @GetMapping("/ranking/{apuestaId}")
     public ResponseEntity<List<ParticipacionDTO>> obtenerRanking(@PathVariable Long apuestaId) {
@@ -58,15 +53,12 @@ public ResponseEntity<ApuestaDTO> unirseApuesta(@PathVariable Long usuarioId, @R
    @PreAuthorize("hasRole('ADMIN')")
 @PostMapping("/cerrar/{apuestaId}")
 public ResponseEntity<ApuestaDTO> cerrarApuesta(@PathVariable Long apuestaId) {
-    ApuestaDTO resultado = apuestaService.cerrarApuesta(apuestaId);
-    return resultado == null ? ResponseEntity.badRequest().build() : ResponseEntity.ok(resultado);
+    return ResponseEntity.ok(apuestaService.cerrarApuesta(apuestaId));
 }
-
 @PreAuthorize("hasRole('ADMIN')")
 @GetMapping("/puntos/{apuestaId}")
 public ResponseEntity<List<PronosticoDTO>> calcularPuntos(@PathVariable Long apuestaId) {
-    List<PronosticoDTO> resultado = apuestaService.calcularPuntos(apuestaId);
-    return resultado == null ? ResponseEntity.badRequest().build() : ResponseEntity.ok(resultado);
+    return ResponseEntity.ok(apuestaService.calcularPuntos(apuestaId));
 }
 
     @GetMapping("/usuario/{usuarioId}")

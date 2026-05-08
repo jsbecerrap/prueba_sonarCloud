@@ -15,9 +15,16 @@ export async function getNotifications(): Promise<NotificationItem[]> {
   return mockDb.notifications.slice().sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
 }
 
-export async function createNotification(title: string, body: string): Promise<NotificationItem> {
+export async function createNotification(title: string, body: string): Promise<void> {
   if (!USE_MOCK) {
-    return http.post<NotificationItem>("/notifications", { title, body });
+    await http.post<void>("/api/notificaciones/enviar", {
+      tipo: "INFO",
+      titulo: title.trim(),
+      mensaje: body.trim(),
+      canal: "SISTEMA",
+      usuarioId: null, 
+    });
+    return;
   }
   await sleep();
   const t = title.trim();
@@ -27,7 +34,6 @@ export async function createNotification(title: string, body: string): Promise<N
     id: nid(), title: t, body: b, read: false, createdAt: new Date().toISOString(),
   };
   mockDb.notifications.unshift(item);
-  return item;
 }
 
 export async function markNotificationRead(id: string): Promise<boolean> {
@@ -50,10 +56,9 @@ export async function markAllNotificationsRead(): Promise<void> {
   await sleep();
   mockDb.notifications.forEach((n) => { n.read = true; });
 }
-
 export async function deleteNotification(id: string): Promise<boolean> {
   if (!USE_MOCK) {
-    await http.delete<void>(`/notifications/${id}`);
+    await http.put<void>(`/api/notificaciones/${id}/leida`);
     return true;
   }
   await sleep();

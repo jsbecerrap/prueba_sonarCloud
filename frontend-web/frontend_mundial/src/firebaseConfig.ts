@@ -12,4 +12,4 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const messaging = getMessaging(app);
-export const VAPID_KEY = "BOAmTzigKOz5JgqWE9luePmfD7ld5B7hmY-BdA8TRb6KX7nu1nTAHwx9ivhkyVVctEJEshXay6yMlpo6EBLahel";
+export const VAPID_KEY = "BOAmTzigKOz5JgqWE9IuePmfD7ld5B7hmY-BdA8TRb6KX7nu1nTAHwx9ivhkyVVctEJEshXay6yMlpo6EBLaheI";

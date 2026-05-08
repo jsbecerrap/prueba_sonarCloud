@@ -588,7 +588,13 @@ const onEnviarNotificacion = async () => {
                 <Stack direction={{ xs: "column", md: "row" }} spacing={2} justifyContent="space-between">
                   <Box>
                     <Stack direction="row" spacing={1} alignItems="center" useFlexGap flexWrap="wrap">
-                      <Typography sx={{ fontWeight: 900 }}>{formatTeam(p.home)} vs {formatTeam(p.away)}</Typography>
+                      <Stack direction="row" spacing={1} alignItems="center">
+  {p.home.logo && <img src={p.home.logo} alt={p.home.name} style={{ width: 24, height: 24, objectFit: "contain" }} />}
+  <Typography sx={{ fontWeight: 900 }}>{p.home.name}</Typography>
+  <Typography sx={{ fontWeight: 900 }}>vs</Typography>
+  {p.away.logo && <img src={p.away.logo} alt={p.away.name} style={{ width: 24, height: 24, objectFit: "contain" }} />}
+  <Typography sx={{ fontWeight: 900 }}>{p.away.name}</Typography>
+</Stack>
                       <Chip size="small" color={statusColors[p.status]} label={statusLabels[p.status]} />
                     </Stack>
                     <Typography color="text.secondary" sx={{ mt: 0.5 }}>

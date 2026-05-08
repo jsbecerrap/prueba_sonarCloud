@@ -9,28 +9,21 @@ import co.edu.unbosque.mundial_2026.dto.response.EntradaResponseDTO;
 
 public interface EntradaService {
 
-    
-    EntradaResponseDTO reservarEntrada(Long usuarioId, EntradaRequestDTO dto);
+    EntradaResponseDTO reservarEntrada(String correo, EntradaRequestDTO dto);
 
-    // Confirmar pago con Stripe (sandbox)
     EntradaResponseDTO confirmarPago(Long entradaId, String paymentRef);
 
-    // Cancelar reserva manualmente
-    EntradaResponseDTO cancelarReserva(Long usuarioId, Long entradaId);
+    EntradaResponseDTO cancelarReserva(String correo, Long entradaId);
 
-    // Transferir entrada a otro usuario
-    EntradaResponseDTO transferirEntrada(Long entradaId, TransferenciaRequestDTO dto,Long usuarioId) ;
+    EntradaResponseDTO transferirEntrada(Long entradaId, TransferenciaRequestDTO dto, String correo);
 
-    // Solicitar reembolso
-    EntradaResponseDTO reembolsarEntrada(Long usuarioId, Long entradaId);
+    EntradaResponseDTO reembolsarEntrada(String correo, Long entradaId);
 
-    // Listar entradas del usuario
-    List<EntradaResponseDTO> listarEntradasUsuario(Long usuarioId);
+    List<EntradaResponseDTO> listarEntradasUsuario(String correo);
 
-    // Obtener entrada por id
     EntradaResponseDTO obtenerEntrada(Long entradaId);
 
-    // Scheduler: expirar reservas vencidas por TTL
     void expirarReservasVencidas();
+
     List<PartidoCapacidadDTO> listarPartidosConCapacidad();
 }

@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
-
+import { useEffect } from "react";
+import { onMessage } from "firebase/messaging";
+import { messaging } from "./firebaseConfig";
 import Layout from "./components/Layout";
 import FullPageLoader from "./components/FullPageLoader";
 
@@ -63,6 +65,18 @@ function IndexRedirect() {
 }
 
 export default function App() {
+  useEffect(() => {
+    const unsubscribe = onMessage(messaging, (payload) => {
+      const { title, body } = payload.notification ?? {};
+      if (Notification.permission === "granted") {
+        new Notification(title ?? "Mundial 2026", {
+          body: body ?? "",
+          icon: "/vite.svg",
+        });
+      }
+    });
+    return () => unsubscribe();
+  }, []);
   return (
     <Routes>
       <Route path="/login" element={<Login />} />

@@ -2,12 +2,12 @@ package co.edu.unbosque.mundial_2026.service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import co.edu.unbosque.mundial_2026.dto.ApuestaDTO;
 import co.edu.unbosque.mundial_2026.dto.ParticipacionDTO;
@@ -22,6 +22,7 @@ import co.edu.unbosque.mundial_2026.entity.Usuario;
 import co.edu.unbosque.mundial_2026.exception.ApuestaCerradaException;
 import co.edu.unbosque.mundial_2026.exception.ApuestaNotFoundException;
 import co.edu.unbosque.mundial_2026.exception.CodigoInvalidoException;
+import co.edu.unbosque.mundial_2026.exception.EstadoInvalidoException;
 import co.edu.unbosque.mundial_2026.exception.ParticipacionNotFoundException;
 import co.edu.unbosque.mundial_2026.exception.PronosticoNotFoundException;
 import co.edu.unbosque.mundial_2026.exception.UsuarioYaEnApuestaException;
@@ -55,7 +56,7 @@ private static final String PRONOSTICO_NO_ENCONTRADO = "Pronostico no encontrado
    
     // EventoAuditoriaService pendiente de migrar
 
-    
+    @Transactional
     @Override
     public ApuestaDTO crearApuesta(ApuestaRequestDTO dto) {
       final Usuario usuario = usuarioService.obtenerEntidadPorId(dto.getUsuarioId());
@@ -80,14 +81,16 @@ private static final String PRONOSTICO_NO_ENCONTRADO = "Pronostico no encontrado
         return new ApuestaDTO(apuesta.getId(), apuesta.getNombre(), apuesta.getEstado(),
                 apuesta.getCodigoInvitacion(), apuesta.getFechaCierre(), creadoPorId);
     }
-
+@Transactional
     @Override
     public PronosticoDTO registrarPronostico(PronosticoRequestDTO dto) {
     final Usuario usuario = usuarioService.obtenerEntidadPorId(dto.getUsuarioId());
         final Apuesta apuesta = apuestaRepository.findById(dto.getApuestaId())
                 .orElseThrow(() -> new ApuestaNotFoundException(APUESTA_NO_ENCONTRADA));
 
-        if (!ESTADO_ABIERTA.equalsIgnoreCase(apuesta.getEstado())) return null;
+        if (!ESTADO_ABIERTA.equalsIgnoreCase(apuesta.getEstado())) {
+    throw new ApuestaCerradaException("La apuesta no está abierta para pronósticos"); // ← cambio
+}
 
         participacionRepository.findByUsuarioIdAndApuestaId(usuario.getId(), apuesta.getId())
                 .orElseThrow(() -> new ParticipacionNotFoundException("Usuario no pertenece a la polla"));
@@ -110,7 +113,8 @@ private static final String PRONOSTICO_NO_ENCONTRADO = "Pronostico no encontrado
                 pronostico.getPuntosObtenidos(), pronostico.getUsuario().getId(),
                 pronostico.getApuesta().getId(), pronostico.getPartido().getId());
     }
-
+    
+@Transactional
     @Override
     public ApuestaDTO unirseApuesta(String codigo, Long usuarioId) {
      final Usuario usuario = usuarioService.obtenerEntidadPorId(usuarioId);
@@ -132,7 +136,7 @@ private static final String PRONOSTICO_NO_ENCONTRADO = "Pronostico no encontrado
         return new ApuestaDTO(apuesta.getId(), apuesta.getNombre(), apuesta.getEstado(),
                 apuesta.getCodigoInvitacion(), apuesta.getFechaCierre(), creadoPorId);
     }
-
+@Transactional(readOnly = true)
     @Override
     public List<ParticipacionDTO> obtenerRanking(Long apuestaId) {
         return participacionRepository.findByApuestaIdOrderByPuntosDesc(apuestaId).stream()
@@ -140,13 +144,15 @@ private static final String PRONOSTICO_NO_ENCONTRADO = "Pronostico no encontrado
                         p.getApuesta().getId(), p.getPuntos(), p.getPosicionRanking()))
                 .collect(Collectors.toList());
     }
-
+@Transactional
     @Override
     public List<PronosticoDTO> calcularPuntos(Long apuestaId) {
         final Apuesta apuesta = apuestaRepository.findById(apuestaId)
                 .orElseThrow(() -> new ApuestaNotFoundException("La apuesta no existe"));
 
-        if (!ESTADO_CERRADA.equalsIgnoreCase(apuesta.getEstado())) return Collections.emptyList();
+     if (!ESTADO_CERRADA.equalsIgnoreCase(apuesta.getEstado())) {
+    throw new EstadoInvalidoException("La apuesta debe estar cerrada para calcular puntos"); // ← cambio
+}
 
         final List<Participacion> participaciones = participacionRepository.findByApuestaId(apuestaId);
         for (final Participacion p : participaciones) {
@@ -210,19 +216,21 @@ private static final String PRONOSTICO_NO_ENCONTRADO = "Pronostico no encontrado
                 == (partido.getGolesLocal() + partido.getGolesVisitante())) puntos += 1;
         return puntos;
     }
-
+@Transactional
     @Override
     public ApuestaDTO cerrarApuesta(Long apuestaId) {
         final Apuesta apuesta = apuestaRepository.findById(apuestaId)
                 .orElseThrow(() -> new ApuestaNotFoundException(APUESTA_NO_ENCONTRADA));
-        if (!ESTADO_ABIERTA.equalsIgnoreCase(apuesta.getEstado())) return null;
+     if (!ESTADO_ABIERTA.equalsIgnoreCase(apuesta.getEstado())) {
+    throw new ApuestaCerradaException("La apuesta ya no está abierta"); 
+}
         apuesta.setEstado(ESTADO_CERRADA);
         apuestaRepository.save(apuesta);
         // eventoAuditoriaService.registrar(...) // pendiente
         return new ApuestaDTO(apuesta.getId(), apuesta.getNombre(), apuesta.getEstado(),
                 apuesta.getCodigoInvitacion(), apuesta.getFechaCierre(), apuesta.getCreadaPor().getId());
     }
-
+@Transactional(readOnly = true)
     @Override
     public ApuestaDTO obtenerApuesta(Long apuestaId) {
         final Apuesta apuesta = apuestaRepository.findById(apuestaId)
@@ -232,7 +240,7 @@ private static final String PRONOSTICO_NO_ENCONTRADO = "Pronostico no encontrado
     }
 
    
-
+@Transactional(readOnly = true)
     @Override
     public List<ParticipacionDTO> listarParticipantes(Long apuestaId) {
         return participacionRepository.findByApuestaId(apuestaId).stream()
@@ -255,7 +263,7 @@ public List<ApuestaDTO> listarApuestasPorUsuario(Long usuarioId) {
             })
             .collect(Collectors.toList());
 }
-
+@Transactional(readOnly = true)
     @Override
     public PronosticoDTO verificarPronostico(Long pronosticoId) {
         final Pronostico pronostico = pronosticoRepository.findById(pronosticoId)
@@ -265,18 +273,19 @@ public List<ApuestaDTO> listarApuestasPorUsuario(Long usuarioId) {
                 pronostico.getPuntosObtenidos(), pronostico.getUsuario().getId(),
                 pronostico.getApuesta().getId(), pronostico.getPartido().getId());
     }
-
+@Transactional
     @Override
     public void calcularPuntosAutomatico() {
         apuestaRepository.findByEstado(ESTADO_CERRADA)
                 .forEach(apuesta -> calcularPuntos(apuesta.getId()));
     }
-
+@Transactional
     @Override
     public void cerrarApuestasVencidas() {
         apuestaRepository.findByEstadoAndFechaCierreBefore(ESTADO_ABIERTA, LocalDateTime.now().plusMinutes(5))
                 .forEach(apuesta -> cerrarApuesta(apuesta.getId()));
     }
+    @Transactional(readOnly = true)
     @Override
 public List<PronosticoDTO> misPronosticos(Long apuestaId, Long usuarioId) {
     return pronosticoRepository.findByApuestaIdAndUsuarioId(apuestaId, usuarioId).stream()
@@ -291,7 +300,7 @@ public List<PronosticoDTO> misPronosticos(Long apuestaId, Long usuarioId) {
                     p.getPartido().getId()))
             .collect(Collectors.toList());
 }
-
+@Transactional
 @Override
 public PronosticoDTO editarPronostico(Long pronosticoId, PronosticoRequestDTO dto) {
     final Pronostico pronostico = pronosticoRepository.findById(pronosticoId)
@@ -321,7 +330,7 @@ public PronosticoDTO editarPronostico(Long pronosticoId, PronosticoRequestDTO dt
             pronostico.getApuesta().getId(),
             pronostico.getPartido().getId());
 }
-
+@Transactional
 @Override
 public void eliminarPronostico(Long pronosticoId) {
     final Pronostico pronostico = pronosticoRepository.findById(pronosticoId)
@@ -334,6 +343,7 @@ public void eliminarPronostico(Long pronosticoId) {
 
     pronosticoRepository.delete(pronostico);
 }
+@Transactional
 @Override
 public List<PronosticoDTO> calcularPuntosParciales(Long apuestaId) {
     apuestaRepository.findById(apuestaId)
@@ -389,6 +399,7 @@ public List<PronosticoDTO> calcularPuntosParciales(Long apuestaId) {
 
     return resultado;
 }
+@Transactional(readOnly = true)
 @Override
 public List<ApuestaDTO> listarTodas() {
     List<Apuesta> apuestas = apuestaRepository.findAll();
@@ -400,11 +411,11 @@ public List<ApuestaDTO> listarTodas() {
     }
     return resultado;
 }
-
+@Transactional
 @Override
 public void eliminarApuesta(Long apuestaId) {
     Apuesta apuesta = apuestaRepository.findById(apuestaId)
-            .orElseThrow(() -> new IllegalArgumentException(APUESTA_NO_ENCONTRADA));
+        .orElseThrow(() -> new ApuestaNotFoundException(APUESTA_NO_ENCONTRADA)); 
     pronosticoRepository.deleteByApuestaId(apuestaId);
     participacionRepository.deleteByApuestaId(apuestaId);
     apuestaRepository.delete(apuesta);

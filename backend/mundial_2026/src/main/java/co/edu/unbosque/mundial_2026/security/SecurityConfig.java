@@ -90,7 +90,8 @@ public class SecurityConfig {
         config.setAllowedOriginPatterns(Arrays.asList(
     "http://localhost:3000",
     "http://localhost:4200",
-    "http://localhost:8080"
+    "http://localhost:8080",
+    "http://localhost:5173"
 ));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "DELETE", "PUT", "PATCH"));
         config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));

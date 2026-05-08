@@ -1,7 +1,9 @@
 import { USE_MOCK } from "./config";
 import { http, setAuthToken, getAuthToken } from "./http";
 import { createSystemEvent } from "./eventsApi";
-
+import { registrarFcmToken } from "./notificationApi";
+import { getToken } from "firebase/messaging";
+import { messaging, VAPID_KEY } from "../firebaseConfig";
 import type { Role, CurrentUser } from "../context/AppContext";
 
 export type LoginResponse = { token: string; user: CurrentUser };
@@ -118,6 +120,18 @@ export async function loginApi(
       message: `Inicio de sesión: ${user.name}`,
       data: { role: user.role },
     });
+
+   
+    void (async () => {
+      try {
+        const permiso = await Notification.requestPermission();
+        if (permiso !== "granted") return;
+        const fcmToken = await getToken(messaging, { vapidKey: VAPID_KEY });
+        if (fcmToken) await registrarFcmToken(fcmToken);
+      } catch {
+
+      }
+    })();
 
     return { token: res.token, user };
   }
@@ -258,3 +272,16 @@ export async function getMeApi(): Promise<CurrentUser | null> {
 
   return parseMockToken(token);
 }
+void (async () => {
+  try {
+    const permiso = await Notification.requestPermission();
+    console.log("Permiso FCM:", permiso); // ← agregar
+    if (permiso !== "granted") return;
+    const fcmToken = await getToken(messaging, { vapidKey: VAPID_KEY });
+    console.log("Token FCM obtenido:", fcmToken); // ← agregar
+    if (fcmToken) await registrarFcmToken(fcmToken);
+    console.log("Token FCM registrado"); // ← agregar
+  } catch (e) {
+    console.error("Error FCM:", e); // ← cambiar a error
+  }
+})();

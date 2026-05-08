@@ -44,5 +44,6 @@ List<PreferenciaDTO> obtenerCatalogoSelecciones();
 Partido obtenerPartidoEntidadPorId(Long partidoId);
 void actualizarCapacidad(Long partidoId, int cantidad);
 List<PartidoCapacidadDTO> listarPartidosConCapacidad();
+List<Partido> listarDesdeBD();
 
 }

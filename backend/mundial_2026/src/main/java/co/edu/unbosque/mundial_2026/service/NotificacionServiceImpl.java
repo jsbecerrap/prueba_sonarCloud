@@ -182,6 +182,7 @@ private static final String TIPO_NOTIFICACION = "NOTIFICACION";
     @Override
     @Transactional
     public void notificarActualizacionPerfil(Usuario usuario) {
+         System.out.println("FCM TOKEN: " + usuario.getFcmtoken());
         Notificacion notificacion = new Notificacion(
                 CANAL_SISTEMA,
                 "Perfil actualizado",
@@ -195,30 +196,33 @@ private static final String TIPO_NOTIFICACION = "NOTIFICACION";
                 usuario.getId(), UUID.randomUUID().toString(), TIPO_NOTIFICACION);
     }
 
-    private void enviarPush(Usuario usuario, String titulo, String mensaje) {
-        if (usuario.getFcmtoken() == null || usuario.getFcmtoken().isBlank()) {
-            return;
-        }
-        try {
-            Message message = Message.builder()
-                    .setToken(usuario.getFcmtoken())
-                    .setNotification(Notification.builder()
-                            .setTitle(titulo)
-                            .setBody(mensaje)
-                            .build())
-                    .build();
-            FirebaseMessaging.getInstance().send(message);
-            eventoAuditoriaService.registrar(
-                    "PUSH_FCM_EXITOSO",
-                    "Push enviado correctamente a " + usuario.getCorreoUsuario(),
-                    usuario.getId(), UUID.randomUUID().toString(), TIPO_NOTIFICACION);
-        } catch (FirebaseMessagingException e) {
-            eventoAuditoriaService.registrar(
-                    "PUSH_FCM_FALLIDO",
-                    "Error al enviar push a " + usuario.getCorreoUsuario() + ": " + e.getMessage(),
-                    usuario.getId(), UUID.randomUUID().toString(), TIPO_NOTIFICACION);
-        }
+private void enviarPush(Usuario usuario, String titulo, String mensaje) {
+    if (usuario.getFcmtoken() == null || usuario.getFcmtoken().isBlank()) {
+        return;
     }
+    try {
+        Message message = Message.builder()
+                .setToken(usuario.getFcmtoken())
+                .setNotification(Notification.builder()
+                        .setTitle(titulo)
+                        .setBody(mensaje)
+                        .build())
+                .build();
+        FirebaseMessaging.getInstance().send(message);
+        eventoAuditoriaService.registrar(
+                "PUSH_FCM_EXITOSO",
+                "Push enviado correctamente a " + usuario.getCorreoUsuario(),
+                usuario.getId(), UUID.randomUUID().toString(), TIPO_NOTIFICACION);
+    } catch (FirebaseMessagingException e) {
+        System.out.println("ERROR FCM COMPLETO: " + e.getMessage()); // ← agregar
+        System.out.println("ERROR CODE: " + e.getErrorCode());       // ← agregar
+        e.printStackTrace();                                          // ← agregar
+        eventoAuditoriaService.registrar(
+                "PUSH_FCM_FALLIDO",
+                "Error al enviar push a " + usuario.getCorreoUsuario() + ": " + e.getMessage(),
+                usuario.getId(), UUID.randomUUID().toString(), TIPO_NOTIFICACION);
+    }
+}
 
     private NotificacionDTO toDTO(Notificacion n) {
         return new NotificacionDTO(

@@ -336,4 +336,9 @@ public List<PartidoCapacidadDTO> listarPartidosConCapacidad() {
     }
     return dtos;
 }
+@Override
+@Transactional(readOnly = true)
+public List<Partido> listarDesdeBD() {
+    return partidoRepository.findAll();
+}
 }

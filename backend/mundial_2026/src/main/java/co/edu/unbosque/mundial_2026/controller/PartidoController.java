@@ -16,6 +16,7 @@ import co.edu.unbosque.mundial_2026.dto.response.JugadorDTO;
 import co.edu.unbosque.mundial_2026.dto.response.PartidoDTO;
 import co.edu.unbosque.mundial_2026.dto.response.PosicionDTO;
 import co.edu.unbosque.mundial_2026.dto.response.PreferenciaDTO;
+import co.edu.unbosque.mundial_2026.entity.Partido;
 import co.edu.unbosque.mundial_2026.service.PartidoService;
 
 @RestController
@@ -106,5 +107,9 @@ public ResponseEntity<Integer> sincronizarPorFechaYLiga(
 public ResponseEntity<List<PreferenciaDTO>> obtenerCatalogoSelecciones() {
     return ResponseEntity.ok(partidoService.obtenerCatalogoSelecciones());
 }
-
+@PreAuthorize("hasRole('ADMIN')")
+@GetMapping("/bd/todos")
+public ResponseEntity<List<Partido>> listarDesdeBD() {
+    return ResponseEntity.ok(partidoService.listarDesdeBD());
+}
 }
