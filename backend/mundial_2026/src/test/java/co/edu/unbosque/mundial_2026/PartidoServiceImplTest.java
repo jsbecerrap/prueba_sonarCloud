@@ -3,6 +3,7 @@ package co.edu.unbosque.mundial_2026;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.verify;
@@ -22,6 +23,7 @@ import org.springframework.web.client.RestClient.RequestHeadersUriSpec;
 import org.springframework.web.client.RestClient.RequestHeadersSpec;
 import org.springframework.web.client.RestClient.ResponseSpec;
 import co.edu.unbosque.mundial_2026.service.UsuarioService;
+import co.edu.unbosque.mundial_2026.dto.PartidoCapacidadDTO;
 import co.edu.unbosque.mundial_2026.dto.response.EquipoConEstadioDTO;
 import co.edu.unbosque.mundial_2026.dto.response.EquipoDTO;
 import co.edu.unbosque.mundial_2026.dto.response.EstadioDTO;
@@ -409,4 +411,88 @@ void obtenerPartidosPorCiudadesFav_usuarioNoExistente_lanzaExcepcion() {
         assertEquals("Colombia", resultado.get(0).getNombre());
         verify(seleccionRepository).findAll();
     }
+    @Test
+void actualizarCapacidad_partidoExistente_actualizaCorrectamente() {
+    Partido partido = new Partido();
+    partido.setId(1L);
+    partido.setCapacidadDisponible(100);
+
+    when(partidoRepository.findById(1L)).thenReturn(Optional.of(partido));
+    when(partidoRepository.save(any(Partido.class))).thenReturn(partido);
+
+    service.actualizarCapacidad(1L, -10);
+
+    assertEquals(90, partido.getCapacidadDisponible());
+    verify(partidoRepository).save(partido);
+}
+
+@Test
+void actualizarCapacidad_partidoNoExistente_lanzaExcepcion() {
+    when(partidoRepository.findById(99L)).thenReturn(Optional.empty());
+
+    assertThrows(PartidoNotFoundException.class,
+            () -> service.actualizarCapacidad(99L, -10));
+}
+
+@Test
+void obtenerPartidoEntidadPorId_existente_retornaEntidad() {
+    Partido partido = new Partido();
+    partido.setId(1L);
+
+    when(partidoRepository.findById(1L)).thenReturn(Optional.of(partido));
+
+    Partido resultado = service.obtenerPartidoEntidadPorId(1L);
+
+    assertNotNull(resultado);
+    assertEquals(1L, resultado.getId());
+}
+
+@Test
+void obtenerPartidoEntidadPorId_noExistente_lanzaExcepcion() {
+    when(partidoRepository.findById(99L)).thenReturn(Optional.empty());
+
+    assertThrows(PartidoNotFoundException.class,
+            () -> service.obtenerPartidoEntidadPorId(99L));
+}
+
+@Test
+void listarPartidosConCapacidad_conPartidos_retornaLista() {
+    Partido partido = new Partido();
+    partido.setId(1L);
+    partido.setSeleccionLocal("Colombia");
+    partido.setSeleccionVisitante("Brazil");
+    partido.setEstadio("MetLife Stadium");
+    partido.setCapacidadDisponible(60000);
+
+    when(partidoRepository.findAll()).thenReturn(List.of(partido));
+
+    List<PartidoCapacidadDTO> resultado = service.listarPartidosConCapacidad();
+
+    assertNotNull(resultado);
+    assertEquals(1, resultado.size());
+    assertEquals("East Rutherford", resultado.get(0).getCiudad());
+}
+
+@Test
+void listarPartidosConCapacidad_sinPartidos_retornaVacio() {
+    when(partidoRepository.findAll()).thenReturn(List.of());
+
+    List<PartidoCapacidadDTO> resultado = service.listarPartidosConCapacidad();
+
+    assertNotNull(resultado);
+    assertTrue(resultado.isEmpty());
+}
+
+@Test
+void listarDesdeBD_retornaLista() {
+    Partido partido = new Partido();
+    partido.setId(1L);
+
+    when(partidoRepository.findAll()).thenReturn(List.of(partido));
+
+    List<Partido> resultado = service.listarDesdeBD();
+
+    assertNotNull(resultado);
+    assertEquals(1, resultado.size());
+}
 }

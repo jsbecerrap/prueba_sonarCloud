@@ -14,7 +14,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import co.edu.unbosque.mundial_2026.dto.NotificacionDTO;
+import co.edu.unbosque.mundial_2026.dto.request.NotificacionRequestDTO;
 import co.edu.unbosque.mundial_2026.entity.*;
+import co.edu.unbosque.mundial_2026.exception.PartidoNotFoundException;
 import co.edu.unbosque.mundial_2026.exception.UsuarioNotFoundException;
 import co.edu.unbosque.mundial_2026.repository.*;
 import co.edu.unbosque.mundial_2026.service.EventoAuditoriaService;
@@ -213,4 +215,67 @@ import co.edu.unbosque.mundial_2026.service.NotificacionServiceImpl;
 
         verify(notificacionRepository).saveAll(any());
     }
+    @Test
+void enviarNotificacion_usuarioExistente_guardaYEnvia() {
+    Usuario usuario = crearUsuario(1L, true);
+    usuario.setFcmtoken(null);
+
+    NotificacionRequestDTO dto = new NotificacionRequestDTO();
+    dto.setUsuarioId(1L);
+    dto.setTipo("INFO");
+    dto.setTitulo("Test");
+    dto.setMensaje("Mensaje test");
+    dto.setCanal("SISTEMA");
+
+    when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+    when(notificacionRepository.save(any(Notificacion.class))).thenReturn(new Notificacion());
+    doNothing().when(eventoAuditoriaService).registrar(any(), any(), any(), any(), any());
+
+    service.enviarNotificacion(dto);
+
+    verify(notificacionRepository).save(any(Notificacion.class));
+}
+
+@Test
+void enviarNotificacion_usuarioNoExistente_lanzaExcepcion() {
+    NotificacionRequestDTO dto = new NotificacionRequestDTO();
+    dto.setUsuarioId(99L);
+
+    when(usuarioRepository.findById(99L)).thenReturn(Optional.empty());
+
+    assertThrows(UsuarioNotFoundException.class,
+            () -> service.enviarNotificacion(dto));
+}
+
+@Test
+void notificarPorPartido_partidoExistente_notificaUsuarios() {
+    Partido partido = new Partido();
+    partido.setId(1L);
+    partido.setSeleccionLocal("Colombia");
+    partido.setSeleccionVisitante("Brazil");
+
+    Usuario usuario = crearUsuario(1L, true);
+    co.edu.unbosque.mundial_2026.entity.Seleccion seleccion =
+            new co.edu.unbosque.mundial_2026.entity.Seleccion();
+    seleccion.setNombre("Colombia");
+    usuario.setSeleccionesU(List.of(seleccion));
+    usuario.setFcmtoken(null);
+
+    when(partidoRepository.findById(1L)).thenReturn(Optional.of(partido));
+    when(usuarioRepository.findAll()).thenReturn(List.of(usuario));
+    when(notificacionRepository.saveAll(any())).thenReturn(List.of());
+    doNothing().when(eventoAuditoriaService).registrar(any(), any(), any(), any(), any());
+
+    service.notificarPorPartido(1L, "INFO", "Titulo", "Mensaje");
+
+    verify(notificacionRepository).saveAll(any());
+}
+
+@Test
+void notificarPorPartido_partidoNoExistente_lanzaExcepcion() {
+    when(partidoRepository.findById(99L)).thenReturn(Optional.empty());
+
+    assertThrows(PartidoNotFoundException.class,
+            () -> service.notificarPorPartido(99L, "INFO", "Titulo", "Mensaje"));
+}
 }

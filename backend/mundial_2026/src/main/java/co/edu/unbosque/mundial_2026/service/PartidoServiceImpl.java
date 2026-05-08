@@ -340,4 +340,5 @@ public List<PartidoCapacidadDTO> listarPartidosConCapacidad() {
 public List<Partido> listarDesdeBD() {
     return partidoRepository.findAll();
 }
+
 }
