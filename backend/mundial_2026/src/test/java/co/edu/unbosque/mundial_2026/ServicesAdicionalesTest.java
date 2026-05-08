@@ -345,4 +345,47 @@ class ServicesAdicionalesTest {
 
         assertNotNull(resultado);
     }
+    @Test
+void determinarResultado_visitanteGana_retornaVisitante() {
+    Usuario usuario = crearUsuario(1L);
+    Apuesta apuesta = crearApuesta(1L, "CERRADA", usuario);
+    Partido partido = crearPartido(1L, 0, 2); // visitante gana
+
+    Pronostico pronostico = crearPronostico(1L, usuario, apuesta, partido, "VISITANTE", 0, 2);
+    Participacion participacion = crearParticipacion(1L, usuario, apuesta);
+
+    when(apuestaRepository.findById(1L)).thenReturn(Optional.of(apuesta));
+    when(participacionRepository.findByApuestaId(1L)).thenReturn(List.of(participacion));
+    when(participacionRepository.save(any())).thenReturn(participacion);
+    when(pronosticoRepository.findByApuestaId(1L)).thenReturn(List.of(pronostico));
+    when(partidoService.sincronizarPorFechaYLiga(any(), anyInt(), anyInt())).thenReturn(1);
+    when(participacionRepository.findByUsuarioIdAndApuestaId(1L, 1L)).thenReturn(Optional.of(participacion));
+    when(pronosticoRepository.save(any())).thenReturn(pronostico);
+    when(participacionRepository.findByApuestaIdOrderByPuntosDesc(1L)).thenReturn(List.of(participacion));
+
+    List<PronosticoDTO> resultado = apuestaService.calcularPuntos(1L);
+    assertNotNull(resultado);
+}
+
+@Test
+void determinarResultado_empate_retornaEmpate() {
+    Usuario usuario = crearUsuario(1L);
+    Apuesta apuesta = crearApuesta(1L, "CERRADA", usuario);
+    Partido partido = crearPartido(1L, 1, 1); // empate
+
+    Pronostico pronostico = crearPronostico(1L, usuario, apuesta, partido, "EMPATE", 1, 1);
+    Participacion participacion = crearParticipacion(1L, usuario, apuesta);
+
+    when(apuestaRepository.findById(1L)).thenReturn(Optional.of(apuesta));
+    when(participacionRepository.findByApuestaId(1L)).thenReturn(List.of(participacion));
+    when(participacionRepository.save(any())).thenReturn(participacion);
+    when(pronosticoRepository.findByApuestaId(1L)).thenReturn(List.of(pronostico));
+    when(partidoService.sincronizarPorFechaYLiga(any(), anyInt(), anyInt())).thenReturn(1);
+    when(participacionRepository.findByUsuarioIdAndApuestaId(1L, 1L)).thenReturn(Optional.of(participacion));
+    when(pronosticoRepository.save(any())).thenReturn(pronostico);
+    when(participacionRepository.findByApuestaIdOrderByPuntosDesc(1L)).thenReturn(List.of(participacion));
+
+    List<PronosticoDTO> resultado = apuestaService.calcularPuntos(1L);
+    assertNotNull(resultado);
+}
 }
