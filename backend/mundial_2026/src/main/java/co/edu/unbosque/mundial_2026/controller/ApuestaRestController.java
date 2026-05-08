@@ -19,7 +19,7 @@ import co.edu.unbosque.mundial_2026.dto.PronosticoDTO;
 import co.edu.unbosque.mundial_2026.dto.request.ApuestaRequestDTO;
 import co.edu.unbosque.mundial_2026.dto.request.PronosticoRequestDTO;
 import co.edu.unbosque.mundial_2026.service.ApuestaService;
-
+//No en el mvp
 @RestController
 @RequestMapping("/api/apuestas")
 public class ApuestaRestController {

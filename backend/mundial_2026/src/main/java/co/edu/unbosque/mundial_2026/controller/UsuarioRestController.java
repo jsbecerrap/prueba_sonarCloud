@@ -28,7 +28,7 @@ import jakarta.validation.Valid;
 
 import static co.edu.unbosque.mundial_2026.security.TokenJwt.HEADER_AUTHORIZATION;
 import static co.edu.unbosque.mundial_2026.security.TokenJwt.PREFIX_TOKEN;
-
+//borra el token despues cierto tiempo
 @RestController
 @RequestMapping("/api")
 public class UsuarioRestController {

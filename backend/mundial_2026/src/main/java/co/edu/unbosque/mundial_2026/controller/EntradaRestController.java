@@ -19,7 +19,7 @@ import co.edu.unbosque.mundial_2026.dto.request.EntradaRequestDTO;
 import co.edu.unbosque.mundial_2026.dto.request.TransferenciaRequestDTO;
 import co.edu.unbosque.mundial_2026.dto.response.EntradaResponseDTO;
 import co.edu.unbosque.mundial_2026.service.EntradaService;
-
+//Falta funcion en admin
 @RestController
 @RequestMapping("/api/entradas")
 public class EntradaRestController {
