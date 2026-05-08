@@ -47,6 +47,7 @@ public class Partido {
     private String estadio;
 
     public Partido() {
+        //Constructor vacio
     }
 
     public Long getId() {

@@ -44,6 +44,7 @@ public class Apuesta {
     private List<Pronostico> pronosticos;
 
     public Apuesta() {
+        //Constructor vacio
     }
 
     public Long getId() {

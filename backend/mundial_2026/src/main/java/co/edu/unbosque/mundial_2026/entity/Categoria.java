@@ -22,6 +22,7 @@ public class Categoria {
     private String descripcion;
 
     public Categoria() {
+        //Constructor vacio
     }
 
     public Long getId() {

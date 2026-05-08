@@ -11,6 +11,7 @@ public class NotificacionMasivaRequestDTO {
     private List<Long> usuarioIds;
 
     public NotificacionMasivaRequestDTO() {
+        //Constructor vacio
     }
 
     public String getTipo() {

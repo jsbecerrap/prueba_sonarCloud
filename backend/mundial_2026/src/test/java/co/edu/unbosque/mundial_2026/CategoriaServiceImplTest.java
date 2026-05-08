@@ -17,8 +17,6 @@ import co.edu.unbosque.mundial_2026.dto.request.CategoriaRequestDTO;
 import co.edu.unbosque.mundial_2026.dto.response.CategoriaResponseDTO;
 import co.edu.unbosque.mundial_2026.entity.Categoria;
 import co.edu.unbosque.mundial_2026.entity.Producto;
-import co.edu.unbosque.mundial_2026.entity.Rol;
-import co.edu.unbosque.mundial_2026.entity.Seleccion;
 import co.edu.unbosque.mundial_2026.exception.CategoriaNotFoundException;
 import co.edu.unbosque.mundial_2026.exception.CategoriaYaExisteException;
 import co.edu.unbosque.mundial_2026.repository.CategoriaRepository;
@@ -26,7 +24,7 @@ import co.edu.unbosque.mundial_2026.repository.ProductoRepository;
 import co.edu.unbosque.mundial_2026.service.CategoriaServiceImpl;
 
 @ExtendWith(MockitoExtension.class)
-public class CategoriaServiceImplTest {
+ class CategoriaServiceImplTest {
 
     @Mock private CategoriaRepository categoriaRepository;
     @Mock private ProductoRepository productoRepository;

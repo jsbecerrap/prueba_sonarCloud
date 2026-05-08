@@ -182,7 +182,6 @@ private static final String TIPO_NOTIFICACION = "NOTIFICACION";
     @Override
     @Transactional
     public void notificarActualizacionPerfil(Usuario usuario) {
-         System.out.println("FCM TOKEN: " + usuario.getFcmtoken());
         Notificacion notificacion = new Notificacion(
                 CANAL_SISTEMA,
                 "Perfil actualizado",
@@ -214,9 +213,6 @@ private void enviarPush(Usuario usuario, String titulo, String mensaje) {
                 "Push enviado correctamente a " + usuario.getCorreoUsuario(),
                 usuario.getId(), UUID.randomUUID().toString(), TIPO_NOTIFICACION);
     } catch (FirebaseMessagingException e) {
-        System.out.println("ERROR FCM COMPLETO: " + e.getMessage()); // ← agregar
-        System.out.println("ERROR CODE: " + e.getErrorCode());       // ← agregar
-        e.printStackTrace();                                          // ← agregar
         eventoAuditoriaService.registrar(
                 "PUSH_FCM_FALLIDO",
                 "Error al enviar push a " + usuario.getCorreoUsuario() + ": " + e.getMessage(),

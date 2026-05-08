@@ -32,6 +32,7 @@ public class ItemOrden {
     private Double precioUnitario;
 
     public ItemOrden() {
+        //Constructor vacio
     }
 
     public Long getId() {

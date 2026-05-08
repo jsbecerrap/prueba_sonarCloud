@@ -24,7 +24,7 @@ import co.edu.unbosque.mundial_2026.service.MetodoPagoServiceImpl;
 import co.edu.unbosque.mundial_2026.service.UsuarioService;
 
 @ExtendWith(MockitoExtension.class)
-public class MetodoPagoServiceImplTest {
+class MetodoPagoServiceImplTest {
 
     @Mock private MetodoPagoRepository metodoPagoRepository;
     @Mock private UsuarioService usuarioService;

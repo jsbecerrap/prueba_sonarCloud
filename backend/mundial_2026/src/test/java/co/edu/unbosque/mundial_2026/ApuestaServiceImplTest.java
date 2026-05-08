@@ -25,7 +25,7 @@ import co.edu.unbosque.mundial_2026.repository.*;
 import co.edu.unbosque.mundial_2026.service.*;
 
 @ExtendWith(MockitoExtension.class)
-public class ApuestaServiceImplTest {
+class ApuestaServiceImplTest {
 
     @Mock private ApuestaRepository apuestaRepository;
     @Mock private PronosticoRepository pronosticoRepository;

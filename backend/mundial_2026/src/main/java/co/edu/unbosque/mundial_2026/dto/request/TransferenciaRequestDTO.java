@@ -4,6 +4,7 @@ public class TransferenciaRequestDTO {
     private String correoDestino;
 
     public TransferenciaRequestDTO() {
+        //Constructor vacio
     }
 
     public String getCorreoDestino() {

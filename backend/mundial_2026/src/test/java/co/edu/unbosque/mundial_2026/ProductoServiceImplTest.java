@@ -24,7 +24,7 @@ import co.edu.unbosque.mundial_2026.service.CategoriaService;
 import co.edu.unbosque.mundial_2026.service.ProductoServiceImpl;
 
 @ExtendWith(MockitoExtension.class)
-public class ProductoServiceImplTest {
+ class ProductoServiceImplTest {
 
     @Mock private ProductoRepository productoRepository;
     @Mock private CategoriaService categoriaService;
@@ -91,14 +91,15 @@ public class ProductoServiceImplTest {
         assertEquals(20, producto.getStock());
     }
 
-    @Test
-    void actualizar_productoNoExistente_lanzaExcepcion() {
-        when(productoRepository.findById(99L)).thenReturn(Optional.empty());
+   @Test
+void actualizar_productoNoExistente_lanzaExcepcion() {
+    when(productoRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThrows(ProductoNotFoundException.class,
-                () -> service.actualizar(99L, new ProductoActualizarRequestDTO()));
-    }
+    ProductoActualizarRequestDTO dto = new ProductoActualizarRequestDTO();
 
+    assertThrows(ProductoNotFoundException.class,
+            () -> service.actualizar(99L, dto));
+}
     @Test
     void eliminar_productoExistente_desactiva() {
         Producto producto = crearProducto(1L, true);

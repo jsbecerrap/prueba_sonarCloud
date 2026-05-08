@@ -330,7 +330,7 @@ public Usuario obtenerEntidadPorCorreo(final String correo) {
 @Transactional
 public void actualizarFcmToken(String correo, String fcmToken) {
     Usuario usuario = repository.findByCorreoUsuario(correo)
-            .orElseThrow(() -> new UsuarioNotFoundException("Usuario no encontrado"));
+            .orElseThrow(() -> new UsuarioNotFoundException(USUARIO_NO_ENCONTRADO));
     usuario.setFcmtoken(fcmToken);
     repository.save(usuario);
 }

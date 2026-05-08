@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
+
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,9 +34,8 @@ public class PartidoServiceImpl implements PartidoService {
 
     private static final int LIGA_MUNDIAL = 1;
     private static final int TEMPORADA_MUNDIAL = 2026;
-    private static final String BASE_FIXTURES = "/fixtures?league=" + LIGA_MUNDIAL + "&season=" + TEMPORADA_MUNDIAL;
-
-    private static final String SEASON_PARAM = "&season=";
+   private static final String SEASON_PARAM = "&season=";
+private static final String BASE_FIXTURES = "/fixtures?league=" + LIGA_MUNDIAL + SEASON_PARAM + TEMPORADA_MUNDIAL;
     private final RestClient footballClient;
     private final PartidoRepository partidoRepository;
     private final UsuarioService usuarioService;
@@ -169,7 +168,7 @@ public List<EquipoMundialDTO> obtenerSelecciones() {
             partido.setGolesLocal(dto.getGoles().getLocal());
             partido.setGolesVisitante(dto.getGoles().getVisitante());
             return partido;
-        }).collect(Collectors.toList());
+        }).toList();
 
         partidoRepository.saveAll(partidos);
         return partidos.size();
@@ -184,7 +183,7 @@ public List<EquipoMundialDTO> obtenerSelecciones() {
 
         final List<Partido> partidos = response.getPartidos().stream()
                 .map(dto -> procesarPartido(dto))
-                .collect(Collectors.toList());
+                .toList();
 
         partidoRepository.saveAll(partidos);
         return partidos.size();
@@ -277,7 +276,7 @@ final Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
                     final String ciudadDelEstadio = ESTADIO_CIUDAD.get(p.getEstadio());
                     return ciudadDelEstadio != null && ciudadDelEstadio.equalsIgnoreCase(nombre);
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private Partido procesarPartido(final PartidoDTO dto) {
@@ -330,7 +329,7 @@ public List<PartidoCapacidadDTO> listarPartidosConCapacidad() {
         dto.setLocal(p.getSeleccionLocal());
         dto.setVisitante(p.getSeleccionVisitante());
         dto.setEstadio(p.getEstadio());
-        dto.setCiudad(ESTADIO_CIUDAD.getOrDefault(p.getEstadio(), "Por confirmar")); // ✅ usa la constante
+        dto.setCiudad(ESTADIO_CIUDAD.getOrDefault(p.getEstadio(), "Por confirmar")); 
         dto.setCapacidadDisponible(p.getCapacidadDisponible() != null ? p.getCapacidadDisponible() : 60000);
         dtos.add(dto);
     }

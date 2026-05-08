@@ -32,8 +32,8 @@ public class ProductoServiceImpl implements ProductoService {
       Categoria categoria = categoriaService.obtenerEntidadPorId(dto.getCategoriaId());
         Producto producto = toEntity(dto, categoria);
         productoRepository.save(producto);
-        ProductoResponseDTO response = toDTO(producto);
-        return response;
+         return toDTO(producto);
+        
     }
 
     @Override
@@ -52,8 +52,8 @@ if (dto.getDescripcion() != null) {
     productoActualizar.setDescripcion(dto.getDescripcion());
 }
 productoRepository.save(productoActualizar);
-  ProductoResponseDTO response = toDTO(productoActualizar);
-        return response;
+ return toDTO(productoActualizar);
+        
 
     }
 
@@ -94,7 +94,7 @@ public List<ProductoResponseDTO> listarPorCategoria(Long categoriaId) {
 public ProductoResponseDTO obtenerPorId(Long id) {
     Producto producto = productoRepository.findById(id)
             .orElseThrow(() -> new ProductoNotFoundException(PRODUCTO_NO_ENCONTRADO));
-    if (!producto.getActivo()) {
+   if (Boolean.FALSE.equals(producto.getActivo())) {
         throw new ProductoNotFoundException("Este producto no está disponible");
     }
     return toDTO(producto);

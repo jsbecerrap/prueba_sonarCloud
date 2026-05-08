@@ -6,7 +6,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -40,15 +39,16 @@ public class EntradaServiceImpl implements EntradaService {
     private final EntradaRepository entradaRepository;
     private final UsuarioService usuarioService;
 private final PartidoService partidoService;
-    private final EventoAuditoriaService auditoriaService;private static final String ESTADO_RESERVADA = "RESERVADA";
+    private final EventoAuditoriaService auditoriaService;
+    
+    private static final String ESTADO_RESERVADA = "RESERVADA";
 private static final String ESTADO_PAGADA = "PAGADA";
 private static final String ESTADO_TRANSFERIDA = "TRANSFERIDA";
 private static final String ENTRADA_NO_ENCONTRADA = "Entrada no encontrada";
 private static final String TIPO_ENTRADA = "ENTRADA";
 private static final String PREFIJO_USUARIO = "Usuario ";
 
-    @Value("${stripe.api.key}")
-    private String stripeApiKey;
+
 
     private static final Map<String, Long> PRECIO_POR_RONDA = new HashMap<>();
 static {
@@ -78,17 +78,18 @@ static {
 }
 
     public EntradaServiceImpl(EntradaRepository entradaRepository,
-        UsuarioService usuarioService,
-        PartidoService partidoService,
-        EventoAuditoriaService auditoriaService) {
+    UsuarioService usuarioService,
+    PartidoService partidoService,
+    EventoAuditoriaService auditoriaService,
+    @Value("${stripe.api.key}") String stripeApiKey) {
     this.entradaRepository = entradaRepository;
     this.usuarioService = usuarioService;
     this.partidoService = partidoService;
     this.auditoriaService = auditoriaService;
-}
+    Stripe.apiKey = stripeApiKey; }
 @Override
 public EntradaResponseDTO reservarEntrada(String correo, EntradaRequestDTO dto) {
-    Usuario u = usuarioService.obtenerEntidadPorCorreo(correo); // ← cambio
+    Usuario u = usuarioService.obtenerEntidadPorCorreo(correo); 
     Long usuarioId = u.getId();
 
     Partido partido = partidoService.obtenerPartidoEntidadPorId(dto.getPartidoId());
@@ -155,7 +156,7 @@ public EntradaResponseDTO reservarEntrada(String correo, EntradaRequestDTO dto) 
         }
 
         try {
-            Stripe.apiKey = stripeApiKey;
+    
 PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
     .setAmount((long)(entrada.getPrecio() * 100))
     .setCurrency("usd")
@@ -233,7 +234,7 @@ public EntradaResponseDTO cancelarReserva(String correo, Long entradaId) {
 
    @Override
 public EntradaResponseDTO transferirEntrada(Long entradaId, TransferenciaRequestDTO dto, String correo) {
-    Usuario u = usuarioService.obtenerEntidadPorCorreo(correo); // ← cambio
+    Usuario u = usuarioService.obtenerEntidadPorCorreo(correo); 
     Long usuarioId = u.getId();
 
     Entrada entrada = entradaRepository.findById(entradaId)
@@ -289,7 +290,7 @@ public EntradaResponseDTO transferirEntrada(Long entradaId, TransferenciaRequest
 
    @Override
 public EntradaResponseDTO reembolsarEntrada(String correo, Long entradaId) {
-    Usuario u = usuarioService.obtenerEntidadPorCorreo(correo); // ← cambio
+    Usuario u = usuarioService.obtenerEntidadPorCorreo(correo); 
     Long usuarioId = u.getId();
 
     Entrada entrada = entradaRepository.findById(entradaId)
@@ -304,7 +305,7 @@ public EntradaResponseDTO reembolsarEntrada(String correo, Long entradaId) {
     }
 
     try {
-        Stripe.apiKey = stripeApiKey;
+       
 
         RefundCreateParams params = RefundCreateParams.builder()
             .setPaymentIntent(entrada.getPaymentRef())
@@ -342,11 +343,11 @@ public EntradaResponseDTO reembolsarEntrada(String correo, Long entradaId) {
 
 @Override
 public List<EntradaResponseDTO> listarEntradasUsuario(String correo) {
-    Usuario u = usuarioService.obtenerEntidadPorCorreo(correo); // ← cambio
+    Usuario u = usuarioService.obtenerEntidadPorCorreo(correo); 
     return entradaRepository.findByUsuarioId(u.getId())
         .stream()
         .map(e -> toDTO(e))
-        .collect(Collectors.toList());
+        .toList();
 }
     @Override
     public EntradaResponseDTO obtenerEntrada(Long entradaId) {

@@ -9,6 +9,7 @@ public class PartidoCapacidadDTO {
     private Integer capacidadDisponible;
 
     public PartidoCapacidadDTO() {
+        //Constructor vacio
     }
 
     public Long getId() {

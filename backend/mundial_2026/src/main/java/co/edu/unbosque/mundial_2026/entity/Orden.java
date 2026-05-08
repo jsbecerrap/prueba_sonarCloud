@@ -43,6 +43,7 @@ public class Orden {
     private MetodoPago metodoPago;
 
     public Orden() {
+        //Constructor vacio
     }
 
     public Long getId() {

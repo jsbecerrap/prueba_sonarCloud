@@ -36,6 +36,8 @@ public class SecurityConfig {
     private final AuthenticationConfiguration authConfig;
     private final UsuarioRepository usuarioRepository;
     private final TokenBlacklist tokenBlacklist;
+    private static final String API_ENTRADAS = "/api/entradas/**";
+private static final String API_PAYMENTS = "/payments/**";//FALTA REVISAR BIEN LAS URLS PERMITIDAS
 
     public SecurityConfig(AuthenticationConfiguration authConfig,
             UsuarioRepository usuarioRepository,
@@ -59,7 +61,8 @@ public class SecurityConfig {
     public CommandLineRunner initJwtKey() {
         return args -> TokenJwt.init(jwtSecret);
     }
-//Relaciona las rutas a las que pueden acceder los usuarios segun su rol y las que necesita estar autenticado o no 
+//Relaciona las rutas a las que pueden acceder los usuarios segun su rol y las que necesita estar autenticado o no
+//FALTA REVISAR BIEN LAS URL PERMITIDAS
     @Bean
     public SecurityFilterChain filterChain(final HttpSecurity http,
             final AuthenticationManager authManager) throws Exception {
@@ -67,12 +70,13 @@ public class SecurityConfig {
         .requestMatchers(HttpMethod.GET, "/api/usuarios/listar").permitAll()
         .requestMatchers(HttpMethod.POST, "/api/usuarios/registrar").permitAll()
         .requestMatchers(HttpMethod.POST, "/api/auth/logout").authenticated()
-        .requestMatchers(HttpMethod.POST, "/api/entradas/**").authenticated()
-        .requestMatchers(HttpMethod.GET, "/api/entradas/**").authenticated()
-        .requestMatchers(HttpMethod.PATCH, "/api/entradas/**").authenticated()
-        .requestMatchers(HttpMethod.GET, "/payments/**").authenticated()
-        .requestMatchers(HttpMethod.POST, "/payments/**").authenticated()
-        .requestMatchers(HttpMethod.PATCH, "/payments/**").authenticated()
+        .requestMatchers(HttpMethod.POST, API_ENTRADAS).authenticated()
+.requestMatchers(HttpMethod.GET, API_ENTRADAS).authenticated()
+.requestMatchers(HttpMethod.PATCH, API_ENTRADAS).authenticated()
+.requestMatchers(HttpMethod.GET, API_PAYMENTS).authenticated()
+.requestMatchers(HttpMethod.POST, API_PAYMENTS).authenticated()
+.requestMatchers(HttpMethod.PATCH, API_PAYMENTS).authenticated()
+        
         .requestMatchers(HttpMethod.GET, "/api/auditoria/**").authenticated()
         .anyRequest().authenticated())
                 .addFilter(new JwtAuthenticationFilter(authManager, usuarioRepository))

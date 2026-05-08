@@ -40,6 +40,7 @@ public class Producto {
     private Categoria categoria;
 
     public Producto() {
+        //Constructor vacio
     }
 
     public Long getId() {

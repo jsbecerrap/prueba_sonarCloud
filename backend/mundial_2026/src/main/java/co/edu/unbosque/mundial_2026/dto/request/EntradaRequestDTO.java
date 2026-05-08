@@ -5,6 +5,7 @@ public class EntradaRequestDTO {
     private Integer cantidad;
 
     public EntradaRequestDTO() {
+        //Constructor vacio
     }
 
     public Long getPartidoId() {

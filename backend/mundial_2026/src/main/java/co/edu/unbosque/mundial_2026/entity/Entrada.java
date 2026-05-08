@@ -52,6 +52,7 @@ public class Entrada {
     private LocalDateTime fechaReembolso;
 
     public Entrada() {
+        //Constructor vacio
     }
 
     public Long getId() {

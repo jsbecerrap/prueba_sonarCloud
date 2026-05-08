@@ -51,21 +51,20 @@ public class OrdenServiceImpl implements OrdenService {
     private static final String CARRITO_NO_ACTIVO = "No tienes un carrito activo";
     private static final String PREFIJO_USUARIO = "Usuario ";
 
-    @Value("${stripe.api.key}")
-    private String stripeApiKey;
-
+   
     public OrdenServiceImpl(OrdenRepository ordenRepository,
             ItemOrdenRepository itemOrdenRepository,
             UsuarioService usuarioService,
             ProductoService productoService,
             MetodoPagoService metodoPagoService,
-            EventoAuditoriaService auditoriaService) {
+            EventoAuditoriaService auditoriaService,@Value("${stripe.api.key}") String stripeApiKey) {
         this.ordenRepository = ordenRepository;
         this.itemOrdenRepository = itemOrdenRepository;
         this.usuarioService = usuarioService;
         this.productoService = productoService;
         this.metodoPagoService = metodoPagoService;
         this.auditoriaService = auditoriaService;
+        Stripe.apiKey = stripeApiKey;
     }
 
     @Override
@@ -76,9 +75,9 @@ public class OrdenServiceImpl implements OrdenService {
         if (producto.getStock() < dto.getCantidad()) {
             throw new StockInsuficienteException("Error no hay stock");
         }
-        if (!producto.getActivo()) {
-            throw new ProductoNotFoundException("Este producto no está disponible");
-        }
+       if (Boolean.FALSE.equals(producto.getActivo())) {
+    throw new ProductoNotFoundException("Este producto no está disponible");
+}
         Optional<Orden> orden = ordenRepository.findByUsuarioIdAndEstado(usuarioId, ESTADO_PENDIENTE);
         Orden ordenActual;
         if (orden.isPresent()) {
@@ -170,7 +169,7 @@ public class OrdenServiceImpl implements OrdenService {
             }
         }
         try {
-            Stripe.apiKey = stripeApiKey;
+           
             long totalCentavos = (long) (ordenAPagar.getTotal() * 100);
             PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
                     .setAmount(totalCentavos)

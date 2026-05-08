@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
+
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -142,7 +142,7 @@ private static final String PRONOSTICO_NO_ENCONTRADO = "Pronostico no encontrado
         return participacionRepository.findByApuestaIdOrderByPuntosDesc(apuestaId).stream()
                 .map(p -> new ParticipacionDTO(p.getId(), p.getUsuario().getId(),
                         p.getApuesta().getId(), p.getPuntos(), p.getPosicionRanking()))
-                .collect(Collectors.toList());
+                .toList();
     }
 @Transactional
     @Override
@@ -246,7 +246,7 @@ private static final String PRONOSTICO_NO_ENCONTRADO = "Pronostico no encontrado
         return participacionRepository.findByApuestaId(apuestaId).stream()
                 .map(p -> new ParticipacionDTO(p.getId(), p.getUsuario().getId(),
                         p.getApuesta().getId(), p.getPuntos(), p.getPosicionRanking()))
-                .collect(Collectors.toList());
+                .toList();
     }
     @Override
 public List<ApuestaDTO> listarApuestasPorUsuario(Long usuarioId) {
@@ -261,7 +261,7 @@ public List<ApuestaDTO> listarApuestasPorUsuario(Long usuarioId) {
                         apuesta.getFechaCierre(),
                         apuesta.getCreadaPor().getId());
             })
-            .collect(Collectors.toList());
+            .toList();
 }
 @Transactional(readOnly = true)
     @Override
@@ -298,7 +298,7 @@ public List<PronosticoDTO> misPronosticos(Long apuestaId, Long usuarioId) {
                     p.getUsuario().getId(),
                     p.getApuesta().getId(),
                     p.getPartido().getId()))
-            .collect(Collectors.toList());
+            .toList();
 }
 @Transactional
 @Override

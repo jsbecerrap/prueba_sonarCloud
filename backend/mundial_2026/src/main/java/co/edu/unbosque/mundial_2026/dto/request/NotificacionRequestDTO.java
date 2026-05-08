@@ -9,6 +9,7 @@ public class NotificacionRequestDTO {
     private Long usuarioId;
 
     public NotificacionRequestDTO() {
+        //Constructor vacio
     }
 
     public String getTipo() {

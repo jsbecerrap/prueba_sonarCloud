@@ -7,6 +7,7 @@ public class MetodoPagoRequestDTO {
     private String details;
 
     public MetodoPagoRequestDTO() {
+        //Constructor vacio
     }
 public Long getUsuarioId() { return usuarioId; }
 public void setUsuarioId(Long usuarioId) { this.usuarioId = usuarioId; }

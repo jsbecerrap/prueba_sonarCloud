@@ -22,7 +22,7 @@ import co.edu.unbosque.mundial_2026.repository.*;
 import co.edu.unbosque.mundial_2026.service.*;
 
 @ExtendWith(MockitoExtension.class)
-public class ServicesAdicionalesTest {
+class ServicesAdicionalesTest {
 
     // ── Mocks compartidos ─────────────────────────────────────────────────
 
@@ -120,15 +120,7 @@ public class ServicesAdicionalesTest {
         return p;
     }
 
-    private ItemOrden crearItem(Long id, Orden orden, Producto producto, int cantidad) {
-        ItemOrden item = new ItemOrden();
-        item.setId(id);
-        item.setOrden(orden);
-        item.setProducto(producto);
-        item.setCantidad(cantidad);
-        item.setPrecioUnitario(producto.getPrecio());
-        return item;
-    }
+ 
 
     private Entrada crearEntrada(Long id, Usuario usuario, Partido partido, String estado, int cantidad) {
         Entrada e = new Entrada();

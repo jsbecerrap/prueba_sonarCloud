@@ -46,6 +46,7 @@ public class Notificacion {
     private Usuario usuario;
 
     public Notificacion() {
+        //Constructor vacio
     }
 
     public Notificacion(String tipo, String titulo, String mensaje,

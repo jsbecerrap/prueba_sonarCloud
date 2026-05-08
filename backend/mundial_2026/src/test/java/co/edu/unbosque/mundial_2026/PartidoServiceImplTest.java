@@ -47,7 +47,7 @@ import co.edu.unbosque.mundial_2026.repository.UsuarioRepository;
 import co.edu.unbosque.mundial_2026.service.PartidoServiceImpl;
 
 @ExtendWith(MockitoExtension.class)
-public class PartidoServiceImplTest {
+class PartidoServiceImplTest {
 
     @Mock
     private RestClient footballClient;

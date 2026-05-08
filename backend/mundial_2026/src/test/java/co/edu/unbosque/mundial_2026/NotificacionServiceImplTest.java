@@ -21,7 +21,7 @@ import co.edu.unbosque.mundial_2026.service.EventoAuditoriaService;
 import co.edu.unbosque.mundial_2026.service.NotificacionServiceImpl;
 
 @ExtendWith(MockitoExtension.class)
-public class NotificacionServiceImplTest {
+ class NotificacionServiceImplTest {
 
     @Mock private NotificacionRepository notificacionRepository;
     @Mock private UsuarioRepository usuarioRepository;

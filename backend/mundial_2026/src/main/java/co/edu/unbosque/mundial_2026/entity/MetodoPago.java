@@ -36,6 +36,7 @@ public class MetodoPago {
     private String createdAt;
 
     public MetodoPago() {
+        //Constructor vacio
     }
 
     public Long getId() {

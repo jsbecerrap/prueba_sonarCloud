@@ -8,9 +8,9 @@ import org.springframework.http.ResponseEntity;
 
 import co.edu.unbosque.mundial_2026.exception.*;
 
-public class ErrorHandlerExceptionTest {
+ class ErrorHandlerExceptionTest {
 
-    private final ErrorHandlerException handler = new ErrorHandlerException();
+    private final GlobalExceptionHandler handler = new GlobalExceptionHandler();
 
     @Test
     void handleUsuarioNotFound_retorna404() {

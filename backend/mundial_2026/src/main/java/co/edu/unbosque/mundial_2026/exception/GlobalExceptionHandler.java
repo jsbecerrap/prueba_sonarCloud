@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @RestControllerAdvice
-public class ErrorHandlerException {
+public class GlobalExceptionHandler{
 
     @ExceptionHandler(UsuarioNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleUsuarioNotFound(UsuarioNotFoundException e) {

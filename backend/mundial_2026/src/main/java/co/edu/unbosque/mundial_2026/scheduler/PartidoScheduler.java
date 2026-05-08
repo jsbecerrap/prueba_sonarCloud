@@ -30,7 +30,7 @@ public class PartidoScheduler {
         try {
             final int actualizados = partidoService
                     .sincronizarPorFechaYLiga(hoy, LIGA_MUNDIAL, TEMPORADA_MUNDIAL);
-           logger.info(String.format("Partidos actualizados hoy: %d", actualizados));
+          logger.log(java.util.logging.Level.INFO, "Partidos actualizados hoy: {0}", actualizados);
         } catch (Exception e) {
             logger.warning("Error actualizando partidos: " + e.getMessage());
         }

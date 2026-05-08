@@ -42,6 +42,7 @@ public class Pronostico {
     private Partido partido;
 
     public Pronostico() {
+        //Constructor vacio
     }
 
     public Long getId() {

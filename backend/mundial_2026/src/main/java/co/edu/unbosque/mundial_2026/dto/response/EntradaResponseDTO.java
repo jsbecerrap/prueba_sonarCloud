@@ -16,6 +16,7 @@ public class EntradaResponseDTO {
     private String paymentRef;
 
     public EntradaResponseDTO() {
+        //Constructor vacio
     }
 
     public Long getId() {

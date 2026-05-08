@@ -24,7 +24,7 @@ import co.edu.unbosque.mundial_2026.repository.OrdenRepository;
 import co.edu.unbosque.mundial_2026.service.*;
 
 @ExtendWith(MockitoExtension.class)
-public class OrdenServiceImplTest {
+class OrdenServiceImplTest {
 
     @Mock private OrdenRepository ordenRepository;
     @Mock private ItemOrdenRepository itemOrdenRepository;

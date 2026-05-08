@@ -27,7 +27,7 @@ import co.edu.unbosque.mundial_2026.service.UserDetailsServiceImpl;
 import co.edu.unbosque.mundial_2026.service.UsuarioService;
 
 @ExtendWith(MockitoExtension.class)
-public class EventoAuditoriaYUserDetailsTest {
+ class EventoAuditoriaYUserDetailsTest {
 
     // ── EventoAuditoriaServiceImpl ────────────────────────────────────────
 

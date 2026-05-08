@@ -10,6 +10,7 @@ public class MetodoPagoResponseDTO {
     private String createdAt;
 
     public MetodoPagoResponseDTO() {
+        //Constructor vacio
     }
 
     public String getId() {

@@ -39,6 +39,7 @@ private String descripcion;
     private Usuario usuario;
 
     public EventoAuditoria() {
+        //Constructor vacio
     }
 
     public EventoAuditoria(String tipo, String descripcion, LocalDateTime fecha,

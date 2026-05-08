@@ -13,7 +13,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import co.edu.unbosque.mundial_2026.dto.request.EntradaRequestDTO;
 import co.edu.unbosque.mundial_2026.dto.request.TransferenciaRequestDTO;
@@ -24,7 +23,7 @@ import co.edu.unbosque.mundial_2026.repository.EntradaRepository;
 import co.edu.unbosque.mundial_2026.service.*;
 
 @ExtendWith(MockitoExtension.class)
-public class EntradaServiceImplTest {
+class EntradaServiceImplTest {
 
     @Mock private EntradaRepository entradaRepository;
     @Mock private UsuarioService usuarioService;
