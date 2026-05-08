@@ -495,4 +495,42 @@ void listarDesdeBD_retornaLista() {
     assertNotNull(resultado);
     assertEquals(1, resultado.size());
 }
+@Test
+void sincronizarPorFechaYLiga_conPartidos_guardaYRetornaConteo() {
+    PartidoResponseDTO response = new PartidoResponseDTO();
+    response.setPartidos(List.of(crearPartidoDTO()));
+    mockRestClient(response);
+
+    when(partidoRepository.findById(any())).thenReturn(Optional.empty());
+    when(partidoRepository.saveAll(anyList())).thenReturn(List.of(new Partido()));
+
+    int resultado = service.sincronizarPorFechaYLiga("2026-06-11", 1, 2026);
+
+    assertEquals(1, resultado);
+    verify(partidoRepository).saveAll(anyList());
+}
+
+@Test
+void sincronizarPorFechaYLiga_respuestaVacia_retornaCero() {
+    PartidoResponseDTO response = new PartidoResponseDTO();
+    response.setPartidos(List.of());
+    mockRestClient(response);
+
+    int resultado = service.sincronizarPorFechaYLiga("2026-06-11", 1, 2026);
+
+    assertEquals(0, resultado);
+}
+
+@Test
+void obtenerSelecciones_retornaLista() {
+    co.edu.unbosque.mundial_2026.dto.response.EquipoMundialResponseDTO response =
+        new co.edu.unbosque.mundial_2026.dto.response.EquipoMundialResponseDTO();
+    response.setEquipos(List.of());
+    mockRestClient(response);
+
+    List<co.edu.unbosque.mundial_2026.dto.response.EquipoMundialDTO> resultado = 
+        service.obtenerSelecciones();
+
+    assertNotNull(resultado);
+}
 }
