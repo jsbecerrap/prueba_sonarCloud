@@ -321,4 +321,44 @@ class ControllersTest {
         ResponseEntity<?> res = usuarioController.listarCiudades();
         assertEquals(200, res.getStatusCode().value());
     }
+    @Test
+void apuesta_crearApuesta_retornaOk() {
+    co.edu.unbosque.mundial_2026.dto.request.ApuestaRequestDTO dto =
+        new co.edu.unbosque.mundial_2026.dto.request.ApuestaRequestDTO();
+    when(apuestaService.crearApuesta(dto)).thenReturn(new ApuestaDTO());
+    ResponseEntity<?> res = apuestaController.crearApuesta(dto);
+    assertEquals(200, res.getStatusCode().value());
+}
+
+@Test
+void apuesta_unirseApuesta_retornaOk() {
+    when(apuestaService.unirseApuesta("codigo", 1L)).thenReturn(new ApuestaDTO());
+    ResponseEntity<?> res = apuestaController.unirseApuesta(1L, "\"codigo\"");
+    assertEquals(200, res.getStatusCode().value());
+}
+
+@Test
+void apuesta_registrarPronostico_retornaOk() {
+    co.edu.unbosque.mundial_2026.dto.request.PronosticoRequestDTO dto =
+        new co.edu.unbosque.mundial_2026.dto.request.PronosticoRequestDTO();
+    when(apuestaService.registrarPronostico(dto)).thenReturn(new PronosticoDTO());
+    ResponseEntity<?> res = apuestaController.registrarPronostico(dto);
+    assertEquals(200, res.getStatusCode().value());
+}
+
+@Test
+void apuesta_editarPronostico_retornaOk() {
+    co.edu.unbosque.mundial_2026.dto.request.PronosticoRequestDTO dto =
+        new co.edu.unbosque.mundial_2026.dto.request.PronosticoRequestDTO();
+    when(apuestaService.editarPronostico(1L, dto)).thenReturn(new PronosticoDTO());
+    ResponseEntity<?> res = apuestaController.editarPronostico(1L, dto);
+    assertEquals(200, res.getStatusCode().value());
+}
+
+@Test
+void apuesta_eliminarPronostico_retornaNoContent() {
+    doNothing().when(apuestaService).eliminarPronostico(1L);
+    ResponseEntity<?> res = apuestaController.eliminarPronostico(1L);
+    assertEquals(204, res.getStatusCode().value());
+}
 }
