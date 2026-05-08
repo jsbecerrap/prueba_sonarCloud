@@ -161,15 +161,15 @@ public class ApuestaServiceImplTest {
     }
 
     @Test
-    void cerrarApuesta_apuestaYaCerrada_lanzaExcepcion() {
-        Usuario creador = crearUsuario(1L);
-        Apuesta apuesta = crearApuesta(1L, "CERRADA", creador);
+void cerrarApuesta_apuestaYaCerrada_lanzaExcepcion() {
+    Usuario creador = crearUsuario(1L);
+    Apuesta apuesta = crearApuesta(1L, "CERRADA", creador);
 
-        when(apuestaRepository.findById(1L)).thenReturn(Optional.of(apuesta));
+    when(apuestaRepository.findById(1L)).thenReturn(Optional.of(apuesta));
 
-        assertThrows(EstadoInvalidoException.class,
-                () -> service.cerrarApuesta(1L));
-    }
+    assertThrows(ApuestaCerradaException.class,  // ← correcto
+            () -> service.cerrarApuesta(1L));
+}
 
     @Test
     void cerrarApuesta_noExistente_lanzaExcepcion() {
