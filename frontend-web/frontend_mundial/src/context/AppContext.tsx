@@ -38,7 +38,7 @@ const AppContext = createContext<AppState | undefined>(undefined);
 
 const LS_POOL = "mundial_activePool";
 
-export function AppProvider({ children }: { children: React.ReactNode }) {
+export function AppProvider({ children }: { readonly children: React.ReactNode }) {
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [activePoolCode, setActivePoolCode] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(true);

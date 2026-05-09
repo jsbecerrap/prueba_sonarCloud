@@ -166,7 +166,7 @@ export default function PollPronostico() {
                     size="small"
                     value={d.hs}
                     disabled={closed || loading}
-                    inputProps={{ min: 0, max: 20 }}
+                    slotProps={{ htmlInput: { min: 0, max: 20 } }}
                     sx={{ width: 80 }}
                     onChange={(e) =>
                       setDraft((prev) => ({
@@ -181,7 +181,7 @@ export default function PollPronostico() {
                     size="small"
                     value={d.as}
                     disabled={closed || loading}
-                    inputProps={{ min: 0, max: 20 }}
+                    slotProps={{ htmlInput: { min: 0, max: 20 } }}
                     sx={{ width: 80 }}
                     onChange={(e) =>
                       setDraft((prev) => ({

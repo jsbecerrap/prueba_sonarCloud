@@ -326,7 +326,7 @@ export default function Marketplace() {
 
             onChange={(e) => setPrice(Number(e.target.value))} 
 
-            inputProps={{ min: 1 }} 
+          slotProps={{ htmlInput: { min: 1 } }}
 
             error={Boolean(priceError)}
             helperText={priceError || "Entre 1 y 200 monedas. Precio recomendado: 5."} 

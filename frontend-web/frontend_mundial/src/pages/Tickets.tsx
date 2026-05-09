@@ -68,19 +68,19 @@ export default function Tickets() {
       set.add(m.home.name);
       set.add(m.away.name);
     });
-    return Array.from(set).sort();
+    return Array.from(set).sort((a, b) => a.localeCompare(b))
   }, [matches]);
 
   const ciudades = useMemo(() => {
     const set = new Set<string>();
     matches.forEach((m) => set.add(m.city));
-    return Array.from(set).sort();
+    return Array.from(set).sort((a, b) => a.localeCompare(b))
   }, [matches]);
 
   const estadios = useMemo(() => {
     const set = new Set<string>();
     matches.forEach((m) => set.add(m.stadium));
-    return Array.from(set).sort();
+    return Array.from(set).sort((a, b) => a.localeCompare(b))
   }, [matches]);
 
   const filteredMatches = useMemo(() => {
@@ -281,7 +281,7 @@ const onRefund = async (ticketId: string) => {
             onChange={(e) => setQuantity(Number(e.target.value))}
             error={Boolean(quantityError)}
             helperText={quantityError || "Máximo 4 entradas por reserva."}
-            inputProps={{ min: 1, max: 4 }}
+          slotProps={{ htmlInput: { min: 1, max: 4 } }}
             disabled={loading}
             sx={{ minWidth: { md: 180 } }}
           />

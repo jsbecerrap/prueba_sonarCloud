@@ -54,11 +54,10 @@ import {
 adminCerrarApuesta,
 adminEliminarApuesta,
 adminForzarPuntos,
-adminEnviarNotificacion,
 adminEnviarMasiva,
 adminNotificarPorPartido,
 } from "../api/adminApi";
-import type { UsuarioSistema, Categoria, Producto, PartidoCapacidad, Apuesta, NotificacionRequest, NotificacionMasivaRequest } from "../api/adminApi";
+import type { UsuarioSistema, Categoria, Producto, PartidoCapacidad, Apuesta } from "../api/adminApi";
 const statusLabels: Record<MatchStatus, string> = {
   SCHEDULED: "Programado",
   LIVE: "En vivo",
@@ -102,7 +101,7 @@ function fromLocalDatetimeInputToISO(localValue: string) {
 }
 
 function makeTeamCode(name: string) {
-  return name.trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Za-z]/g, "").slice(0, 3).toUpperCase();
+ return name.trim().normalize("NFD").replaceAll(/[\u0300-\u036f]/g, "").replaceAll(/[^A-Za-z]/g, "").slice(0, 3).toUpperCase();
 }
 
 function validateScore(value: number, label: string) {
@@ -228,7 +227,7 @@ setApuestas(apuestas);
     return events.filter((e) => e.type === eventFilter);
   }, [events, eventFilter]);
 
-  const eventTypes = useMemo(() => Array.from(new Set(events.map((e) => e.type))).sort(), [events]);
+  const eventTypes = useMemo(() => Array.from(new Set(events.map((e) => e.type))).sort((a, b) => a.localeCompare(b)), [events]);
 
   const validateMatchForm = () => {
     const nextErrors: FieldErrors<MatchField> = {
@@ -572,7 +571,7 @@ const onEnviarNotificacion = async () => {
       <Stack direction={{ xs: "column", md: "row" }} spacing={2} justifyContent="space-between" alignItems={{ md: "center" }}>
         <Typography variant="h6">Partidos</Typography>
         <Stack direction="row" spacing={1}>
-          <TextField label="Filtrar por fecha" type="date" size="small" value={fechaFiltro} onChange={(e) => setFechaFiltro(e.target.value)} disabled={loading} InputLabelProps={{ shrink: true }} />
+          <TextField label="Filtrar por fecha" type="date" size="small" value={fechaFiltro} onChange={(e) => setFechaFiltro(e.target.value)} disabled={loading} slotProps={{ inputLabel: { shrink: true } }} />
           <Button variant="outlined" size="small" disabled={loading} onClick={onFiltrarFecha}>Filtrar</Button>
           <Button variant="outlined" size="small" disabled={loading} onClick={async () => { const all = await adminGetPartidos(); setPartidos(all); setFechaFiltro(""); }}>Ver todos</Button>
         </Stack>

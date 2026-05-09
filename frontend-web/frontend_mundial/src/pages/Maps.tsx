@@ -20,13 +20,16 @@ export default function Maps() {
   const [stadiums, setStadiums] = useState<Stadium[]>(stadiumsMock);
   const [selectedId, setSelectedId] = useState(stadiumsMock[0].id);
 
-  useEffect(() => {
-    getStadiums().then((data) => {
-      if (data.length === 0) return;
-      setStadiums(data);
-      setSelectedId((current) => data.some((stadium) => stadium.id === current) ? current : data[0].id);
-    });
-  }, []);
+useEffect(() => {
+  const loadStadiums = async () => {
+    const data = await getStadiums();
+    if (data.length === 0) return;
+    setStadiums(data);
+    const currentIsValid = data.some((stadium) => stadium.id === selectedId);
+    setSelectedId(currentIsValid ? selectedId : data[0].id);
+  };
+  void loadStadiums();
+}, []);
 
   const filtered = useMemo(() => {
     const cleanQuery = query.trim().toLowerCase();

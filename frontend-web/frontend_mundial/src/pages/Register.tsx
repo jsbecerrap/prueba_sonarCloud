@@ -75,7 +75,6 @@ export default function Register() {
       setAvatarUrl(String(reader.result));
       setErrors((current) => {
         const { avatar, ...rest } = current;
-        void avatar;
         return rest;
       });
     };

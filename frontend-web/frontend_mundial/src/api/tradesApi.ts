@@ -69,7 +69,7 @@ export async function createTradeOffer(
   want: Sticker
 ): Promise<TradeOffer> {
   if (!USE_MOCK) {
-    void fromUserId;
+    
     return http.post<TradeOffer>(`/album/${poolCode}/trades`, {
       toUserId,
       giveStickerId: give.id,

@@ -198,36 +198,38 @@ if (!USE_MOCK) {
   }
 
 
-  await sleep();
-  const pm = findPaymentMethod(userId, paymentMethodId);
-  if (!pm) throw new Error("Método de pago inválido");
-  const ticket = mockDb.tickets.find((t) => t.id === ticketId && t.userId === userId);
-  if (!ticket) throw new Error("Ticket no existe");
-if (ticket.status !== "RESERVADA") throw new Error("El ticket no está disponible para pago");
-  const tx: PaymentTx = {
-    id: txid(),
-    userId,
-    kind: "TICKET",
-    ticketId,
-    paymentMethodId,
-    amount,
-    currency: "COP",
-    status: "PENDING",
-    createdAt: nowIso(),
-    provider,
-    providerRef: providerRef(),
-  };
-  mockDb.paymentsTx.unshift(tx);
-  await createSystemEvent({
-    type: "PAYMENT_CREATED",
-    actorId: userId,
-    actorName: userId,
-    entityType: "PAYMENT",
-    entityId: tx.id,
-    message: `Transacción creada para ticket ${ticketId}`,
-    data: { ticketId, amount, provider, paymentMethodId },
-  });
-  return tx;
+ await sleep();
+const pm = findPaymentMethod(userId, paymentMethodId);
+if (!pm) throw new Error("Método de pago inválido");
+const ticket = mockDb.tickets.find((t) => t.id === ticketId && t.userId === userId);
+if (!ticket) throw new Error("Ticket no existe");
+if (ticket.status !== "RESERVADA") {
+  throw new Error("El ticket no está disponible para pago");
+}
+const tx: PaymentTx = {
+  id: txid(),
+  userId,
+  kind: "TICKET",
+  ticketId,
+  paymentMethodId,
+  amount,
+  currency: "COP",
+  status: "PENDING",
+  createdAt: nowIso(),
+  provider,
+  providerRef: providerRef(),
+};
+mockDb.paymentsTx.unshift(tx);
+await createSystemEvent({
+  type: "PAYMENT_CREATED",
+  actorId: userId,
+  actorName: userId,
+  entityType: "PAYMENT",
+  entityId: tx.id,
+  message: `Transacción creada para ticket ${ticketId}`,
+  data: { ticketId, amount, provider, paymentMethodId },
+});
+return tx;
 }
 
 export async function createCoinsPayment(

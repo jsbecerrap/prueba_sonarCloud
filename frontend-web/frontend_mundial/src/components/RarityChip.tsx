@@ -4,9 +4,8 @@ import { Chip } from "@mui/material";
 
 import type { Sticker } from "../types/sticker"; 
 
- 
+ type Props = { readonly rarity: Sticker["rarity"] };
 
-type Props = { rarity: Sticker["rarity"] }; 
 
  
 
@@ -78,36 +77,20 @@ const map = (rarity: Props["rarity"]) => {
 
 }; 
 
- 
 
 export default function RarityChip({ rarity }: Props) { 
-
   const r = map(rarity); 
-
   return ( 
-
     <Chip 
-
       size="small" 
-
       variant="outlined" 
-
       label={r.label} 
-
       sx={{ 
-
         borderRadius: 999, 
-
         fontWeight: 900, 
-
         letterSpacing: 0.4, 
-
         ...r.sx, 
-
       }} 
-
     /> 
-
   ); 
-
-} 
+}

@@ -346,7 +346,7 @@ public List<EntradaResponseDTO> listarEntradasUsuario(String correo) {
     Usuario u = usuarioService.obtenerEntidadPorCorreo(correo); 
     return entradaRepository.findByUsuarioId(u.getId())
         .stream()
-        .map(e -> toDTO(e))
+        .map(this::toDTO)
         .toList();
 }
     @Override

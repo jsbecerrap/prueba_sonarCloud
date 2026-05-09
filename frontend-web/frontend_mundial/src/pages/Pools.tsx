@@ -159,7 +159,7 @@ export default function Pools() {
               value={fechaCierre}
               onChange={(e) => setFechaCierre(e.target.value)}
               disabled={loading}
-              InputLabelProps={{ shrink: true }}
+              slotProps={{ inputLabel: { shrink: true } }}
             />
             <Button variant="contained" onClick={onCreate} disabled={loading}>
               Crear

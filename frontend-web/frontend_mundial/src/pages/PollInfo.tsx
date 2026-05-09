@@ -191,7 +191,7 @@ getMatches(),
                       onChange={(e) =>
                         setEditDraft((prev) => ({ ...prev, hs: Number(e.target.value) }))
                       }
-                      inputProps={{ min: 0, max: 20 }}
+                      slotProps={{ htmlInput: { min: 0, max: 20 } }}
                       sx={{ width: 80 }}
                     />
                     <TextField
@@ -202,7 +202,7 @@ getMatches(),
                       onChange={(e) =>
                         setEditDraft((prev) => ({ ...prev, as: Number(e.target.value) }))
                       }
-                      inputProps={{ min: 0, max: 20 }}
+                      slotProps={{ htmlInput: { min: 0, max: 20 } }}
                       sx={{ width: 80 }}
                     />
                     <Button variant="contained" size="small" disabled={loading}

@@ -48,7 +48,6 @@ export async function createListing(
   groupId?: string
 ): Promise<boolean> {
   if (!USE_MOCK) {
-    void sellerId;
     return http.post<boolean>(`/album/${poolCode}/market/listings`, {
       stickerId,
       price,
@@ -104,7 +103,6 @@ export async function buyListing(
   listingId: string
 ): Promise<boolean> {
   if (!USE_MOCK) {
-    void buyerId;
     return http.post<boolean>(`/album/${poolCode}/market/listings/${listingId}/buy`);
   }
 
@@ -154,7 +152,6 @@ export async function cancelListing(
   listingId: string
 ): Promise<boolean> {
   if (!USE_MOCK) {
-    void sellerId;
     return http.post<boolean>(`/album/${poolCode}/market/listings/${listingId}/cancel`);
   }
 

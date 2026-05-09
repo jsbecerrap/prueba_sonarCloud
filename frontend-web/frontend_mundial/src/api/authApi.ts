@@ -63,12 +63,15 @@ function buildMockUser(
   avatarUrl = ""
 ): CurrentUser {
   const key = email.trim().toLowerCase() || name.trim().toLowerCase();
-  const mockId =
-    key === "sara"
-      ? "u1"
-      : key === "juan"
-      ? "u2"
-      : `u_${key.replace(/\s+/g, "_")}`;
+  
+  let mockId: string;
+  if (key === "sara") {
+    mockId = "u1";
+  } else if (key === "juan") {
+    mockId = "u2";
+  } else {
+    mockId = `u_${key.replaceAll(" ", "_")}`;
+  }
 
   return {
     id: mockId,
@@ -136,19 +139,25 @@ export async function loginApi(
     return { token: res.token, user };
   }
 
-  const lowerUser = trimmed.toLowerCase();
-  const role: Role =
-    lowerUser.includes("admin") || password === "Admin2026*"
-      ? "admin"
-      : lowerUser.includes("soporte") ||
-        lowerUser.includes("support") ||
-        password === "Soporte2026*"
-      ? "support"
-      : "user";
-  const user = buildMockUser(trimmed, role, "", trimmed.includes("@") ? trimmed : "");
-  const token = buildMockToken(user);
+ const lowerUser = trimmed.toLowerCase();
 
-  setAuthToken(token);
+let role: Role;
+if (lowerUser.includes("admin") || password === "Admin2026*") {
+  role = "admin";
+} else if (
+  lowerUser.includes("soporte") ||
+  lowerUser.includes("support") ||
+  password === "Soporte2026*"
+) {
+  role = "support";
+} else {
+  role = "user";
+}
+
+const user = buildMockUser(trimmed, role, "", trimmed.includes("@") ? trimmed : "");
+const token = buildMockToken(user);
+
+setAuthToken(token);
 
   await createSystemEvent({
     type: "AUTH_LOGIN",
@@ -272,16 +281,3 @@ export async function getMeApi(): Promise<CurrentUser | null> {
 
   return parseMockToken(token);
 }
-void (async () => {
-  try {
-    const permiso = await Notification.requestPermission();
-    console.log("Permiso FCM:", permiso); // ← agregar
-    if (permiso !== "granted") return;
-    const fcmToken = await getToken(messaging, { vapidKey: VAPID_KEY });
-    console.log("Token FCM obtenido:", fcmToken); // ← agregar
-    if (fcmToken) await registrarFcmToken(fcmToken);
-    console.log("Token FCM registrado"); // ← agregar
-  } catch (e) {
-    console.error("Error FCM:", e); // ← cambiar a error
-  }
-})();

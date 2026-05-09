@@ -64,7 +64,7 @@ export default function Album() {
   );
 
   const countries = useMemo(
-    () => Array.from(new Set(catalog.map((sticker) => sticker.team))).sort(),
+    () =>Array.from(new Set(catalog.map((sticker) => sticker.team))).sort((a, b) => a.localeCompare(b)),
     []
   );
 

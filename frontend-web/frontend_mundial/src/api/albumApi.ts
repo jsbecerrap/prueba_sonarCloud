@@ -184,23 +184,15 @@ function ensureMember(poolCode: string, userId: string, userName: string) {
 
  
 
-  if (!member) { 
-
-    member = { 
-
-      user: { id: userId, name: userName, stickers: [], repeated: [] }, 
-
-      points: 0, 
-
-    }; 
-
-    pool.members.push(member); 
-
-  } else { 
-
-    member.user.name = userName; 
-
-  } 
+  if (member) {
+  member.user.name = userName;
+} else {
+  member = {
+    user: { id: userId, name: userName, stickers: [], repeated: [] },
+    points: 0,
+  };
+  pool.members.push(member);
+}
 
  
 
@@ -310,27 +302,17 @@ export async function openPack(
 
  
 
-  for (const st of pack) { 
+  for (const st of pack) {
+  const already = member.user.stickers!.some((x) => x.id === st.id);
 
-    const already = member.user.stickers!.some((x) => x.id === st.id); 
-
- 
-
-    if (!already) { 
-
-      member.user.stickers!.push(st); 
-
-      pushEvent(poolCode, userId, "STICKER_NEW", { sticker: st }); 
-
-    } else { 
-
-      member.user.repeated!.push(st); 
-
-      pushEvent(poolCode, userId, "STICKER_DUPLICATE", { sticker: st }); 
-
-    } 
-
-  } 
+  if (already) {
+    member.user.repeated!.push(st);
+    pushEvent(poolCode, userId, "STICKER_DUPLICATE", { sticker: st });
+  } else {
+    member.user.stickers!.push(st);
+    pushEvent(poolCode, userId, "STICKER_NEW", { sticker: st });
+  }
+}
 
  
 

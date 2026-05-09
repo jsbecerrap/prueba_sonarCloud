@@ -182,7 +182,7 @@ public List<EquipoMundialDTO> obtenerSelecciones() {
                 .body(PartidoResponseDTO.class);
 
         final List<Partido> partidos = response.getPartidos().stream()
-                .map(dto -> procesarPartido(dto))
+                .map(this::procesarPartido)
                 .toList();
 
         partidoRepository.saveAll(partidos);
@@ -228,7 +228,7 @@ final Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
                         final String nombre = p.getInformacion().getEstadio().getNombre();
                         return nombre != null && nombre.equalsIgnoreCase(nombreEstadio);
                     })
-                    .forEach(p -> listaPartidos.add(p));
+                 .forEach(listaPartidos::add);
         }
         return listaPartidos;
     }

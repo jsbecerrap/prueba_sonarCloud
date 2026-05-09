@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { Alert, Button, Paper, Stack, TextField, Typography } from "@mui/material";
 import { getToken } from "firebase/messaging";
 import { messaging, VAPID_KEY } from "../firebaseConfig";
-import { registrarFcmToken } from "../api/notificationApi";
 import {
+  registrarFcmToken,
   createNotification,
   deleteNotification,
   getNotifications,

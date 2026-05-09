@@ -2,7 +2,7 @@ import { CircularProgress, Stack, Typography } from "@mui/material";
 
  
 
-export default function FullPageLoader({ text = "Cargando..." }: { text?: string }) { 
+export default function FullPageLoader({ text = "Cargando..." }: { readonly text?: string }) {
 
   return ( 
 

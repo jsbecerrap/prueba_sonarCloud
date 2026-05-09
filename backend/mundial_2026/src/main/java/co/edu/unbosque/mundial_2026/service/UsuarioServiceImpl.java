@@ -61,7 +61,7 @@ public UsuarioServiceImpl(UsuarioRepository repository, RolRepository rolReposit
     @Transactional(readOnly = true)
     public List<UsuarioResponseDTO> listarTodos() {
         return repository.findAll().stream()
-        .map(usuario -> toResponseDTO(usuario))
+        .map(this::toResponseDTO)
         .toList();
     }
 //Registra al usuario guardandolo en la base de datos verificando los datos,aplicando las excepciones,hasheando la contraseña 
@@ -82,7 +82,6 @@ public UsuarioServiceImpl(UsuarioRepository repository, RolRepository rolReposit
         usuario.setNombre(dto.getNombre());
         usuario.setApellido(dto.getApellido());
         Usuario guardado = repository.save(usuario);
-notificacionService.notificarRegistro(guardado);
 return toResponseDTO(guardado);
     }
 
@@ -331,7 +330,14 @@ public Usuario obtenerEntidadPorCorreo(final String correo) {
 public void actualizarFcmToken(String correo, String fcmToken) {
     Usuario usuario = repository.findByCorreoUsuario(correo)
             .orElseThrow(() -> new UsuarioNotFoundException(USUARIO_NO_ENCONTRADO));
+    
+    boolean esPrimerToken = usuario.getFcmtoken() == null || usuario.getFcmtoken().isBlank();
+    
     usuario.setFcmtoken(fcmToken);
     repository.save(usuario);
+    
+    if (esPrimerToken) {
+        notificacionService.notificarRegistro(usuario);
+    }
 }
 }
