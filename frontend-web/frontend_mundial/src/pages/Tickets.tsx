@@ -28,14 +28,14 @@ type Msg = { text: string; severity: "success" | "error" | "info" } | null;
 const ticketPrice = 50000;
 
 function statusLabel(status: Ticket["status"]) {
- const labels: Record<Ticket["status"], string> = {
+  const labels: Record<Ticket["status"], string> = {
     RESERVADA: "Reservada",
     PAGADA: "Pagada",
     CANCELADA: "Cancelada",
     EXPIRADA: "Expirada",
     REEMBOLSADA: "Reembolsada",
     TRANSFERIDA: "Transferida",
-};
+  };
   return labels[status];
 }
 
@@ -62,47 +62,55 @@ export default function Tickets() {
 
   const matchById = useMemo(() => new Map(matches.map((match) => [match.id, match])), [matches]);
 
+  // ─── Dropdowns construidos desde partidosCapacidad (fuente correcta: BD propia) ───
+
   const selecciones = useMemo(() => {
     const set = new Set<string>();
-    matches.forEach((m) => {
-      set.add(m.home.name);
-      set.add(m.away.name);
+    partidosCapacidad.forEach((p) => {
+      if (p.local) set.add(p.local);
+      if (p.visitante) set.add(p.visitante);
     });
-    return Array.from(set).sort((a, b) => a.localeCompare(b))
-  }, [matches]);
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [partidosCapacidad]);
 
   const ciudades = useMemo(() => {
     const set = new Set<string>();
-    matches.forEach((m) => set.add(m.city));
-    return Array.from(set).sort((a, b) => a.localeCompare(b))
-  }, [matches]);
+    partidosCapacidad.forEach((p) => {
+      if (p.ciudad) set.add(p.ciudad);
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [partidosCapacidad]);
 
   const estadios = useMemo(() => {
     const set = new Set<string>();
-    matches.forEach((m) => set.add(m.stadium));
-    return Array.from(set).sort((a, b) => a.localeCompare(b))
-  }, [matches]);
+    partidosCapacidad.forEach((p) => {
+      if (p.estadio) set.add(p.estadio);
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [partidosCapacidad]);
 
-  const filteredMatches = useMemo(() => {
-    return matches.filter((m) => {
-      if (filterSeleccion && m.home.name !== filterSeleccion && m.away.name !== filterSeleccion) return false;
-      if (filterCiudad && m.city !== filterCiudad) return false;
-      if (filterEstadio && m.stadium !== filterEstadio) return false;
+  // ─── Lista de partidos filtrada también desde partidosCapacidad ───
+
+  const filteredPartidos = useMemo(() => {
+    return partidosCapacidad.filter((p) => {
+      if (filterSeleccion && p.local !== filterSeleccion && p.visitante !== filterSeleccion) return false;
+      if (filterCiudad && p.ciudad !== filterCiudad) return false;
+      if (filterEstadio && p.estadio !== filterEstadio) return false;
       return true;
     });
-  }, [matches, filterSeleccion, filterCiudad, filterEstadio]);
+  }, [partidosCapacidad, filterSeleccion, filterCiudad, filterEstadio]);
 
   const refresh = useCallback(async () => {
     if (!user) return;
     const [ticketsData, matchesData, partidosData] = await Promise.all([
-    getMyTickets(user.id),
-    getMatches(),
-    getPartidosConCapacidad()
-]);
-setItems(ticketsData ?? []);
-setMatches(matchesData ?? []);
-setPartidosCapacidad(partidosData ?? []);
-setSelectedMatchId((current) => current || matchesData[0]?.id || "");
+      getMyTickets(user.id),
+      getMatches(),
+      getPartidosConCapacidad(),
+    ]);
+    setItems(ticketsData ?? []);
+    setMatches(matchesData ?? []);
+    setPartidosCapacidad(partidosData ?? []);
+    setSelectedMatchId((current) => current || String(partidosData[0]?.id) || "");
   }, [user]);
 
   useEffect(() => {
@@ -113,13 +121,14 @@ setSelectedMatchId((current) => current || matchesData[0]?.id || "");
     () => ({
       total: items.length,
       reserved: items.filter((t) => t.status === "RESERVADA").length,
-paid: items.filter((t) => t.status === "PAGADA").length,
-refunded: items.filter((t) => t.status === "REEMBOLSADA").length,
-cancelled: items.filter((t) => t.status === "CANCELADA").length,
-expired: items.filter((t) => t.status === "EXPIRADA").length,
+      paid: items.filter((t) => t.status === "PAGADA").length,
+      refunded: items.filter((t) => t.status === "REEMBOLSADA").length,
+      cancelled: items.filter((t) => t.status === "CANCELADA").length,
+      expired: items.filter((t) => t.status === "EXPIRADA").length,
     }),
     [items]
-);
+  );
+
   if (!user) {
     return (
       <Stack spacing={2}>
@@ -143,7 +152,7 @@ expired: items.filter((t) => t.status === "EXPIRADA").length,
     try {
       setLoading(true);
       setMsg(null);
-      const ticket = await reserveTicket(user.id, selectedMatchId, quantity);
+      await reserveTicket(user.id, selectedMatchId, quantity);
       setMsg({ text: "Reserva creada. Tienes 15 minutos para pagarla.", severity: "success" });
       await refresh();
     } catch (e) {
@@ -153,20 +162,22 @@ expired: items.filter((t) => t.status === "EXPIRADA").length,
       setLoading(false);
     }
   };
-const onRefund = async (ticketId: string) => {
+
+  const onRefund = async (ticketId: string) => {
     if (!confirm("¿Seguro que quieres reembolsar esta entrada?")) return;
     try {
-        setLoading(true);
-        await markTicketAsRefunded(String(user.id), ticketId);
-        setMsg({ text: "Entrada reembolsada correctamente.", severity: "success" });
-        await refresh();
+      setLoading(true);
+      await markTicketAsRefunded(String(user.id), ticketId);
+      setMsg({ text: "Entrada reembolsada correctamente.", severity: "success" });
+      await refresh();
     } catch (e) {
-        const message = e instanceof Error ? e.message : "Error reembolsando la entrada.";
-        setMsg({ text: message, severity: "error" });
+      const message = e instanceof Error ? e.message : "Error reembolsando la entrada.";
+      setMsg({ text: message, severity: "error" });
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
-};
+  };
+
   const onCancel = async (ticketId: string) => {
     try {
       setLoading(true);
@@ -265,14 +276,14 @@ const onRefund = async (ticketId: string) => {
             disabled={loading}
             fullWidth
           >
-            {filteredMatches.map((match) => {
-    const capacidad = partidosCapacidad.find((p) => String(p.id) === String(match.id));
-    return (
-        <MenuItem key={match.id} value={match.id}>
-            {match.home.name} vs {match.away.name} · {match.city} · {capacidad ? capacidad.capacidadDisponible.toLocaleString() + " cupos" : ""}
-        </MenuItem>
-    );
-})}
+            {filteredPartidos.length === 0 && (
+              <MenuItem value="" disabled>No hay partidos disponibles</MenuItem>
+            )}
+            {filteredPartidos.map((p) => (
+              <MenuItem key={p.id} value={String(p.id)}>
+                {p.local} vs {p.visitante} · {p.ciudad} · {p.capacidadDisponible.toLocaleString()} cupos
+              </MenuItem>
+            ))}
           </TextField>
           <TextField
             label="Cantidad"
@@ -281,11 +292,11 @@ const onRefund = async (ticketId: string) => {
             onChange={(e) => setQuantity(Number(e.target.value))}
             error={Boolean(quantityError)}
             helperText={quantityError || "Máximo 4 entradas por reserva."}
-          slotProps={{ htmlInput: { min: 1, max: 4 } }}
+            slotProps={{ htmlInput: { min: 1, max: 4 } }}
             disabled={loading}
             sx={{ minWidth: { md: 180 } }}
           />
-          <Button variant="contained" onClick={onReserve} disabled={loading || filteredMatches.length === 0}>
+          <Button variant="contained" onClick={onReserve} disabled={loading || filteredPartidos.length === 0}>
             Reservar
           </Button>
         </Stack>
@@ -294,7 +305,7 @@ const onRefund = async (ticketId: string) => {
       <Paper sx={{ p: 2.5 }}>
         <Typography variant="h6">Resumen</Typography>
         <Typography color="text.secondary">
-       Total: {summary.total} · Reservadas: {summary.reserved} · Pagadas: {summary.paid} · Reembolsadas: {summary.refunded} · Canceladas: {summary.cancelled} · Expiradas: {summary.expired}
+          Total: {summary.total} · Reservadas: {summary.reserved} · Pagadas: {summary.paid} · Reembolsadas: {summary.refunded} · Canceladas: {summary.cancelled} · Expiradas: {summary.expired}
         </Typography>
       </Paper>
 
@@ -309,22 +320,28 @@ const onRefund = async (ticketId: string) => {
           <Stack spacing={1.5} sx={{ mt: 2 }}>
             {items.map((ticket) => {
               const match = matchById.get(ticket.matchId);
+              // fallback: buscar en partidosCapacidad si match no está en la API externa
+              const partido = partidosCapacidad.find((p) => String(p.id) === ticket.matchId);
               return (
                 <Paper key={ticket.id} variant="outlined" sx={{ p: 2 }}>
                   <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" spacing={2}>
                     <Stack spacing={0.5}>
                       <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" alignItems="center">
                         <Typography sx={{ fontWeight: 800 }}>
-                          {match ? `${match.home.name} vs ${match.away.name}` : ticket.matchId}
+                          {match
+                            ? `${match.home.name} vs ${match.away.name}`
+                            : partido
+                            ? `${partido.local} vs ${partido.visitante}`
+                            : ticket.matchId}
                         </Typography>
                         <Chip label={statusLabel(ticket.status)} size="small" variant="outlined" />
                       </Stack>
                       <Typography color="text.secondary">
                         Cantidad: {ticket.quantity} · Total: ${(ticket.quantity * ticketPrice).toLocaleString()} COP
                       </Typography>
-                      {match && (
+                      {(match || partido) && (
                         <Typography color="text.secondary">
-                          {match.city} · {match.stadium}
+                          {match ? match.city : partido?.ciudad} · {match ? match.stadium : partido?.estadio}
                         </Typography>
                       )}
                       <Typography variant="caption" color="text.secondary">
@@ -335,7 +352,7 @@ const onRefund = async (ticketId: string) => {
                     </Stack>
 
                     <Stack direction="row" spacing={1} alignItems="center" useFlexGap flexWrap="wrap">
-                     {ticket.status === "RESERVADA" && (
+                      {ticket.status === "RESERVADA" && (
                         <>
                           <Button
                             variant="contained"
@@ -348,19 +365,19 @@ const onRefund = async (ticketId: string) => {
                           </Button>
                         </>
                       )}
-                    {ticket.status === "PAGADA" && (
-    <>
-        <Button variant="outlined" onClick={() => navigate("/payments")}>
-            Ver pago
-        </Button>
-        <Button variant="outlined" color="warning" onClick={() => onOpenTransfer(ticket.id)}>
-            Transferir
-        </Button>
-        <Button variant="outlined" color="error" onClick={() => onRefund(ticket.id)}>
-            Reembolsar
-        </Button>
-    </>
-)}
+                      {ticket.status === "PAGADA" && (
+                        <>
+                          <Button variant="outlined" onClick={() => navigate("/payments")}>
+                            Ver pago
+                          </Button>
+                          <Button variant="outlined" color="warning" onClick={() => onOpenTransfer(ticket.id)}>
+                            Transferir
+                          </Button>
+                          <Button variant="outlined" color="error" onClick={() => onRefund(ticket.id)}>
+                            Reembolsar
+                          </Button>
+                        </>
+                      )}
                     </Stack>
                   </Stack>
                 </Paper>

@@ -28,13 +28,13 @@ function normalizeTickets() {
 
 export async function getMyTickets(userId: string): Promise<Ticket[]> {
   if (!USE_MOCK) {
-    const data = await http.get<any[]>(`/api/entradas/usuario/${userId}`);
+    const data = await http.get<any[]>(`/api/entradas/usuario`); // ← el backend lo saca del JWT
     return data.map((e) => {
-    let estado = e.estado as TicketStatus;
-    if (estado === "RESERVADA" && e.ttlReserva && new Date(e.ttlReserva).getTime() <= Date.now()) {
-    estado = "EXPIRADA";
-}
-    return {
+      let estado = e.estado as TicketStatus;
+      if (estado === "RESERVADA" && e.ttlReserva && new Date(e.ttlReserva).getTime() <= Date.now()) {
+        estado = "EXPIRADA";
+      }
+      return {
         id: String(e.id),
         userId: String(e.usuarioId),
         matchId: String(e.partidoId),
@@ -45,8 +45,8 @@ export async function getMyTickets(userId: string): Promise<Ticket[]> {
         paidAt: e.fechaPago ?? undefined,
         refundedAt: e.fechaReembolso ?? undefined,
         paymentRef: e.paymentRef ?? undefined,
-    };
-});
+      };
+    });
   }
   await sleep(200);
   normalizeTickets();
@@ -68,19 +68,20 @@ export async function getTicketById(userId: string, ticketId: string): Promise<T
 
 export async function reserveTicket(userId: string, matchId: string, quantity: number): Promise<Ticket> {
   if (!USE_MOCK) {
-    const data = await http.post<any>(`/api/entradas/reservar/${userId}`, { partidoId: matchId, cantidad: quantity });
-return {
-    id: String(data.id),
-    userId: String(data.usuarioId),
-    matchId: String(data.partidoId),
-    quantity: data.cantidad,
-    status: data.estado as TicketStatus,
-    createdAt: data.fechaCompra ?? new Date().toISOString(),
-    expiresAt: data.ttlReserva ?? undefined,
-    paidAt: data.fechaPago ?? undefined,
-    refundedAt: data.fechaReembolso ?? undefined,
-    paymentRef: data.paymentRef ?? undefined,
-};
+    // ← sin userId en la URL; el backend lo obtiene del @AuthenticationPrincipal
+    const data = await http.post<any>(`/api/entradas/reservar`, { partidoId: matchId, cantidad: quantity });
+    return {
+      id: String(data.id),
+      userId: String(data.usuarioId),
+      matchId: String(data.partidoId),
+      quantity: data.cantidad,
+      status: data.estado as TicketStatus,
+      createdAt: data.fechaCompra ?? new Date().toISOString(),
+      expiresAt: data.ttlReserva ?? undefined,
+      paidAt: data.fechaPago ?? undefined,
+      refundedAt: data.fechaReembolso ?? undefined,
+      paymentRef: data.paymentRef ?? undefined,
+    };
   }
   await sleep(250);
   const match = mockDb.matches.find((m) => m.id === matchId);
@@ -118,19 +119,20 @@ export const buyTicket = reserveTicket;
 
 export async function cancelTicket(userId: string, ticketId: string): Promise<boolean> {
   if (!USE_MOCK) {
-    await http.patch<void>(`/api/entradas/cancelar/${userId}/${ticketId}`);
+    // ← solo el entradaId en la URL; el backend valida el usuario con el JWT
+    await http.patch<void>(`/api/entradas/cancelar/${ticketId}`);
     return true;
   }
   await sleep(200);
   const t = mockDb.tickets.find((x) => x.id === ticketId && x.userId === userId);
   if (!t) return false;
   expireIfNeeded(t);
-if (t.status === "PAGADA") return false;
-if (t.status === "REEMBOLSADA") return false;
-if (t.status === "TRANSFERIDA") return false;
-if (t.status === "EXPIRADA") return false;
-if (t.status === "CANCELADA") return true;
-t.status = "CANCELADA";
+  if (t.status === "PAGADA") return false;
+  if (t.status === "REEMBOLSADA") return false;
+  if (t.status === "TRANSFERIDA") return false;
+  if (t.status === "EXPIRADA") return false;
+  if (t.status === "CANCELADA") return true;
+  t.status = "CANCELADA";
   await createSystemEvent({
     type: "TICKET_CANCELLED",
     actorId: userId,
@@ -152,8 +154,8 @@ export async function markTicketAsPaid(userId: string, ticketId: string, payment
   const t = mockDb.tickets.find((x) => x.id === ticketId && x.userId === userId);
   if (!t) return false;
   expireIfNeeded(t);
- if (t.status !== "RESERVADA") return false;
-t.status = "PAGADA";
+  if (t.status !== "RESERVADA") return false;
+  t.status = "PAGADA";
   t.paidAt = nowIso();
   t.paymentRef = paymentRef;
   t.expiresAt = undefined;
@@ -162,29 +164,32 @@ t.status = "PAGADA";
 
 export async function markTicketAsRefunded(userId: string, ticketId: string): Promise<boolean> {
   if (!USE_MOCK) {
-    await http.patch<void>(`/api/entradas/reembolsar/${userId}/${ticketId}`);
+    // ← solo el entradaId en la URL; el backend valida el usuario con el JWT
+    await http.patch<void>(`/api/entradas/reembolsar/${ticketId}`);
     return true;
   }
   await sleep(120);
   const t = mockDb.tickets.find((x) => x.id === ticketId && x.userId === userId);
   if (!t) return false;
   if (t.status !== "PAGADA") return false;
-t.status = "REEMBOLSADA";
+  t.status = "REEMBOLSADA";
   t.refundedAt = nowIso();
   return true;
 }
 
 export async function transferTicket(userId: string, ticketId: string, correoDestino: string): Promise<Ticket> {
   if (!USE_MOCK) {
-    return http.patch<Ticket>(`/api/entradas/transferir/${userId}/${ticketId}`, { correoDestino });
+    // ← solo el entradaId en la URL; el backend valida el usuario con el JWT
+    return http.patch<Ticket>(`/api/entradas/transferir/${ticketId}`, { correoDestino });
   }
   await sleep(200);
   const t = mockDb.tickets.find((x) => x.id === ticketId && x.userId === userId);
   if (!t) throw new Error("Ticket no encontrado");
   if (t.status !== "PAGADA") throw new Error("Solo se pueden transferir entradas pagadas");
-t.status = "TRANSFERIDA";
+  t.status = "TRANSFERIDA";
   return t;
 }
+
 export type PartidoCapacidad = {
   id: string;
   local: string;
