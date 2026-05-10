@@ -35,12 +35,26 @@ public class Producto {
     @Column(nullable = false)
     private Boolean activo;
 
+    @Column(name = "codigo_producto", unique = true)
+    private String codigoProducto;
+
+    @Column(name = "talla")
+    private String talla;
+
+    @Column(name = "equipo")
+    private String equipo;
+
+    @Column(name = "bandera")
+    private String bandera;
+
+    @Column(name = "destacado", nullable = false)
+    private Boolean destacado = false;
+
     @ManyToOne
     @JoinColumn(name = "categoria_id", nullable = false)
     private Categoria categoria;
 
     public Producto() {
-        //Constructor vacio
     }
 
     public Long getId() {
@@ -97,6 +111,46 @@ public class Producto {
 
     public void setActivo(Boolean activo) {
         this.activo = activo;
+    }
+
+    public String getCodigoProducto() {
+        return codigoProducto;
+    }
+
+    public void setCodigoProducto(String codigoProducto) {
+        this.codigoProducto = codigoProducto;
+    }
+
+    public String getTalla() {
+        return talla;
+    }
+
+    public void setTalla(String talla) {
+        this.talla = talla;
+    }
+
+    public String getEquipo() {
+        return equipo;
+    }
+
+    public void setEquipo(String equipo) {
+        this.equipo = equipo;
+    }
+
+    public String getBandera() {
+        return bandera;
+    }
+
+    public void setBandera(String bandera) {
+        this.bandera = bandera;
+    }
+
+    public Boolean getDestacado() {
+        return destacado;
+    }
+
+    public void setDestacado(Boolean destacado) {
+        this.destacado = destacado;
     }
 
     public Categoria getCategoria() {

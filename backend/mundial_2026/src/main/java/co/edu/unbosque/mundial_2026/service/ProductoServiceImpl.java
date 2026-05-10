@@ -37,25 +37,41 @@ public class ProductoServiceImpl implements ProductoService {
     }
 
     @Override
-    public ProductoResponseDTO actualizar(Long id, ProductoActualizarRequestDTO dto) {
-        Producto productoActualizar = productoRepository.findById(id).orElseThrow(() -> new ProductoNotFoundException(PRODUCTO_NO_ENCONTRADO));
-        if (dto.getPrecio() != null) {
-    productoActualizar.setPrecio(dto.getPrecio());
-}
-if (dto.getStock() != null) {
-    productoActualizar.setStock(dto.getStock());
-}
-if (dto.getImagenUrl() != null) {
-    productoActualizar.setImagenUrl(dto.getImagenUrl());
-}
-if (dto.getDescripcion() != null) {
-    productoActualizar.setDescripcion(dto.getDescripcion());
-}
-productoRepository.save(productoActualizar);
- return toDTO(productoActualizar);
-        
+public ProductoResponseDTO actualizar(Long id, ProductoActualizarRequestDTO dto) {
+    Producto productoActualizar = productoRepository.findById(id)
+            .orElseThrow(() -> new ProductoNotFoundException(PRODUCTO_NO_ENCONTRADO));
 
+    if (dto.getPrecio() != null) {
+        productoActualizar.setPrecio(dto.getPrecio());
     }
+    if (dto.getStock() != null) {
+        productoActualizar.setStock(dto.getStock());
+    }
+    if (dto.getImagenUrl() != null) {
+        productoActualizar.setImagenUrl(dto.getImagenUrl());
+    }
+    if (dto.getDescripcion() != null) {
+        productoActualizar.setDescripcion(dto.getDescripcion());
+    }
+    if (dto.getCodigoProducto() != null) {
+        productoActualizar.setCodigoProducto(dto.getCodigoProducto());
+    }
+    if (dto.getTalla() != null) {
+        productoActualizar.setTalla(dto.getTalla());
+    }
+    if (dto.getEquipo() != null) {
+        productoActualizar.setEquipo(dto.getEquipo());
+    }
+    if (dto.getBandera() != null) {
+        productoActualizar.setBandera(dto.getBandera());
+    }
+    if (dto.getDestacado() != null) {
+        productoActualizar.setDestacado(dto.getDestacado());
+    }
+
+    productoRepository.save(productoActualizar);
+    return toDTO(productoActualizar);
+}
 
    @Override
 public void eliminar(Long id) {
@@ -99,30 +115,9 @@ public ProductoResponseDTO obtenerPorId(Long id) {
     }
     return toDTO(producto);
 }
-    private ProductoResponseDTO toDTO(Producto producto) {
-    ProductoResponseDTO response = new ProductoResponseDTO();
-    response.setId(producto.getId());
-    response.setNombre(producto.getNombre());
-    response.setDescripcion(producto.getDescripcion());
-    response.setPrecio(producto.getPrecio());
-    response.setStock(producto.getStock());
-    response.setImagenUrl(producto.getImagenUrl());
-    response.setActivo(producto.getActivo());
-    response.setCategoriaNombre(producto.getCategoria().getNombre());
-    return response;
-}
+   
 
-private Producto toEntity(ProductoRequestDTO dto, Categoria categoria) {
-    Producto producto = new Producto();
-    producto.setNombre(dto.getNombre());
-    producto.setDescripcion(dto.getDescripcion());
-    producto.setPrecio(dto.getPrecio());
-    producto.setStock(dto.getStock());
-    producto.setImagenUrl(dto.getImagenUrl());
-    producto.setActivo(true);
-    producto.setCategoria(categoria);
-    return producto;
-}
+
 @Override
 @Transactional(readOnly = true)
 public Producto obtenerEntidadPorId(final Long id) {
@@ -160,5 +155,39 @@ public List<ProductoResponseDTO> listarTodos(boolean soloActivos) {
         responseDTOs.add(toDTO(productos.get(i)));
     }
     return responseDTOs;
+}
+private ProductoResponseDTO toDTO(Producto producto) {
+    ProductoResponseDTO response = new ProductoResponseDTO();
+    response.setId(producto.getId());
+    response.setNombre(producto.getNombre());
+    response.setDescripcion(producto.getDescripcion());
+    response.setPrecio(producto.getPrecio());
+    response.setStock(producto.getStock());
+    response.setImagenUrl(producto.getImagenUrl());
+    response.setActivo(producto.getActivo());
+    response.setCategoriaNombre(producto.getCategoria().getNombre());
+    response.setCodigoProducto(producto.getCodigoProducto());
+    response.setTalla(producto.getTalla());
+    response.setEquipo(producto.getEquipo());
+    response.setBandera(producto.getBandera());
+    response.setDestacado(producto.getDestacado());
+    return response;
+}
+
+private Producto toEntity(ProductoRequestDTO dto, Categoria categoria) {
+    Producto producto = new Producto();
+    producto.setNombre(dto.getNombre());
+    producto.setDescripcion(dto.getDescripcion());
+    producto.setPrecio(dto.getPrecio());
+    producto.setStock(dto.getStock());
+    producto.setImagenUrl(dto.getImagenUrl());
+    producto.setActivo(true);
+    producto.setCategoria(categoria);
+    producto.setCodigoProducto(dto.getCodigoProducto());
+    producto.setTalla(dto.getTalla());
+    producto.setEquipo(dto.getEquipo());
+    producto.setBandera(dto.getBandera());
+    producto.setDestacado(Boolean.TRUE.equals(dto.getDestacado()));
+    return producto;
 }
 }

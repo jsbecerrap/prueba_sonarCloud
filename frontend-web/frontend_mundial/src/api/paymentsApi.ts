@@ -68,9 +68,7 @@ export async function getMyPaymentMethods(
   userId: string
 ): Promise<PaymentMethod[]> {
   if (!USE_MOCK) {
-    return http.get<PaymentMethod[]>(
-      `/payments?userId=${encodeURIComponent(userId)}`
-    );
+    return http.get<PaymentMethod[]>(`/payments`);
   }
 
   await sleep();
@@ -89,7 +87,6 @@ export async function addPaymentMethod(
 ): Promise<PaymentMethod> {
   if (!USE_MOCK) {
     return http.post<PaymentMethod>("/payments", {
-      userId,
       type,
       label,
       details,
@@ -142,24 +139,7 @@ export async function setDefaultPaymentMethod(
 
 export async function getMyPaymentTxs(userId: string): Promise<PaymentTx[]> {
   if (!USE_MOCK) {
-    const entradas = await http.get<any[]>(`/api/entradas/usuario/${userId}`);
-    if (!entradas) return [];
-    return entradas
-   .filter((e) => e.estado === "PAGADA" || e.estado === "REEMBOLSADA")
-      .map((e) => ({
-        id: String(e.id),
-        userId: String(e.usuarioId),
-        kind: "TICKET" as const,
-        ticketId: String(e.id),
-        paymentMethodId: "",
-        amount: e.precio ?? 0,
-        currency: "COP",
-       status: e.estado === "REEMBOLSADA" ? "REFUNDED" as const : "SUCCEEDED" as const,
-        createdAt: e.fechaCompra ?? new Date().toISOString(),
-        provider: "MOCK_STRIPE" as const,
-        providerRef: e.paymentRef ?? "",
-        confirmedAt: e.fechaPago ?? e.fechaCompra,
-      }));
+    return [];
   }
   await sleep();
   return mockDb.paymentsTx

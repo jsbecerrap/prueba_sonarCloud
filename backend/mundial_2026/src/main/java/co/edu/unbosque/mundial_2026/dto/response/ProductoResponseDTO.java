@@ -10,6 +10,11 @@ public class ProductoResponseDTO {
     private String imagenUrl;
     private Boolean activo;
     private String categoriaNombre;
+    private String codigoProducto;
+    private String talla;
+    private String equipo;
+    private String bandera;
+    private Boolean destacado;
 
     public Long getId() {
         return id;
@@ -73,5 +78,45 @@ public class ProductoResponseDTO {
 
     public void setCategoriaNombre(String categoriaNombre) {
         this.categoriaNombre = categoriaNombre;
+    }
+
+    public String getCodigoProducto() {
+        return codigoProducto;
+    }
+
+    public void setCodigoProducto(String codigoProducto) {
+        this.codigoProducto = codigoProducto;
+    }
+
+    public String getTalla() {
+        return talla;
+    }
+
+    public void setTalla(String talla) {
+        this.talla = talla;
+    }
+
+    public String getEquipo() {
+        return equipo;
+    }
+
+    public void setEquipo(String equipo) {
+        this.equipo = equipo;
+    }
+
+    public String getBandera() {
+        return bandera;
+    }
+
+    public void setBandera(String bandera) {
+        this.bandera = bandera;
+    }
+
+    public Boolean getDestacado() {
+        return destacado;
+    }
+
+    public void setDestacado(Boolean destacado) {
+        this.destacado = destacado;
     }
 }

@@ -25,7 +25,8 @@ import Maps from "./pages/Maps";
 import Checkout from "./pages/Checkout";
 import Tickets from "./pages/Tickets";
 import Payments from "./pages/Payments";
-
+import Store from "./pages/Store";
+import Cart from "./pages/Cart";
 import { useApp } from "./context/AppContext";
 
 type GuardProps = { children: ReactNode };
@@ -103,7 +104,8 @@ export default function App() {
         <Route path="checkout" element={<UserOnly><Checkout /></UserOnly>} />
         <Route path="tickets" element={<UserOnly><Tickets /></UserOnly>} />
         <Route path="payments" element={<UserOnly><Payments /></UserOnly>} />
-
+<Route path="store" element={<UserOnly><Store /></UserOnly>} />
+<Route path="cart" element={<UserOnly><Cart /></UserOnly>} />
         <Route path="admin" element={<AdminOnly><Admin /></AdminOnly>} />
         <Route path="support" element={<SupportArea><Support /></SupportArea>} />
 

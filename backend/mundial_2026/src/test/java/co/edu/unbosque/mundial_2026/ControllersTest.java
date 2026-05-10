@@ -135,15 +135,7 @@ class ControllersTest {
         assertEquals(200, res.getStatusCode().value());
     }
 
-    @Test
-    void entrada_listar_retornaOk() {
-        org.springframework.security.core.userdetails.UserDetails user =
-            org.springframework.security.core.userdetails.User
-                .withUsername("test@test.com").password("pass").roles("USUARIO").build();
-        when(entradaService.listarEntradasUsuario("test@test.com")).thenReturn(List.of());
-        ResponseEntity<?> res = entradaController.listar(user);
-        assertEquals(200, res.getStatusCode().value());
-    }
+   
 
     @Test
     void entrada_pagar_retornaOk() {
@@ -152,46 +144,11 @@ class ControllersTest {
         assertEquals(200, res.getStatusCode().value());
     }
 
-    @Test
-    void entrada_cancelar_retornaOk() {
-        org.springframework.security.core.userdetails.UserDetails user =
-            org.springframework.security.core.userdetails.User
-                .withUsername("test@test.com").password("pass").roles("USUARIO").build();
-        when(entradaService.cancelarReserva("test@test.com", 1L)).thenReturn(new EntradaResponseDTO());
-        ResponseEntity<?> res = entradaController.cancelar(user, 1L);
-        assertEquals(200, res.getStatusCode().value());
-    }
+    
 
-    @Test
-    void orden_historial_retornaOk() {
-        org.springframework.security.core.userdetails.UserDetails user =
-            org.springframework.security.core.userdetails.User
-                .withUsername("test@test.com").password("pass").roles("USUARIO").build();
-        when(ordenService.historial("test@test.com")).thenReturn(List.of());
-        ResponseEntity<?> res = ordenController.historial(user);
-        assertEquals(200, res.getStatusCode().value());
-    }
-
-    @Test
-    void orden_carrito_retornaOk() {
-        org.springframework.security.core.userdetails.UserDetails user =
-            org.springframework.security.core.userdetails.User
-                .withUsername("test@test.com").password("pass").roles("USUARIO").build();
-        when(ordenService.obtenerCarrito("test@test.com")).thenReturn(new OrdenResponseDTO());
-        ResponseEntity<?> res = ordenController.carrito(user);
-        assertEquals(200, res.getStatusCode().value());
-    }
-
-    @Test
-    void orden_cancelar_retornaOk() {
-        org.springframework.security.core.userdetails.UserDetails user =
-            org.springframework.security.core.userdetails.User
-                .withUsername("test@test.com").password("pass").roles("USUARIO").build();
-        when(ordenService.cancelarOrden("test@test.com")).thenReturn(new OrdenResponseDTO());
-        ResponseEntity<?> res = ordenController.cancelar(user);
-        assertEquals(200, res.getStatusCode().value());
-    }
-
+   
+    
+   
     @Test
     void partido_catalogo_selecciones_retornaOk() {
         when(partidoService.obtenerCatalogoSelecciones()).thenReturn(List.of());
@@ -241,33 +198,8 @@ class ControllersTest {
         assertEquals(200, res.getStatusCode().value());
     }
 
-    @Test
-    void metodoPago_listar_retornaOk() {
-        when(metodoPagoService.listarPorUsuario(1L)).thenReturn(List.of());
-        ResponseEntity<?> res = metodoPagoController.listar(1L);
-        assertEquals(200, res.getStatusCode().value());
-    }
 
-    @Test
-    void metodoPago_agregar_retornaOk() {
-        co.edu.unbosque.mundial_2026.dto.request.MetodoPagoRequestDTO dto =
-            new co.edu.unbosque.mundial_2026.dto.request.MetodoPagoRequestDTO();
-        co.edu.unbosque.mundial_2026.dto.response.MetodoPagoResponseDTO response =
-            new co.edu.unbosque.mundial_2026.dto.response.MetodoPagoResponseDTO();
-        when(metodoPagoService.agregar(dto)).thenReturn(response);
-        ResponseEntity<?> res = metodoPagoController.agregar(dto);
-        assertEquals(200, res.getStatusCode().value());
-    }
-
-    @Test
-    void metodoPago_agregar_nullRetorna400() {
-        co.edu.unbosque.mundial_2026.dto.request.MetodoPagoRequestDTO dto =
-            new co.edu.unbosque.mundial_2026.dto.request.MetodoPagoRequestDTO();
-        when(metodoPagoService.agregar(dto)).thenReturn(null);
-        ResponseEntity<?> res = metodoPagoController.agregar(dto);
-        assertEquals(400, res.getStatusCode().value());
-    }
-
+    
     @Test
     void producto_listar_sinCategoria_retornaOk() {
         when(productoService.listarTodos()).thenReturn(List.of());
@@ -361,27 +293,84 @@ void apuesta_eliminarPronostico_retornaNoContent() {
     ResponseEntity<?> res = apuestaController.eliminarPronostico(1L);
     assertEquals(204, res.getStatusCode().value());
 }
+
+@Test
+void entrada_listar_retornaOk() {
+    when(entradaService.listarEntradasUsuario("test@test.com")).thenReturn(List.of());
+    ResponseEntity<?> res = entradaController.listar("test@test.com");
+    assertEquals(200, res.getStatusCode().value());
+}
+
+@Test
+void entrada_cancelar_retornaOk() {
+    when(entradaService.cancelarReserva("test@test.com", 1L)).thenReturn(new EntradaResponseDTO());
+    ResponseEntity<?> res = entradaController.cancelar("test@test.com", 1L);
+    assertEquals(200, res.getStatusCode().value());
+}
+
 @Test
 void entrada_transferir_retornaOk() {
-    org.springframework.security.core.userdetails.UserDetails user =
-        org.springframework.security.core.userdetails.User
-            .withUsername("test@test.com").password("pass").roles("USUARIO").build();
     co.edu.unbosque.mundial_2026.dto.request.TransferenciaRequestDTO dto =
         new co.edu.unbosque.mundial_2026.dto.request.TransferenciaRequestDTO();
     when(entradaService.transferirEntrada(1L, dto, "test@test.com"))
         .thenReturn(new EntradaResponseDTO());
-    ResponseEntity<?> res = entradaController.transferir(user, 1L, dto);
+    ResponseEntity<?> res = entradaController.transferir("test@test.com", 1L, dto);
     assertEquals(200, res.getStatusCode().value());
 }
 
 @Test
 void entrada_reembolsar_retornaOk() {
-    org.springframework.security.core.userdetails.UserDetails user =
-        org.springframework.security.core.userdetails.User
-            .withUsername("test@test.com").password("pass").roles("USUARIO").build();
     when(entradaService.reembolsarEntrada("test@test.com", 1L))
         .thenReturn(new EntradaResponseDTO());
-    ResponseEntity<?> res = entradaController.reembolsar(user, 1L);
+    ResponseEntity<?> res = entradaController.reembolsar("test@test.com", 1L);
     assertEquals(200, res.getStatusCode().value());
+}
+
+@Test
+void orden_historial_retornaOk() {
+    when(ordenService.historial("test@test.com")).thenReturn(List.of());
+    ResponseEntity<?> res = ordenController.historial("test@test.com");
+    assertEquals(200, res.getStatusCode().value());
+}
+
+@Test
+void orden_carrito_retornaOk() {
+    when(ordenService.obtenerCarrito("test@test.com")).thenReturn(new OrdenResponseDTO());
+    ResponseEntity<?> res = ordenController.carrito("test@test.com");
+    assertEquals(200, res.getStatusCode().value());
+}
+
+@Test
+void orden_cancelar_retornaOk() {
+    when(ordenService.cancelarOrden("test@test.com")).thenReturn(new OrdenResponseDTO());
+    ResponseEntity<?> res = ordenController.cancelar("test@test.com");
+    assertEquals(200, res.getStatusCode().value());
+}
+
+@Test
+void metodoPago_listar_retornaOk() {
+    when(metodoPagoService.listarPorCorreo("test@test.com")).thenReturn(List.of());
+    ResponseEntity<?> res = metodoPagoController.listar("test@test.com");
+    assertEquals(200, res.getStatusCode().value());
+}
+
+@Test
+void metodoPago_agregar_retornaOk() {
+    co.edu.unbosque.mundial_2026.dto.request.MetodoPagoRequestDTO dto =
+        new co.edu.unbosque.mundial_2026.dto.request.MetodoPagoRequestDTO();
+    co.edu.unbosque.mundial_2026.dto.response.MetodoPagoResponseDTO response =
+        new co.edu.unbosque.mundial_2026.dto.response.MetodoPagoResponseDTO();
+    when(metodoPagoService.agregar("test@test.com", dto)).thenReturn(response);
+    ResponseEntity<?> res = metodoPagoController.agregar("test@test.com", dto);
+    assertEquals(200, res.getStatusCode().value());
+}
+
+@Test
+void metodoPago_agregar_nullRetorna400() {
+    co.edu.unbosque.mundial_2026.dto.request.MetodoPagoRequestDTO dto =
+        new co.edu.unbosque.mundial_2026.dto.request.MetodoPagoRequestDTO();
+    when(metodoPagoService.agregar("test@test.com", dto)).thenReturn(null);
+    ResponseEntity<?> res = metodoPagoController.agregar("test@test.com", dto);
+    assertEquals(400, res.getStatusCode().value());
 }
 }

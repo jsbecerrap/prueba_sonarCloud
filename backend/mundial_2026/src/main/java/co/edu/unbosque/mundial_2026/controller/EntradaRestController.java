@@ -4,7 +4,6 @@ import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,7 +18,7 @@ import co.edu.unbosque.mundial_2026.dto.request.EntradaRequestDTO;
 import co.edu.unbosque.mundial_2026.dto.request.TransferenciaRequestDTO;
 import co.edu.unbosque.mundial_2026.dto.response.EntradaResponseDTO;
 import co.edu.unbosque.mundial_2026.service.EntradaService;
-//Falta funcion en admin
+
 @RestController
 @RequestMapping("/api/entradas")
 public class EntradaRestController {
@@ -32,9 +31,9 @@ public class EntradaRestController {
 
     @PostMapping("/reservar")
     public ResponseEntity<EntradaResponseDTO> reservar(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @AuthenticationPrincipal String username,
             @RequestBody EntradaRequestDTO dto) {
-        return ResponseEntity.ok(entradaService.reservarEntrada(userDetails.getUsername(), dto));
+        return ResponseEntity.ok(entradaService.reservarEntrada(username, dto));
     }
 
     @PatchMapping("/pagar/{entradaId}")
@@ -46,30 +45,30 @@ public class EntradaRestController {
 
     @PatchMapping("/cancelar/{entradaId}")
     public ResponseEntity<EntradaResponseDTO> cancelar(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @AuthenticationPrincipal String username,
             @PathVariable Long entradaId) {
-        return ResponseEntity.ok(entradaService.cancelarReserva(userDetails.getUsername(), entradaId));
+        return ResponseEntity.ok(entradaService.cancelarReserva(username, entradaId));
     }
 
     @PatchMapping("/transferir/{entradaId}")
     public ResponseEntity<EntradaResponseDTO> transferir(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @AuthenticationPrincipal String username,
             @PathVariable Long entradaId,
             @RequestBody TransferenciaRequestDTO dto) {
-        return ResponseEntity.ok(entradaService.transferirEntrada(entradaId, dto, userDetails.getUsername()));
+        return ResponseEntity.ok(entradaService.transferirEntrada(entradaId, dto, username));
     }
 
     @PatchMapping("/reembolsar/{entradaId}")
     public ResponseEntity<EntradaResponseDTO> reembolsar(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @AuthenticationPrincipal String username,
             @PathVariable Long entradaId) {
-        return ResponseEntity.ok(entradaService.reembolsarEntrada(userDetails.getUsername(), entradaId));
+        return ResponseEntity.ok(entradaService.reembolsarEntrada(username, entradaId));
     }
 
     @GetMapping("/usuario")
     public ResponseEntity<List<EntradaResponseDTO>> listar(
-            @AuthenticationPrincipal UserDetails userDetails) {
-        return ResponseEntity.ok(entradaService.listarEntradasUsuario(userDetails.getUsername()));
+            @AuthenticationPrincipal String username) {
+        return ResponseEntity.ok(entradaService.listarEntradasUsuario(username));
     }
 
     @GetMapping("/{entradaId}")

@@ -24,6 +24,12 @@ public class ProductoRequestDTO {
     @NotNull(message = "La categoria es obligatoria")
     private Long categoriaId;
 
+    private String codigoProducto;
+    private String talla;
+    private String equipo;
+    private String bandera;
+    private Boolean destacado = false;
+
     public String getNombre() {
         return nombre;
     }
@@ -70,5 +76,45 @@ public class ProductoRequestDTO {
 
     public void setCategoriaId(Long categoriaId) {
         this.categoriaId = categoriaId;
+    }
+
+    public String getCodigoProducto() {
+        return codigoProducto;
+    }
+
+    public void setCodigoProducto(String codigoProducto) {
+        this.codigoProducto = codigoProducto;
+    }
+
+    public String getTalla() {
+        return talla;
+    }
+
+    public void setTalla(String talla) {
+        this.talla = talla;
+    }
+
+    public String getEquipo() {
+        return equipo;
+    }
+
+    public void setEquipo(String equipo) {
+        this.equipo = equipo;
+    }
+
+    public String getBandera() {
+        return bandera;
+    }
+
+    public void setBandera(String bandera) {
+        this.bandera = bandera;
+    }
+
+    public Boolean getDestacado() {
+        return destacado;
+    }
+
+    public void setDestacado(Boolean destacado) {
+        this.destacado = destacado;
     }
 }

@@ -84,6 +84,7 @@ List<MetodoPago> existentes = metodoPagoRepository.findByUsuarioId(dto.getUsuari
     dto.setDetails(metodo.getDetails());
     dto.setDefault(metodo.isDefault());
     dto.setCreatedAt(metodo.getCreatedAt());
+    dto.setId(String.valueOf(metodo.getId()));
     return dto;
 }
 @Override
@@ -92,5 +93,51 @@ public MetodoPago obtenerEntidadPorId(final Long id) {
     return metodoPagoRepository.findById(id)
             .orElseThrow(() -> new MetodoPagoNotFoundException(
                     "Método de pago no encontrado con id: " + id));
+}
+@Override
+public MetodoPagoResponseDTO agregar(String correo, MetodoPagoRequestDTO dto) {
+    Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
+    List<MetodoPago> existentes = metodoPagoRepository.findByUsuarioId(usuario.getId());
+    boolean esElPrimero = existentes.isEmpty();
+
+    MetodoPago metodo = new MetodoPago();
+    metodo.setUsuario(usuario);
+    metodo.setTipo(dto.getType());
+    metodo.setLabel(dto.getLabel());
+    metodo.setDetails(dto.getDetails());
+    metodo.setDefault(esElPrimero);
+    metodo.setCreatedAt(LocalDateTime.now().toString());
+
+    metodoPagoRepository.save(metodo);
+    return toDTO(metodo);
+}
+
+@Override
+public List<MetodoPagoResponseDTO> listarPorCorreo(String correo) {
+    Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
+    List<MetodoPago> lista = metodoPagoRepository.findByUsuarioIdOrderByCreatedAtDesc(usuario.getId());
+    List<MetodoPagoResponseDTO> dtos = new ArrayList<>();
+    for (int i = 0; i < lista.size(); i++) {
+        dtos.add(toDTO(lista.get(i)));
+    }
+    return dtos;
+}
+@Override
+@Transactional
+public void setDefaultPorCorreo(String correo, Long metodoPagoId) {
+    Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
+    List<MetodoPago> todos = metodoPagoRepository.findByUsuarioId(usuario.getId());
+    MetodoPago target = null;
+    for (int i = 0; i < todos.size(); i++) {
+        todos.get(i).setDefault(false);
+        if (todos.get(i).getId().equals(metodoPagoId)) {
+            target = todos.get(i);
+        }
+    }
+    if (target == null) {
+        throw new MetodoPagoNotFoundException("Método de pago no encontrado");
+    }
+    target.setDefault(true);
+    metodoPagoRepository.saveAll(todos);
 }
 }

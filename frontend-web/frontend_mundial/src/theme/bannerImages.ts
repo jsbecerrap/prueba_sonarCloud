@@ -15,4 +15,8 @@ export const bannerImages = {
     "https://bayareadeportes.com/wp-content/uploads/2025/04/COPA-1024x768.webp",
   support:
     "https://i.blogs.es/8b0bf5/mundial-2026-fifa/500_333.webp",
+    cart:
+    "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?auto=format&fit=crop&w=1400&q=80",
+  store:
+    "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=1400&q=80",
 };
