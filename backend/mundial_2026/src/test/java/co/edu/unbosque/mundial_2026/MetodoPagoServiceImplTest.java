@@ -167,25 +167,6 @@ class MetodoPagoServiceImplTest {
     }
 
 
-
-
-
-
-
-@Test
-void eliminar_metodoExistente_eliminaCorrectamente() {
-    Usuario usuario = crearUsuario(1L);
-    MetodoPago metodo = crearMetodoPago(1L, usuario, false);
-
-    when(usuarioService.obtenerEntidadPorCorreo("user@test.com")).thenReturn(usuario);
-    when(metodoPagoRepository.findById(1L)).thenReturn(Optional.of(metodo));
-    when(metodoPagoRepository.findByUsuarioIdOrderByCreatedAtDesc(1L)).thenReturn(List.of());
-    doNothing().when(metodoPagoRepository).delete(metodo);
-
-    service.eliminar("user@test.com", 1L);
-
-    verify(metodoPagoRepository).delete(metodo);
-}
 @Test
 void eliminar_metodoDeOtroUsuario_lanzaExcepcion() {
     Usuario usuario = crearUsuario(1L);
@@ -229,5 +210,19 @@ void actualizar_metodoDeOtroUsuario_lanzaExcepcion() {
 
     assertThrows(MetodoPagoNotFoundException.class,
             () -> service.actualizar("user@test.com", 1L, dto));
+}
+
+@Test
+void eliminar_metodoExistente_eliminaCorrectamente() {
+    Usuario usuario = crearUsuario(1L);
+    MetodoPago metodo = crearMetodoPago(1L, usuario, false);
+
+    when(usuarioService.obtenerEntidadPorCorreo("user@test.com")).thenReturn(usuario);
+    when(metodoPagoRepository.findById(1L)).thenReturn(Optional.of(metodo));
+    doNothing().when(metodoPagoRepository).delete(metodo);
+
+    service.eliminar("user@test.com", 1L);
+
+    verify(metodoPagoRepository).delete(metodo);
 }
 }
