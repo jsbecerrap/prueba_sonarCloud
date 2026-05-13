@@ -9,7 +9,7 @@ public class ItemOrdenResponseDTO {
     private Integer cantidad;
     private Double precioUnitario;
     private Double subtotal;
-
+    private String categoriaNombre;
     public Long getId() {
         return id;
     }
@@ -65,4 +65,13 @@ public class ItemOrdenResponseDTO {
     public void setSubtotal(Double subtotal) {
         this.subtotal = subtotal;
     }
+
+    public String getCategoriaNombre() {
+        return categoriaNombre;
+    }
+
+    public void setCategoriaNombre(String categoriaNombre) {
+        this.categoriaNombre = categoriaNombre;
+    }
+    
 }

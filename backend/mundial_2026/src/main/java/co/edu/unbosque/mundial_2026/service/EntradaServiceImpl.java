@@ -76,7 +76,12 @@ static {
     SELECCIONES_TOP.add("Germany");
     SELECCIONES_TOP.add("Colombia");
 }
-
+private static final Map<String, Double> MULTIPLICADOR_CATEGORIA = new HashMap<>();
+static {
+    MULTIPLICADOR_CATEGORIA.put("GENERAL", 1.0);
+    MULTIPLICADOR_CATEGORIA.put("PREFERENCIAL", 2.0);
+    MULTIPLICADOR_CATEGORIA.put("VIP", 3.5);
+}
     public EntradaServiceImpl(EntradaRepository entradaRepository,
     UsuarioService usuarioService,
     PartidoService partidoService,
@@ -124,7 +129,11 @@ public EntradaResponseDTO reservarEntrada(String correo, EntradaRequestDTO dto) 
     entrada.setCantidad(dto.getCantidad());
     entrada.setEstado(ESTADO_RESERVADA);
     entrada.setPartido(partido);
-    entrada.setPrecio(calcularPrecio(partido) * dto.getCantidad());
+ String categoria = (dto.getCategoria() != null && !dto.getCategoria().isBlank())
+    ? dto.getCategoria().toUpperCase()
+    : "GENERAL";
+entrada.setCategoria(categoria);
+entrada.setPrecio(calcularPrecio(partido, categoria) * dto.getCantidad());
     entrada.setFechaCompra(LocalDateTime.now());
     entrada.setTtlReserva(LocalDateTime.now().plusMinutes(15));
 
@@ -275,6 +284,7 @@ public EntradaResponseDTO transferirEntrada(Long entradaId, TransferenciaRequest
     nuevaEntrada.setPrecio(entrada.getPrecio());
     nuevaEntrada.setEstado(ESTADO_PAGADA);
     nuevaEntrada.setFechaCompra(LocalDateTime.now());
+    nuevaEntrada.setCategoria(entrada.getCategoria());
     entradaRepository.save(nuevaEntrada);
 
     auditoriaService.registrar(
@@ -381,6 +391,11 @@ public List<EntradaResponseDTO> listarEntradasUsuario(String correo) {
     dto.setId(entrada.getId());
     dto.setUsuarioId(entrada.getUsuario().getId());
     dto.setPartidoId(entrada.getPartido().getId());
+dto.setSeleccionLocal(entrada.getPartido().getSeleccionLocal());
+dto.setSeleccionVisitante(entrada.getPartido().getSeleccionVisitante());
+dto.setFecha(entrada.getPartido().getFecha() != null ? entrada.getPartido().getFecha().toString() : null);
+dto.setEstadio(entrada.getPartido().getEstadio());
+dto.setRonda(entrada.getPartido().getRonda());
    dto.setEstado(entrada.getEstado());
     dto.setCantidad(entrada.getCantidad());
     dto.setPrecio(entrada.getPrecio());
@@ -389,19 +404,23 @@ public List<EntradaResponseDTO> listarEntradasUsuario(String correo) {
     dto.setFechaPago(entrada.getFechaPago());
     dto.setFechaReembolso(entrada.getFechaReembolso());
     dto.setPaymentRef(entrada.getPaymentRef());
+    dto.setCategoria(entrada.getCategoria());
     return dto;
 }
 @Override
 public List<PartidoCapacidadDTO> listarPartidosConCapacidad() {
     return partidoService.listarPartidosConCapacidad();
 }
-private Double calcularPrecio(Partido partido) {
+private Double calcularPrecio(Partido partido, String categoria) {
     Long precioBase = PRECIO_POR_RONDA.getOrDefault(partido.getRonda(), 50000L);
-    boolean hayTop = SELECCIONES_TOP.contains(partido.getSeleccionLocal()) 
+    boolean hayTop = SELECCIONES_TOP.contains(partido.getSeleccionLocal())
                   || SELECCIONES_TOP.contains(partido.getSeleccionVisitante());
     if (hayTop) {
         precioBase = (long)(precioBase * 1.5);
     }
-    return precioBase.doubleValue();
+    Double multiplicador = MULTIPLICADOR_CATEGORIA.getOrDefault(
+        categoria != null ? categoria.toUpperCase() : "GENERAL", 1.0
+    );
+    return precioBase * multiplicador;
 }
 }

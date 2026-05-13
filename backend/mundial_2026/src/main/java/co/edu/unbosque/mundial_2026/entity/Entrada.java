@@ -50,6 +50,8 @@ public class Entrada {
 
     @Column(name = "fecha_reembolso")
     private LocalDateTime fechaReembolso;
+    @Column(nullable = false)
+private String categoria;
 
     public Entrada() {
         //Constructor vacio
@@ -142,4 +144,11 @@ public class Entrada {
     public void setFechaReembolso(LocalDateTime fechaReembolso) {
         this.fechaReembolso = fechaReembolso;
     }
+    public String getCategoria() {
+    return categoria;
+}
+
+public void setCategoria(String categoria) {
+    this.categoria = categoria;
+}
 }

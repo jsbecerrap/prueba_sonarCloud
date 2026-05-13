@@ -17,4 +17,7 @@ export type Ticket = {
   paidAt?: string;
   refundedAt?: string;
   paymentRef?: string;
+  categoria?: string;
+price?: number;
+  
 };

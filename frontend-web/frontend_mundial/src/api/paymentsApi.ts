@@ -136,11 +136,63 @@ export async function setDefaultPaymentMethod(
 
   return true;
 }
-
 export async function getMyPaymentTxs(userId: string): Promise<PaymentTx[]> {
   if (!USE_MOCK) {
-    return [];
+    const [ordenes, entradas] = await Promise.all([
+      http.get<any[]>("/api/ordenes/historial"),
+      http.get<any[]>("/api/entradas/usuario"),
+    ]);
+
+    const txOrdenes: PaymentTx[] = (ordenes ?? []).map((o: any) => ({
+      id: String(o.id),
+      userId,
+      kind: "ORDEN" as const,
+      items: (o.items ?? []).map((item: any) => ({
+        productoNombre: item.productoNombre,
+        cantidad: item.cantidad,
+        precioUnitario: item.precioUnitario,
+        subtotal: item.subtotal,
+        categoriaNombre: item.categoriaNombre,
+      })),
+      paymentMethodId: "",
+      amount: o.total,
+      currency: "USD" as const,
+      status: o.estado === "PAGADA" ? "SUCCEEDED" as const : "REFUNDED" as const,
+      createdAt: o.fechaCreacion,
+      confirmedAt: o.fechaPago ?? undefined,
+      provider: "MOCK_STRIPE" as const,
+      providerRef: o.paymentRef ?? "",
+      metodoPagoLabel: o.metodoPagoLabel,
+    }));
+
+    const txEntradas: PaymentTx[] = (entradas ?? [])
+      .filter((e: any) => e.estado === "PAGADA" || e.estado === "REEMBOLSADA")
+      .map((e: any) => ({
+        id: String(e.id),
+        userId,
+        kind: "TICKET" as const,
+        ticketId: String(e.id),
+        seleccionLocal: e.seleccionLocal,
+        seleccionVisitante: e.seleccionVisitante,
+        ronda: e.ronda,
+        estadio: e.estadio,
+        fechaPartido: e.fecha,
+        cantidadEntradas: e.cantidad,
+        paymentMethodId: "",
+        amount: e.precio,
+        currency: "USD" as const,
+        status: e.estado === "PAGADA" ? "SUCCEEDED" as const : "REFUNDED" as const,
+        createdAt: e.fechaCompra,
+        confirmedAt: e.fechaPago ?? undefined,
+        provider: "MOCK_STRIPE" as const,
+        providerRef: e.paymentRef ?? "",
+      }));
+
+    return [...txOrdenes, ...txEntradas].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
   }
+
   await sleep();
   return mockDb.paymentsTx
     .filter((t) => t.userId === userId)

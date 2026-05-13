@@ -45,6 +45,8 @@ export async function getMyTickets(userId: string): Promise<Ticket[]> {
         paidAt: e.fechaPago ?? undefined,
         refundedAt: e.fechaReembolso ?? undefined,
         paymentRef: e.paymentRef ?? undefined,
+categoria: e.categoria ?? "GENERAL",
+price: e.precio ?? 0,
       };
     });
   }
@@ -66,10 +68,9 @@ export async function getTicketById(userId: string, ticketId: string): Promise<T
   return t ?? null;
 }
 
-export async function reserveTicket(userId: string, matchId: string, quantity: number): Promise<Ticket> {
+ export async function reserveTicket(userId: string, matchId: string, quantity: number, categoria: string = "GENERAL"): Promise<Ticket> {
   if (!USE_MOCK) {
-    // ← sin userId en la URL; el backend lo obtiene del @AuthenticationPrincipal
-    const data = await http.post<any>(`/api/entradas/reservar`, { partidoId: matchId, cantidad: quantity });
+   const data = await http.post<any>(`/api/entradas/reservar`, { partidoId: matchId, cantidad: quantity, categoria });
     return {
       id: String(data.id),
       userId: String(data.usuarioId),
@@ -81,6 +82,8 @@ export async function reserveTicket(userId: string, matchId: string, quantity: n
       paidAt: data.fechaPago ?? undefined,
       refundedAt: data.fechaReembolso ?? undefined,
       paymentRef: data.paymentRef ?? undefined,
+      categoria: data.categoria ?? "GENERAL",
+price: data.precio ?? 0,
     };
   }
   await sleep(250);

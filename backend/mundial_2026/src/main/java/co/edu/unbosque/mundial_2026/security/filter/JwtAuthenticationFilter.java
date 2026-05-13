@@ -43,6 +43,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         super(authManager);
         this.authManager = authManager;
         this.usuarioRepo = usuarioRepo;
+        
     }
 //Inicia la autenticacion del usuario donde lee lo ingresado y retorna un new authenticate para internamente procesar y validar los datos
     @Override

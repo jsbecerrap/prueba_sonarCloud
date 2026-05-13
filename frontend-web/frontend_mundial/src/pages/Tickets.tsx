@@ -25,7 +25,7 @@ import { validatePositiveNumber } from "../utils/validation";
 
 type Msg = { text: string; severity: "success" | "error" | "info" } | null;
 
-const ticketPrice = 50000;
+
 
 function statusLabel(status: Ticket["status"]) {
   const labels: Record<Ticket["status"], string> = {
@@ -48,6 +48,7 @@ export default function Tickets() {
   const [partidosCapacidad, setPartidosCapacidad] = useState<PartidoCapacidad[]>([]);
   const [selectedMatchId, setSelectedMatchId] = useState("");
   const [quantity, setQuantity] = useState(1);
+  const [categoria, setCategoria] = useState<string>("GENERAL");
   const [quantityError, setQuantityError] = useState("");
   const [msg, setMsg] = useState<Msg>(null);
   const [loading, setLoading] = useState(false);
@@ -152,7 +153,7 @@ export default function Tickets() {
     try {
       setLoading(true);
       setMsg(null);
-      await reserveTicket(user.id, selectedMatchId, quantity);
+await reserveTicket(user.id, selectedMatchId, quantity, categoria);
       setMsg({ text: "Reserva creada. Tienes 15 minutos para pagarla.", severity: "success" });
       await refresh();
     } catch (e) {
@@ -296,6 +297,18 @@ export default function Tickets() {
             disabled={loading}
             sx={{ minWidth: { md: 180 } }}
           />
+          <TextField
+            select
+            label="Categoría"
+            value={categoria}
+            onChange={(e) => setCategoria(e.target.value)}
+            disabled={loading}
+            sx={{ minWidth: { md: 180 } }}
+          >
+            <MenuItem value="GENERAL">General</MenuItem>
+            <MenuItem value="PREFERENCIAL">Preferencial</MenuItem>
+            <MenuItem value="VIP">VIP</MenuItem>
+          </TextField>
           <Button variant="contained" onClick={onReserve} disabled={loading || filteredPartidos.length === 0}>
             Reservar
           </Button>
@@ -337,7 +350,8 @@ export default function Tickets() {
                         <Chip label={statusLabel(ticket.status)} size="small" variant="outlined" />
                       </Stack>
                       <Typography color="text.secondary">
-                        Cantidad: {ticket.quantity} · Total: ${(ticket.quantity * ticketPrice).toLocaleString()} COP
+                        Cantidad: {ticket.quantity}
+{ticket.categoria ? ` · Categoría: ${ticket.categoria}` : ""}
                       </Typography>
                       {(match || partido) && (
                         <Typography color="text.secondary">
@@ -356,7 +370,7 @@ export default function Tickets() {
                         <>
                           <Button
                             variant="contained"
-                            onClick={() => navigate(`/checkout?type=TICKET&ticketId=${ticket.id}&amount=${ticket.quantity * ticketPrice}`)}
+                           onClick={() => navigate(`/checkout?type=TICKET&ticketId=${ticket.id}&amount=${ticket.price ?? 0}`)}
                           >
                             Pagar
                           </Button>

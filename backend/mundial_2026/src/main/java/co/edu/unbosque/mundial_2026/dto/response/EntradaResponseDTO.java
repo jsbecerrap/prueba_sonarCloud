@@ -14,9 +14,15 @@ public class EntradaResponseDTO {
     private LocalDateTime fechaPago;
     private LocalDateTime fechaReembolso;
     private String paymentRef;
+    private String seleccionLocal;
+    private String seleccionVisitante;
+    private String fecha;
+    private String estadio;
+    private String ronda;
+    private String categoria;
 
     public EntradaResponseDTO() {
-        //Constructor vacio
+        // Constructor vacio
     }
 
     public Long getId() {
@@ -106,4 +112,51 @@ public class EntradaResponseDTO {
     public void setPaymentRef(String paymentRef) {
         this.paymentRef = paymentRef;
     }
+
+    public String getSeleccionLocal() {
+        return seleccionLocal;
+    }
+
+    public void setSeleccionLocal(String seleccionLocal) {
+        this.seleccionLocal = seleccionLocal;
+    }
+
+    public String getSeleccionVisitante() {
+        return seleccionVisitante;
+    }
+
+    public void setSeleccionVisitante(String seleccionVisitante) {
+        this.seleccionVisitante = seleccionVisitante;
+    }
+
+    public String getFecha() {
+        return fecha;
+    }
+
+    public void setFecha(String fecha) {
+        this.fecha = fecha;
+    }
+
+    public String getEstadio() {
+        return estadio;
+    }
+
+    public void setEstadio(String estadio) {
+        this.estadio = estadio;
+    }
+
+    public String getRonda() {
+        return ronda;
+    }
+
+    public void setRonda(String ronda) {
+        this.ronda = ronda;
+    }
+    public String getCategoria() {
+    return categoria;
+}
+
+public void setCategoria(String categoria) {
+    this.categoria = categoria;
+}
 }

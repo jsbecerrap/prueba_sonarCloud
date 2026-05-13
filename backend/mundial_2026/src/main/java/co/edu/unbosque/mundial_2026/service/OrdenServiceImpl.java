@@ -246,6 +246,7 @@ public class OrdenServiceImpl implements OrdenService {
         response.setCantidad(item.getCantidad());
         response.setPrecioUnitario(item.getPrecioUnitario());
         response.setSubtotal(item.getCantidad() * item.getPrecioUnitario());
+        response.setCategoriaNombre(item.getProducto().getCategoria().getNombre());
         return response;
     }
 

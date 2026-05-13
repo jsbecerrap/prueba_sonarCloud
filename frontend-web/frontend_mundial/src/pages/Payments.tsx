@@ -221,26 +221,52 @@ export default function Payments() {
           </Typography>
         ) : (
           <Stack spacing={1.5} sx={{ mt: 2 }}>
-            {txs.map((tx) => (
-              <Paper key={tx.id} variant="outlined" sx={{ p: 2 }}>
-                <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" spacing={2}>
-                  <Stack spacing={0.5}>
-                    <Typography sx={{ fontWeight: 800 }}>
-                      {tx.kind === "TICKET" ? "Entrada" : "Monedas"} · {statusLabels[tx.status]}
-                    </Typography>
-                    <Typography color="text.secondary">
-                      ${tx.amount.toLocaleString()} {tx.currency} · {tx.provider}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Creada: {new Date(tx.createdAt).toLocaleString()}
-                      {tx.confirmedAt ? ` · Confirmada: ${new Date(tx.confirmedAt).toLocaleString()}` : ""}
-                      {tx.providerRef ? ` · Ref: ${tx.providerRef}` : ""}
-                    </Typography>
-                  </Stack>
-              
-                </Stack>
-              </Paper>
+           {txs.map((tx) => (
+  <Paper key={tx.id} variant="outlined" sx={{ p: 2 }}>
+    <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" spacing={2}>
+      <Stack spacing={0.5}>
+
+        <Typography sx={{ fontWeight: 800 }}>
+      {tx.kind === "TICKET" ? "Entrada" : tx.kind === "ORDEN" ? "Souvenir" : "Monedas"}
+          {" · "}
+          {statusLabels[tx.status]}
+        </Typography>
+
+        {tx.kind === "TICKET" && (
+          <Typography color="text.secondary">
+            {tx.seleccionLocal} vs {tx.seleccionVisitante}
+            {tx.ronda ? ` · ${tx.ronda}` : ""}
+            {tx.estadio ? ` · ${tx.estadio}` : ""}
+            {tx.cantidadEntradas ? ` · ${tx.cantidadEntradas} entrada(s)` : ""}
+          </Typography>
+        )}
+
+        {tx.kind === "ORDEN" && tx.items && tx.items.length > 0 && (
+          <Stack spacing={0.3}>
+            {tx.items.map((item, i) => (
+              <Typography key={i} color="text.secondary" variant="body2">
+                {item.categoriaNombre ? `[${item.categoriaNombre}] ` : ""}
+                {item.productoNombre} x{item.cantidad} — ${item.subtotal.toLocaleString()}
+              </Typography>
             ))}
+          </Stack>
+        )}
+
+        <Typography color="text.secondary">
+          ${tx.amount.toLocaleString()} {tx.currency}
+          {tx.metodoPagoLabel ? ` · ${tx.metodoPagoLabel}` : ""}
+        </Typography>
+
+        <Typography variant="caption" color="text.secondary">
+          Creada: {new Date(tx.createdAt).toLocaleString()}
+          {tx.confirmedAt ? ` · Pagada: ${new Date(tx.confirmedAt).toLocaleString()}` : ""}
+          {tx.providerRef ? ` · Ref: ${tx.providerRef}` : ""}
+        </Typography>
+
+      </Stack>
+    </Stack>
+  </Paper>
+))}
           </Stack>
         )}
       </Paper>
