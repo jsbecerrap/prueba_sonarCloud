@@ -9,4 +9,5 @@ import co.edu.unbosque.mundial_2026.entity.MetodoPago;
 public interface MetodoPagoRepository extends JpaRepository<MetodoPago, Long> {
     List<MetodoPago> findByUsuarioId(Long usuarioId);
     List<MetodoPago> findByUsuarioIdOrderByCreatedAtDesc(Long usuarioId);
+List<MetodoPago> findByUsuarioIdOrderByIsDefaultDescCreatedAtDesc(Long usuarioId);
 }

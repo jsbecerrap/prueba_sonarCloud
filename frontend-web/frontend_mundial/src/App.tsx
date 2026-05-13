@@ -5,7 +5,7 @@ import { onMessage } from "firebase/messaging";
 import { messaging } from "./firebaseConfig";
 import Layout from "./components/Layout";
 import FullPageLoader from "./components/FullPageLoader";
-
+import Transactions from "./pages/Transactions";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -108,7 +108,7 @@ export default function App() {
 <Route path="cart" element={<UserOnly><Cart /></UserOnly>} />
         <Route path="admin" element={<AdminOnly><Admin /></AdminOnly>} />
         <Route path="support" element={<SupportArea><Support /></SupportArea>} />
-
+<Route path="transactions" element={<UserOnly><Transactions /></UserOnly>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

@@ -5,6 +5,7 @@ import java.util.List;
 
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -50,5 +51,19 @@ public ResponseEntity<Void> setDefault(
     metodoPagoService.setDefaultPorCorreo(username, id);
     return ResponseEntity.noContent().build();
 }
-  
+  @DeleteMapping("/{id}")
+public ResponseEntity<Void> eliminar(
+        @AuthenticationPrincipal String username,
+        @PathVariable Long id) {
+    metodoPagoService.eliminar(username, id);
+    return ResponseEntity.noContent().build();
+}
+
+@PatchMapping("/{id}")
+public ResponseEntity<MetodoPagoResponseDTO> actualizar(
+        @AuthenticationPrincipal String username,
+        @PathVariable Long id,
+        @RequestBody MetodoPagoRequestDTO dto) {
+    return ResponseEntity.ok(metodoPagoService.actualizar(username, id, dto));
+}
 }

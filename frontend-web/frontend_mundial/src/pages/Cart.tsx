@@ -198,7 +198,7 @@ export default function Cart() {
                 </Button>
                 <Button
                   variant="contained"
-                  onClick={() => setMostrarPago(true)}
+                  onClick={() => navigate(`/checkout?type=ORDEN&total=${total}`)}
                   disabled={items.length === 0}
                 >
                   Ir a pagar

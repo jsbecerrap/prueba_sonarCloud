@@ -3,59 +3,57 @@ import {
   Alert,
   Button,
   Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   MenuItem,
   Paper,
   Stack,
   TextField,
   Typography,
 } from "@mui/material";
-
 import {
   addPaymentMethod,
+  deletePaymentMethod,
   getMyPaymentMethods,
-  getMyPaymentTxs,
-  refundPaymentTx,
+  
+  
   setDefaultPaymentMethod,
+  updatePaymentMethod,
 } from "../api/paymentsApi";
 import { useApp } from "../context/AppContext";
 import type { PaymentMethod, PaymentMethodType } from "../types/payment";
-import type { PaymentTx, PaymentTxStatus } from "../types/paymentTx";
 import {
   validatePaymentReference,
   validateTextLength,
   type FieldErrors,
 } from "../utils/validation";
-
+import { useNavigate } from "react-router-dom";
 type PaymentField = "label" | "details";
 type Msg = { text: string; severity: "success" | "error" | "info" } | null;
 
-const statusLabels: Record<PaymentTxStatus, string> = {
-  PENDING: "Pendiente",
-  SUCCEEDED: "Aprobado",
-  FAILED: "Fallido",
-  REFUNDED: "Reembolsado",
-};
 
 export default function Payments() {
   const { user } = useApp();
+  const navigate = useNavigate();
   const [methods, setMethods] = useState<PaymentMethod[]>([]);
-  const [txs, setTxs] = useState<PaymentTx[]>([]);
+ 
   const [type, setType] = useState<PaymentMethodType>("CARD");
   const [label, setLabel] = useState("");
   const [details, setDetails] = useState("");
   const [errors, setErrors] = useState<FieldErrors<PaymentField>>({});
   const [msg, setMsg] = useState<Msg>(null);
   const [loading, setLoading] = useState(false);
-
+const [editDialogOpen, setEditDialogOpen] = useState(false);
+const [editMethodId, setEditMethodId] = useState("");
+const [editLabel, setEditLabel] = useState("");
+const [editType, setEditType] = useState<PaymentMethodType>("CARD");
+const [editDetails, setEditDetails] = useState("");
   const refresh = useCallback(async () => {
     if (!user) return;
-    const [paymentMethods, transactions] = await Promise.all([
-      getMyPaymentMethods(user.id),
-      getMyPaymentTxs(user.id),
-    ]);
-
-    setMethods(paymentMethods ?? []);
-    setTxs(transactions ?? []);
+    const paymentMethods = await getMyPaymentMethods(user.id);
+setMethods(paymentMethods ?? []);
   }, [user]);
 
   useEffect(() => {
@@ -117,20 +115,43 @@ export default function Payments() {
       setLoading(false);
     }
   };
+const onDelete = async (paymentId: string) => {
+  if (!confirm("¿Seguro que quieres eliminar este método de pago?")) return;
+  try {
+    setLoading(true);
+    await deletePaymentMethod(user.id, paymentId);
+    setMsg({ text: "Método de pago eliminado.", severity: "success" });
+    await refresh();
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "No se pudo eliminar el método.";
+    setMsg({ text: message, severity: "error" });
+  } finally {
+    setLoading(false);
+  }
+};
 
-  const onRefund = async (txId: string) => {
-    try {
-      setLoading(true);
-      await refundPaymentTx(user.id, txId);
-      setMsg({ text: "Reembolso registrado correctamente.", severity: "success" });
-      await refresh();
-    } catch (e) {
-      const message = e instanceof Error ? e.message : "No se pudo hacer el reembolso.";
-      setMsg({ text: message, severity: "error" });
-    } finally {
-      setLoading(false);
-    }
-  };
+const onOpenEdit = (method: PaymentMethod) => {
+  setEditMethodId(method.id);
+  setEditLabel(method.label);
+  setEditType(method.type);
+  setEditDetails(method.details ?? "");
+  setEditDialogOpen(true);
+};
+
+const onUpdate = async () => {
+  try {
+    setLoading(true);
+    setEditDialogOpen(false);
+    await updatePaymentMethod(user.id, editMethodId, editType, editLabel, editDetails);
+    setMsg({ text: "Método actualizado correctamente.", severity: "success" });
+    await refresh();
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "No se pudo actualizar el método.";
+    setMsg({ text: message, severity: "error" });
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <Stack spacing={2}>
@@ -201,11 +222,19 @@ export default function Payments() {
                     </Typography>
                     {method.isDefault && <Chip label="Predeterminado" size="small" color="success" />}
                   </Stack>
-                  {!method.isDefault && (
-                    <Button variant="outlined" onClick={() => onSetDefault(method.id)} disabled={loading}>
-                      Usar por defecto
-                    </Button>
-                  )}
+                  <Stack direction="row" spacing={1}>
+  {!method.isDefault && (
+    <Button variant="outlined" onClick={() => onSetDefault(method.id)} disabled={loading}>
+      Usar por defecto
+    </Button>
+  )}
+  <Button variant="outlined" onClick={() => onOpenEdit(method)} disabled={loading}>
+    Editar
+  </Button>
+  <Button variant="outlined" color="error" onClick={() => onDelete(method.id)} disabled={loading}>
+    Eliminar
+  </Button>
+</Stack>
                 </Stack>
               </Paper>
             ))}
@@ -213,63 +242,55 @@ export default function Payments() {
         )}
       </Paper>
 
-      <Paper sx={{ p: 2.5 }}>
-        <Typography variant="h6">Historial de transacciones</Typography>
-        {txs.length === 0 ? (
-          <Typography color="text.secondary" sx={{ mt: 1 }}>
-            No hay transacciones registradas.
-          </Typography>
-        ) : (
-          <Stack spacing={1.5} sx={{ mt: 2 }}>
-           {txs.map((tx) => (
-  <Paper key={tx.id} variant="outlined" sx={{ p: 2 }}>
-    <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" spacing={2}>
-      <Stack spacing={0.5}>
-
-        <Typography sx={{ fontWeight: 800 }}>
-      {tx.kind === "TICKET" ? "Entrada" : tx.kind === "ORDEN" ? "Souvenir" : "Monedas"}
-          {" · "}
-          {statusLabels[tx.status]}
-        </Typography>
-
-        {tx.kind === "TICKET" && (
-          <Typography color="text.secondary">
-            {tx.seleccionLocal} vs {tx.seleccionVisitante}
-            {tx.ronda ? ` · ${tx.ronda}` : ""}
-            {tx.estadio ? ` · ${tx.estadio}` : ""}
-            {tx.cantidadEntradas ? ` · ${tx.cantidadEntradas} entrada(s)` : ""}
-          </Typography>
-        )}
-
-        {tx.kind === "ORDEN" && tx.items && tx.items.length > 0 && (
-          <Stack spacing={0.3}>
-            {tx.items.map((item, i) => (
-              <Typography key={i} color="text.secondary" variant="body2">
-                {item.categoriaNombre ? `[${item.categoriaNombre}] ` : ""}
-                {item.productoNombre} x{item.cantidad} — ${item.subtotal.toLocaleString()}
-              </Typography>
-            ))}
+   <Paper sx={{ p: 2.5 }}>
+        <Stack direction="row" justifyContent="space-between" alignItems="center">
+          <Stack spacing={0.25}>
+            <Typography variant="h6">Transacciones</Typography>
+            <Typography color="text.secondary" variant="body2">
+              Consulta el historial completo de tus pagos.
+            </Typography>
           </Stack>
-        )}
-
-        <Typography color="text.secondary">
-          ${tx.amount.toLocaleString()} {tx.currency}
-          {tx.metodoPagoLabel ? ` · ${tx.metodoPagoLabel}` : ""}
-        </Typography>
-
-        <Typography variant="caption" color="text.secondary">
-          Creada: {new Date(tx.createdAt).toLocaleString()}
-          {tx.confirmedAt ? ` · Pagada: ${new Date(tx.confirmedAt).toLocaleString()}` : ""}
-          {tx.providerRef ? ` · Ref: ${tx.providerRef}` : ""}
-        </Typography>
-
-      </Stack>
-    </Stack>
-  </Paper>
-))}
-          </Stack>
-        )}
+          <Button variant="outlined" onClick={() => navigate("/transactions")}>
+            Ver historial
+          </Button>
+        </Stack>
       </Paper>
+          
+      
+  <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)}>
+        <DialogTitle>Editar método de pago</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ mt: 1, minWidth: 320 }}>
+            <TextField
+              select
+              label="Tipo"
+              value={editType}
+              onChange={(e) => setEditType(e.target.value as PaymentMethodType)}
+            >
+              <MenuItem value="CARD">Tarjeta</MenuItem>
+              <MenuItem value="PSE">PSE</MenuItem>
+              <MenuItem value="TRANSFER">Transferencia</MenuItem>
+              <MenuItem value="CASH">Efectivo</MenuItem>
+            </TextField>
+            <TextField
+              label="Nombre"
+              value={editLabel}
+              onChange={(e) => setEditLabel(e.target.value)}
+            />
+            <TextField
+              label="Referencia"
+              value={editDetails}
+              onChange={(e) => setEditDetails(e.target.value)}
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditDialogOpen(false)}>Cancelar</Button>
+          <Button variant="contained" onClick={onUpdate} disabled={loading}>
+            Guardar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Stack>
   );
 }

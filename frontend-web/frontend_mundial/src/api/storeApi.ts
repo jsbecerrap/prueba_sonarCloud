@@ -38,6 +38,7 @@ export interface ItemOrdenResponse {
   productoImagenUrl: string;
   cantidad: number;
   precioUnitario: number;
+  categoriaNombre?: string;
 }
 
 export interface OrdenResponse {

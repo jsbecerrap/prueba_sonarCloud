@@ -14,4 +14,6 @@ public interface MetodoPagoService {
     MetodoPagoResponseDTO agregar(String correo, MetodoPagoRequestDTO dto);
 List<MetodoPagoResponseDTO> listarPorCorreo(String correo);
 void setDefaultPorCorreo(String correo, Long metodoPagoId);
+void eliminar(String correo, Long id);
+MetodoPagoResponseDTO actualizar(String correo, Long id, MetodoPagoRequestDTO dto);
 }

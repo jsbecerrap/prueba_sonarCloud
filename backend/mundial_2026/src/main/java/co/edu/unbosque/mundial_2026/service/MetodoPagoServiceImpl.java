@@ -115,7 +115,7 @@ public MetodoPagoResponseDTO agregar(String correo, MetodoPagoRequestDTO dto) {
 @Override
 public List<MetodoPagoResponseDTO> listarPorCorreo(String correo) {
     Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
-    List<MetodoPago> lista = metodoPagoRepository.findByUsuarioIdOrderByCreatedAtDesc(usuario.getId());
+   List<MetodoPago> lista = metodoPagoRepository.findByUsuarioIdOrderByIsDefaultDescCreatedAtDesc(usuario.getId());
     List<MetodoPagoResponseDTO> dtos = new ArrayList<>();
     for (int i = 0; i < lista.size(); i++) {
         dtos.add(toDTO(lista.get(i)));
@@ -140,4 +140,46 @@ public void setDefaultPorCorreo(String correo, Long metodoPagoId) {
     target.setDefault(true);
     metodoPagoRepository.saveAll(todos);
 }
+@Override
+@Transactional
+public void eliminar(String correo, Long id) {
+    Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
+    MetodoPago metodo = metodoPagoRepository.findById(id)
+            .orElseThrow(() -> new MetodoPagoNotFoundException("Método de pago no encontrado"));
+    if (!metodo.getUsuario().getId().equals(usuario.getId())) {
+        throw new MetodoPagoNotFoundException("Este método de pago no pertenece al usuario");
+    }
+    boolean eraDefault = metodo.isDefault();
+    metodoPagoRepository.delete(metodo);
+    if (eraDefault) {
+        List<MetodoPago> restantes = metodoPagoRepository.findByUsuarioIdOrderByCreatedAtDesc(usuario.getId());
+        if (!restantes.isEmpty()) {
+            restantes.get(0).setDefault(true);
+            metodoPagoRepository.save(restantes.get(0));
+        }
+    }
+}
+
+@Override
+@Transactional
+public MetodoPagoResponseDTO actualizar(String correo, Long id, MetodoPagoRequestDTO dto) {
+    Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
+    MetodoPago metodo = metodoPagoRepository.findById(id)
+            .orElseThrow(() -> new MetodoPagoNotFoundException("Método de pago no encontrado"));
+    if (!metodo.getUsuario().getId().equals(usuario.getId())) {
+        throw new MetodoPagoNotFoundException("Este método de pago no pertenece al usuario");
+    }
+    if (dto.getLabel() != null && !dto.getLabel().isBlank()) {
+        metodo.setLabel(dto.getLabel());
+    }
+    if (dto.getType() != null && !dto.getType().isBlank()) {
+        metodo.setTipo(dto.getType());
+    }
+    if (dto.getDetails() != null && !dto.getDetails().isBlank()) {
+        metodo.setDetails(dto.getDetails());
+    }
+    metodoPagoRepository.save(metodo);
+    return toDTO(metodo);
+}
+
 }

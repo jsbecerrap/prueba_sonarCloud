@@ -165,4 +165,61 @@ class MetodoPagoServiceImplTest {
         assertThrows(MetodoPagoNotFoundException.class,
                 () -> service.obtenerEntidadPorId(99L));
     }
+    @Test
+void eliminar_metodoExistente_eliminaCorrectamente() {
+    Usuario usuario = crearUsuario(1L);
+    MetodoPago metodo = crearMetodoPago(1L, usuario, false);
+
+    when(metodoPagoRepository.findById(1L)).thenReturn(Optional.of(metodo));
+    when(metodoPagoRepository.findByUsuarioIdOrderByCreatedAtDesc(1L)).thenReturn(List.of());
+    doNothing().when(metodoPagoRepository).delete(metodo);
+
+    service.eliminar("user@test.com", 1L);
+
+    verify(metodoPagoRepository).delete(metodo);
+}
+
+@Test
+void eliminar_metodoDeOtroUsuario_lanzaExcepcion() {
+    Usuario usuario = crearUsuario(1L);
+    Usuario otroUsuario = crearUsuario(2L);
+    MetodoPago metodo = crearMetodoPago(1L, otroUsuario, false);
+
+    when(metodoPagoRepository.findById(1L)).thenReturn(Optional.of(metodo));
+
+    assertThrows(MetodoPagoNotFoundException.class,
+            () -> service.eliminar("user@test.com", 1L));
+}
+
+@Test
+void actualizar_camposValidos_retornaDTO() {
+    Usuario usuario = crearUsuario(1L);
+    MetodoPago metodo = crearMetodoPago(1L, usuario, false);
+
+    MetodoPagoRequestDTO dto = new MetodoPagoRequestDTO();
+    dto.setLabel("Visa actualizada");
+
+    when(metodoPagoRepository.findById(1L)).thenReturn(Optional.of(metodo));
+    when(metodoPagoRepository.save(any(MetodoPago.class))).thenReturn(metodo);
+
+    MetodoPagoResponseDTO resultado = service.actualizar("user@test.com", 1L, dto);
+
+    assertNotNull(resultado);
+    verify(metodoPagoRepository).save(metodo);
+}
+
+@Test
+void actualizar_metodoDeOtroUsuario_lanzaExcepcion() {
+    Usuario usuario = crearUsuario(1L);
+    Usuario otroUsuario = crearUsuario(2L);
+    MetodoPago metodo = crearMetodoPago(1L, otroUsuario, false);
+
+    MetodoPagoRequestDTO dto = new MetodoPagoRequestDTO();
+    dto.setLabel("Nuevo label");
+
+    when(metodoPagoRepository.findById(1L)).thenReturn(Optional.of(metodo));
+
+    assertThrows(MetodoPagoNotFoundException.class,
+            () -> service.actualizar("user@test.com", 1L, dto));
+}
 }

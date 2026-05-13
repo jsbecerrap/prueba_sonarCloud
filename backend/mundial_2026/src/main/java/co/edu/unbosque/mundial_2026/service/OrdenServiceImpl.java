@@ -202,7 +202,7 @@ public class OrdenServiceImpl implements OrdenService {
                     PREFIJO_ORDEN + ordenAPagar.getId(),
                     TIPO_ORDEN);
         } catch (StripeException e) {
-            throw new PagoStripeException("Error al procesar el pago: " + e.getMessage());
+          throw new PagoStripeException("Error al procesar el pago. Revisa los datos de tu tarjeta e intenta de nuevo.");
         }
         return toOrdenDTO(ordenAPagar, items);
     }

@@ -446,3 +446,58 @@ export async function refundPaymentTx(
 
 export const confirmPayment = confirmPaymentTx;
 export const refundPayment = refundPaymentTx;
+export async function deletePaymentMethod(
+  userId: string,
+  paymentId: string
+): Promise<boolean> {
+  if (!USE_MOCK) {
+    await http.delete<void>(`/payments/${paymentId}`);
+    return true;
+  }
+
+  await sleep();
+
+  const index = mockDb.payments.findIndex(
+    (p) => p.id === paymentId && p.userId === userId
+  );
+  if (index === -1) return false;
+
+  const eraDefault = mockDb.payments[index].isDefault;
+  mockDb.payments.splice(index, 1);
+
+  if (eraDefault) {
+    const restantes = mockDb.payments.filter((p) => p.userId === userId);
+    if (restantes.length > 0) restantes[0].isDefault = true;
+  }
+
+  return true;
+}
+
+export async function updatePaymentMethod(
+  userId: string,
+  paymentId: string,
+  type?: string,
+  label?: string,
+  details?: string
+): Promise<PaymentMethod> {
+  if (!USE_MOCK) {
+    return http.patch<PaymentMethod>(`/payments/${paymentId}`, {
+      type,
+      label,
+      details,
+    });
+  }
+
+  await sleep();
+
+  const pm = mockDb.payments.find(
+    (p) => p.id === paymentId && p.userId === userId
+  );
+  if (!pm) throw new Error("Método de pago no encontrado");
+
+  if (type) pm.type = type as PaymentMethodType;
+  if (label) pm.label = label;
+  if (details) pm.details = details;
+
+  return pm;
+}

@@ -46,14 +46,19 @@ class OrdenServiceImplTest {
     }
 
     private Producto crearProducto(Long id, int stock, boolean activo) {
-        Producto p = new Producto();
-        p.setId(id);
-        p.setNombre("Camiseta");
-        p.setPrecio(50.0);
-        p.setStock(stock);
-        p.setActivo(activo);
-        return p;
-    }
+    Categoria categoria = new Categoria();
+    categoria.setId(1L);
+    categoria.setNombre("Souvenirs");
+
+    Producto p = new Producto();
+    p.setId(id);
+    p.setNombre("Camiseta");
+    p.setPrecio(50.0);
+    p.setStock(stock);
+    p.setActivo(activo);
+    p.setCategoria(categoria);
+    return p;
+}
 
     private Orden crearOrden(Long id, String estado, Usuario usuario) {
         Orden o = new Orden();

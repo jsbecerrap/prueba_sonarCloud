@@ -203,7 +203,7 @@ PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
                 String.valueOf(entradaId),
                 TIPO_ENTRADA
             );
-          throw new PagoStripeException("Error al procesar el pago: " + e.getMessage());
+         throw new PagoStripeException("Error al procesar el pago. Revisa los datos de tu tarjeta e intenta de nuevo.");
         }
 
         return toDTO(entrada);
@@ -345,7 +345,7 @@ public EntradaResponseDTO reembolsarEntrada(String correo, Long entradaId) {
             String.valueOf(entradaId),
             TIPO_ENTRADA
         );
-        throw new PagoStripeException("Error al procesar el reembolso: " + e.getMessage());
+       throw new PagoStripeException("Error al procesar el reembolso. Intenta de nuevo más tarde.");
     }
 
     return toDTO(entrada);
@@ -354,10 +354,11 @@ public EntradaResponseDTO reembolsarEntrada(String correo, Long entradaId) {
 @Override
 public List<EntradaResponseDTO> listarEntradasUsuario(String correo) {
     Usuario u = usuarioService.obtenerEntidadPorCorreo(correo); 
-    return entradaRepository.findByUsuarioId(u.getId())
-        .stream()
-        .map(this::toDTO)
-        .toList();
+  return entradaRepository.findByUsuarioId(u.getId())
+    .stream()
+    .sorted((a, b) -> b.getFechaCompra().compareTo(a.getFechaCompra()))
+    .map(this::toDTO)
+    .toList();
 }
     @Override
     public EntradaResponseDTO obtenerEntrada(Long entradaId) {

@@ -1,4 +1,4 @@
-import { Box, Button, Chip, CircularProgress, Alert, Paper, Stack, Typography } from "@mui/material";
+import { Box, Button, Chip, CircularProgress, Alert, Paper, Stack, Typography, Snackbar } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -9,15 +9,18 @@ import type { ProductoResponse, CategoriaResponse } from "../api/storeApi";
 function formatPrecio(value: number) {
   return `$${value.toLocaleString("es-CO")} COP`;
 }
-
 function ProductCard({
   product,
   onAdd,
   loading,
+  quantity,
+  onChangeQty,
 }: {
   product: ProductoResponse;
-  onAdd: (product: ProductoResponse) => void;
+  onAdd: (product: ProductoResponse, qty: number) => void;
   loading: boolean;
+  quantity: number;
+  onChangeQty: (productId: number, delta: number) => void;
 }) {
   return (
     <Paper
@@ -30,17 +33,16 @@ function ProductCard({
         borderColor: product.destacado ? "rgba(255, 209, 102, 0.42)" : undefined,
       }}
     >
-   <Box
-  sx={{
-    height: 290,
-    borderRadius: 1.5,
-    backgroundImage: `url(${product.imagenUrl})`,
-backgroundSize: "cover",
-backgroundPosition: "center",
-
-    mb: 1.5,
-  }}
-/>
+      <Box
+        sx={{
+          height: 290,
+          borderRadius: 1.5,
+          backgroundImage: `url(${product.imagenUrl})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          mb: 1.5,
+        }}
+      />
       <Stack spacing={1}>
         <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
           <Chip label={product.categoriaNombre} size="small" />
@@ -63,15 +65,41 @@ backgroundPosition: "center",
         <Typography variant="h6" sx={{ fontWeight: 900 }}>
           {formatPrecio(product.precio)}
         </Typography>
+
         {product.stock === 0 ? (
-          <Button variant="outlined" disabled>
-            Sin stock
-          </Button>
+          <Button variant="outlined" disabled>Sin stock</Button>
+        ) : quantity === 0 ? (
+  <Button variant="contained" disabled={loading} onClick={() => onChangeQty(product.id, 1)}>
+    Agregar al carrito
+  </Button>
         ) : (
-          <Button variant="contained" disabled={loading} onClick={() => onAdd(product)}>
-            Agregar al carrito
-          </Button>
-        )}
+  <Stack spacing={1}>
+    <Stack direction="row" spacing={1} alignItems="center">
+      <Button
+        variant="outlined"
+        size="small"
+        sx={{ minWidth: 36, width: 36, height: 36, borderRadius: "50%", p: 0 }}
+        onClick={() => onChangeQty(product.id, -1)}
+      >−</Button>
+      <Typography sx={{ fontWeight: 900, minWidth: 20, textAlign: "center" }}>
+        {quantity}
+      </Typography>
+      <Button
+        variant="outlined"
+        size="small"
+        sx={{ minWidth: 36, width: 36, height: 36, borderRadius: "50%", p: 0 }}
+        onClick={() => onChangeQty(product.id, 1)}
+      >+</Button>
+    </Stack>
+    <Button
+      variant="contained"
+      disabled={loading}
+      onClick={() => onAdd(product, quantity)}
+    >
+      Confirmar
+    </Button>
+  </Stack>
+)}
       </Stack>
     </Paper>
   );
@@ -84,8 +112,8 @@ export default function Store() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [agregando, setAgregando] = useState<number | null>(null);
-  const [mensajeExito, setMensajeExito] = useState<string | null>(null);
-
+const [cantidades, setCantidades] = useState<Record<number, number>>({});
+const [snackbar, setSnackbar] = useState<{ open: boolean; msg: string }>({ open: false, msg: "" });
   useEffect(() => {
     const cargar = async () => {
       try {
@@ -101,18 +129,37 @@ export default function Store() {
     cargar();
   }, []);
 
-  const handleAgregar = async (product: ProductoResponse) => {
-    try {
-      setAgregando(product.id);
-      setMensajeExito(null);
-      await agregarAlCarrito({ productoId: product.id, cantidad: 1 });
-      setMensajeExito(`"${product.nombre}" agregado al carrito.`);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setAgregando(null);
+const handleAgregar = (product: ProductoResponse) => {
+  setCantidades((prev) => ({ ...prev, [product.id]: 1 }));
+};
+const handleConfirmar = async (product: ProductoResponse, qty: number) => {
+  try {
+    setAgregando(product.id);
+    await agregarAlCarrito({ productoId: product.id, cantidad: qty });
+    setCantidades((prev) => {
+      const next = { ...prev };
+      delete next[product.id];
+      return next;
+    });
+   setSnackbar({ open: true, msg: `"${product.nombre}" agregado al carrito. ` });
+  } catch (e) {
+    setError((e as Error).message);
+  } finally {
+    setAgregando(null);
+  }
+};
+const handleChangeQty = (productId: number, delta: number) => {
+  setCantidades((prev) => {
+    const actual = prev[productId] ?? 0;
+    const nueva = actual + delta;
+    if (nueva <= 0) {
+      const next = { ...prev };
+      delete next[productId];
+      return next;
     }
-  };
+    return { ...prev, [productId]: nueva };
+  });
+};
 
   const featured = productos.find((p) => p.destacado) ?? productos[0];
 
@@ -153,7 +200,7 @@ export default function Store() {
           {featured && (
             <Button
               variant="contained"
-              onClick={() => handleAgregar(featured)}
+            onClick={() => handleConfirmar(featured, 1)}
               disabled={agregando === featured.id}
               sx={{ alignSelf: "flex-start", mt: 1 }}
             >
@@ -163,7 +210,18 @@ export default function Store() {
         </Stack>
       </Paper>
 
-      {mensajeExito && <Alert severity="success">{mensajeExito}</Alert>}
+   <Snackbar
+  open={snackbar.open}
+  autoHideDuration={3000}
+  onClose={() => setSnackbar({ open: false, msg: "" })}
+  anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+  message={snackbar.msg}
+  action={
+    <Button color="inherit" size="small" onClick={() => navigate("/cart")}>
+      Ver carrito
+    </Button>
+  }
+/>
 
       {featured && (
         <Paper
@@ -216,25 +274,58 @@ export default function Store() {
                 Explora la colección y agrega al carrito lo que quieras llevar.
               </Typography>
             </Box>
-            <Box
-              sx={{
-                display: "flex",
-                gap: 1.5,
-                overflowX: "auto",
-                pb: 1,
-                scrollSnapType: "x proximity",
-                "& > *": { scrollSnapAlign: "start" },
-              }}
-            >
-              {items.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  onAdd={handleAgregar}
-                  loading={agregando === product.id}
-                />
-              ))}
-            </Box>
+            <Box sx={{ position: "relative" }}>
+  <Button
+    onClick={() => {
+      const el = document.getElementById(`cat-${cat.id}`);
+      if (el) el.scrollLeft -= 320;
+    }}
+    sx={{
+      position: "absolute", left: 0, top: "50%", transform: "translateY(-50%)",
+      zIndex: 2, minWidth: 36, width: 36, height: 36, borderRadius: "50%",
+      backgroundColor: "rgba(0,0,0,0.5)", color: "white", p: 0,
+      "&:hover": { backgroundColor: "rgba(0,0,0,0.75)" },
+    }}
+  >{"<"}</Button>
+
+  <Box
+    id={`cat-${cat.id}`}
+    sx={{
+      display: "flex",
+      gap: 1.5,
+      overflowX: "auto",
+      pb: 1,
+      px: 5,
+      scrollSnapType: "x proximity",
+      scrollBehavior: "smooth",
+      "& > *": { scrollSnapAlign: "start" },
+    }}
+  >
+    {items.map((product) => (
+      <ProductCard
+        key={product.id}
+        product={product}
+        onAdd={handleConfirmar}
+        loading={agregando === product.id}
+        quantity={cantidades[product.id] ?? 0}
+        onChangeQty={handleChangeQty}
+      />
+    ))}
+  </Box>
+
+  <Button
+    onClick={() => {
+      const el = document.getElementById(`cat-${cat.id}`);
+      if (el) el.scrollLeft += 320;
+    }}
+    sx={{
+      position: "absolute", right: 0, top: "50%", transform: "translateY(-50%)",
+      zIndex: 2, minWidth: 36, width: 36, height: 36, borderRadius: "50%",
+      backgroundColor: "rgba(0,0,0,0.5)", color: "white", p: 0,
+      "&:hover": { backgroundColor: "rgba(0,0,0,0.75)" },
+    }}
+  >{">"}</Button>
+</Box>
           </Stack>
         );
       })}
