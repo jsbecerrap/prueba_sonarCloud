@@ -165,11 +165,19 @@ class MetodoPagoServiceImplTest {
         assertThrows(MetodoPagoNotFoundException.class,
                 () -> service.obtenerEntidadPorId(99L));
     }
-    @Test
+
+
+
+
+
+
+
+@Test
 void eliminar_metodoExistente_eliminaCorrectamente() {
     Usuario usuario = crearUsuario(1L);
     MetodoPago metodo = crearMetodoPago(1L, usuario, false);
 
+    when(usuarioService.obtenerEntidadPorCorreo("user@test.com")).thenReturn(usuario);
     when(metodoPagoRepository.findById(1L)).thenReturn(Optional.of(metodo));
     when(metodoPagoRepository.findByUsuarioIdOrderByCreatedAtDesc(1L)).thenReturn(List.of());
     doNothing().when(metodoPagoRepository).delete(metodo);
@@ -178,19 +186,18 @@ void eliminar_metodoExistente_eliminaCorrectamente() {
 
     verify(metodoPagoRepository).delete(metodo);
 }
-
 @Test
 void eliminar_metodoDeOtroUsuario_lanzaExcepcion() {
     Usuario usuario = crearUsuario(1L);
     Usuario otroUsuario = crearUsuario(2L);
     MetodoPago metodo = crearMetodoPago(1L, otroUsuario, false);
 
+    when(usuarioService.obtenerEntidadPorCorreo("user@test.com")).thenReturn(usuario);
     when(metodoPagoRepository.findById(1L)).thenReturn(Optional.of(metodo));
 
     assertThrows(MetodoPagoNotFoundException.class,
             () -> service.eliminar("user@test.com", 1L));
 }
-
 @Test
 void actualizar_camposValidos_retornaDTO() {
     Usuario usuario = crearUsuario(1L);
@@ -199,6 +206,7 @@ void actualizar_camposValidos_retornaDTO() {
     MetodoPagoRequestDTO dto = new MetodoPagoRequestDTO();
     dto.setLabel("Visa actualizada");
 
+    when(usuarioService.obtenerEntidadPorCorreo("user@test.com")).thenReturn(usuario);
     when(metodoPagoRepository.findById(1L)).thenReturn(Optional.of(metodo));
     when(metodoPagoRepository.save(any(MetodoPago.class))).thenReturn(metodo);
 
@@ -207,7 +215,6 @@ void actualizar_camposValidos_retornaDTO() {
     assertNotNull(resultado);
     verify(metodoPagoRepository).save(metodo);
 }
-
 @Test
 void actualizar_metodoDeOtroUsuario_lanzaExcepcion() {
     Usuario usuario = crearUsuario(1L);
@@ -217,6 +224,7 @@ void actualizar_metodoDeOtroUsuario_lanzaExcepcion() {
     MetodoPagoRequestDTO dto = new MetodoPagoRequestDTO();
     dto.setLabel("Nuevo label");
 
+    when(usuarioService.obtenerEntidadPorCorreo("user@test.com")).thenReturn(usuario);
     when(metodoPagoRepository.findById(1L)).thenReturn(Optional.of(metodo));
 
     assertThrows(MetodoPagoNotFoundException.class,
