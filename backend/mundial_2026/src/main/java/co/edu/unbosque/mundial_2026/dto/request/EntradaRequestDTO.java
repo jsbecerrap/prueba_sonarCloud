@@ -4,6 +4,8 @@ public class EntradaRequestDTO {
     private Long partidoId;
     private Integer cantidad;
 private String categoria;
+    private String sector;
+    private String fila;
     public EntradaRequestDTO() {
         //Constructor vacio
     }
@@ -30,4 +32,19 @@ private String categoria;
 public void setCategoria(String categoria) {
     this.categoria = categoria;
 }
+public String getSector() {
+        return sector;
+    }
+
+    public void setSector(String sector) {
+        this.sector = sector;
+    }
+
+    public String getFila() {
+        return fila;
+    }
+
+    public void setFila(String fila) {
+        this.fila = fila;
+    }
 }

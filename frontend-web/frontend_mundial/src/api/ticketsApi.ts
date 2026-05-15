@@ -45,8 +45,16 @@ export async function getMyTickets(userId: string): Promise<Ticket[]> {
         paidAt: e.fechaPago ?? undefined,
         refundedAt: e.fechaReembolso ?? undefined,
         paymentRef: e.paymentRef ?? undefined,
-categoria: e.categoria ?? "GENERAL",
-price: e.precio ?? 0,
+        categoria: e.categoria ?? "BARRA",
+        price: e.precio ?? 0,
+        seleccionLocal: e.seleccionLocal ?? undefined,
+        seleccionVisitante: e.seleccionVisitante ?? undefined,
+        estadio: e.estadio ?? undefined,
+        fecha: e.fecha ?? undefined,
+        ronda: e.ronda ?? undefined,
+        sector: e.sector ?? undefined,
+        fila: e.fila ?? undefined,
+        asientoInicio: e.asientoInicio ?? undefined,
       };
     });
   }
@@ -60,7 +68,29 @@ price: e.precio ?? 0,
 
 export async function getTicketById(userId: string, ticketId: string): Promise<Ticket | null> {
   if (!USE_MOCK) {
-    return http.get<Ticket>(`/api/entradas/${ticketId}`);
+   const e = await http.get<any>(`/api/entradas/${ticketId}`);
+    return {
+      id: String(e.id),
+      userId: String(e.usuarioId),
+      matchId: String(e.partidoId),
+      quantity: e.cantidad,
+      status: e.estado as TicketStatus,
+      createdAt: e.fechaCompra ?? new Date().toISOString(),
+      expiresAt: e.ttlReserva ?? undefined,
+      paidAt: e.fechaPago ?? undefined,
+      refundedAt: e.fechaReembolso ?? undefined,
+      paymentRef: e.paymentRef ?? undefined,
+      categoria: e.categoria ?? "BARRA",
+      price: e.precio ?? 0,
+      seleccionLocal: e.seleccionLocal ?? undefined,
+      seleccionVisitante: e.seleccionVisitante ?? undefined,
+      estadio: e.estadio ?? undefined,
+      fecha: e.fecha ?? undefined,
+      ronda: e.ronda ?? undefined,
+      sector: e.sector ?? undefined,
+      fila: e.fila ?? undefined,
+      asientoInicio: e.asientoInicio ?? undefined,
+    };
   }
   await sleep(150);
   normalizeTickets();
@@ -68,9 +98,9 @@ export async function getTicketById(userId: string, ticketId: string): Promise<T
   return t ?? null;
 }
 
- export async function reserveTicket(userId: string, matchId: string, quantity: number, categoria: string = "GENERAL"): Promise<Ticket> {
+export async function reserveTicket(userId: string, matchId: string, quantity: number, categoria: string = "BARRA", sector: string = "Norte", fila: string = "C"): Promise<Ticket> {
   if (!USE_MOCK) {
-   const data = await http.post<any>(`/api/entradas/reservar`, { partidoId: matchId, cantidad: quantity, categoria });
+    const data = await http.post<any>(`/api/entradas/reservar`, { partidoId: matchId, cantidad: quantity, categoria, sector, fila });
     return {
       id: String(data.id),
       userId: String(data.usuarioId),
@@ -82,8 +112,11 @@ export async function getTicketById(userId: string, ticketId: string): Promise<T
       paidAt: data.fechaPago ?? undefined,
       refundedAt: data.fechaReembolso ?? undefined,
       paymentRef: data.paymentRef ?? undefined,
-      categoria: data.categoria ?? "GENERAL",
-price: data.precio ?? 0,
+      categoria: data.categoria ?? "BARRA",
+      price: data.precio ?? 0,
+      sector: data.sector ?? undefined,
+      fila: data.fila ?? undefined,
+      asientoInicio: data.asientoInicio ?? undefined,
     };
   }
   await sleep(250);
@@ -200,6 +233,7 @@ export type PartidoCapacidad = {
   estadio: string;
   ciudad: string;
   capacidadDisponible: number;
+  ronda?: string;
 };
 
 export async function getPartidosConCapacidad(): Promise<PartidoCapacidad[]> {

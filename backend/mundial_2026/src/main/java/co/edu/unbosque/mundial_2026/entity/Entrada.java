@@ -51,7 +51,16 @@ public class Entrada {
     @Column(name = "fecha_reembolso")
     private LocalDateTime fechaReembolso;
     @Column(nullable = false)
-private String categoria;
+    private String categoria;
+
+    @Column
+    private String sector;
+
+    @Column
+    private String fila;
+
+    @Column(name = "asiento_inicio")
+    private Integer asientoInicio;
 
     public Entrada() {
         //Constructor vacio
@@ -151,4 +160,27 @@ private String categoria;
 public void setCategoria(String categoria) {
     this.categoria = categoria;
 }
+public String getSector() {
+        return sector;
+    }
+
+    public void setSector(String sector) {
+        this.sector = sector;
+    }
+
+    public String getFila() {
+        return fila;
+    }
+
+    public void setFila(String fila) {
+        this.fila = fila;
+    }
+
+    public Integer getAsientoInicio() {
+        return asientoInicio;
+    }
+
+    public void setAsientoInicio(Integer asientoInicio) {
+        this.asientoInicio = asientoInicio;
+    }
 }

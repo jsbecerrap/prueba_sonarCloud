@@ -331,6 +331,7 @@ public List<PartidoCapacidadDTO> listarPartidosConCapacidad() {
         dto.setEstadio(p.getEstadio());
         dto.setCiudad(ESTADIO_CIUDAD.getOrDefault(p.getEstadio(), "Por confirmar")); 
         dto.setCapacidadDisponible(p.getCapacidadDisponible() != null ? p.getCapacidadDisponible() : 60000);
+        dto.setRonda(p.getRonda());
         dtos.add(dto);
     }
     return dtos;

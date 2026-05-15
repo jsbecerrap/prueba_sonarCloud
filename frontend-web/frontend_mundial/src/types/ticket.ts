@@ -18,6 +18,13 @@ export type Ticket = {
   refundedAt?: string;
   paymentRef?: string;
   categoria?: string;
-price?: number;
-  
+  price?: number;
+ seleccionLocal?: string;
+  seleccionVisitante?: string;
+  estadio?: string;
+  fecha?: string;
+  ronda?: string;
+  sector?: string;
+  fila?: string;
+  asientoInicio?: number;
 };

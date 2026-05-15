@@ -86,9 +86,9 @@ export default function Checkout() {
     try {
       setLoading(true);
       setMsg(null);
-      if (kind === "TICKET") {
+     if (kind === "TICKET") {
         await createTicketPayment(user.id, ticketId, methodId, amount);
-        navigate("/tickets");
+        navigate(`/entrada/${ticketId}`);
       } else if (kind === "ORDEN") {
         await confirmarOrden({ metodoPagoId: Number(methodId) });
         navigate("/store");

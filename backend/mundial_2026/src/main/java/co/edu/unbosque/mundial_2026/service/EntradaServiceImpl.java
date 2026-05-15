@@ -78,9 +78,9 @@ static {
 }
 private static final Map<String, Double> MULTIPLICADOR_CATEGORIA = new HashMap<>();
 static {
-    MULTIPLICADOR_CATEGORIA.put("GENERAL", 1.0);
-    MULTIPLICADOR_CATEGORIA.put("PREFERENCIAL", 2.0);
-    MULTIPLICADOR_CATEGORIA.put("VIP", 3.5);
+    MULTIPLICADOR_CATEGORIA.put("BARRA", 1.0);
+    MULTIPLICADOR_CATEGORIA.put("GENERAL", 2.0);
+    MULTIPLICADOR_CATEGORIA.put("PALCO", 3.5);
 }
     public EntradaServiceImpl(EntradaRepository entradaRepository,
     UsuarioService usuarioService,
@@ -130,15 +130,27 @@ public EntradaResponseDTO reservarEntrada(String correo, EntradaRequestDTO dto) 
     entrada.setEstado(ESTADO_RESERVADA);
     entrada.setPartido(partido);
  String categoria = (dto.getCategoria() != null && !dto.getCategoria().isBlank())
-    ? dto.getCategoria().toUpperCase()
-    : "GENERAL";
-entrada.setCategoria(categoria);
-entrada.setPrecio(calcularPrecio(partido, categoria) * dto.getCantidad());
+        ? dto.getCategoria().toUpperCase()
+        : "BARRA";
+    String sector = (dto.getSector() != null && !dto.getSector().isBlank())
+        ? dto.getSector()
+        : "Norte";
+    String fila = (dto.getFila() != null && !dto.getFila().isBlank())
+        ? dto.getFila().toUpperCase()
+        : "C";
+
+    entrada.setCategoria(categoria);
+    entrada.setSector(sector);
+    entrada.setFila(fila);
+    entrada.setPrecio(calcularPrecio(partido, categoria) * dto.getCantidad());
     entrada.setFechaCompra(LocalDateTime.now());
     entrada.setTtlReserva(LocalDateTime.now().plusMinutes(15));
 
     entradaRepository.save(entrada);
 
+    int asientoInicio = (int)((entrada.getId() * 7) % 50) + 1;
+    entrada.setAsientoInicio(asientoInicio);
+    entradaRepository.save(entrada);
     partidoService.actualizarCapacidad(partido.getId(), -dto.getCantidad());
 
     auditoriaService.registrar(
@@ -285,6 +297,9 @@ public EntradaResponseDTO transferirEntrada(Long entradaId, TransferenciaRequest
     nuevaEntrada.setEstado(ESTADO_PAGADA);
     nuevaEntrada.setFechaCompra(LocalDateTime.now());
     nuevaEntrada.setCategoria(entrada.getCategoria());
+    nuevaEntrada.setSector(entrada.getSector());
+    nuevaEntrada.setFila(entrada.getFila());
+    nuevaEntrada.setAsientoInicio(entrada.getAsientoInicio());
     entradaRepository.save(nuevaEntrada);
 
     auditoriaService.registrar(
@@ -406,6 +421,9 @@ dto.setRonda(entrada.getPartido().getRonda());
     dto.setFechaReembolso(entrada.getFechaReembolso());
     dto.setPaymentRef(entrada.getPaymentRef());
     dto.setCategoria(entrada.getCategoria());
+    dto.setSector(entrada.getSector());
+    dto.setFila(entrada.getFila());
+    dto.setAsientoInicio(entrada.getAsientoInicio());
     return dto;
 }
 @Override
@@ -420,7 +438,7 @@ private Double calcularPrecio(Partido partido, String categoria) {
         precioBase = (long)(precioBase * 1.5);
     }
     Double multiplicador = MULTIPLICADOR_CATEGORIA.getOrDefault(
-        categoria != null ? categoria.toUpperCase() : "GENERAL", 1.0
+        categoria != null ? categoria.toUpperCase() : "BARRA", 1.0
     );
     return precioBase * multiplicador;
 }

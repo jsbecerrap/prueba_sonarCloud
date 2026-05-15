@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Alert,
+  Box,
   Button,
   Chip,
   Dialog,
@@ -11,6 +12,7 @@ import {
   Paper,
   Stack,
   TextField,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
@@ -48,7 +50,11 @@ export default function Tickets() {
   const [partidosCapacidad, setPartidosCapacidad] = useState<PartidoCapacidad[]>([]);
   const [selectedMatchId, setSelectedMatchId] = useState("");
   const [quantity, setQuantity] = useState(1);
-  const [categoria, setCategoria] = useState<string>("GENERAL");
+ const [categoria, setCategoria] = useState<string>("BARRA");
+  const [sector, setSector] = useState<string>("Norte");
+  const [fila, setFila] = useState<string>("C");
+
+
   const [quantityError, setQuantityError] = useState("");
   const [msg, setMsg] = useState<Msg>(null);
   const [loading, setLoading] = useState(false);
@@ -63,7 +69,7 @@ export default function Tickets() {
 
   const matchById = useMemo(() => new Map(matches.map((match) => [match.id, match])), [matches]);
 
-  // ─── Dropdowns construidos desde partidosCapacidad (fuente correcta: BD propia) ───
+ 
 
   const selecciones = useMemo(() => {
     const set = new Set<string>();
@@ -90,7 +96,7 @@ export default function Tickets() {
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [partidosCapacidad]);
 
-  // ─── Lista de partidos filtrada también desde partidosCapacidad ───
+ 
 
   const filteredPartidos = useMemo(() => {
     return partidosCapacidad.filter((p) => {
@@ -100,7 +106,28 @@ export default function Tickets() {
       return true;
     });
   }, [partidosCapacidad, filterSeleccion, filterCiudad, filterEstadio]);
+const partidoSeleccionado = useMemo(
+  () => filteredPartidos.find((p) => String(p.id) === selectedMatchId) ?? null,
+  [filteredPartidos, selectedMatchId]
+);
+const PRECIO_POR_RONDA: Record<string, number> = {
+    "Group Stage - 1": 50000, "Group Stage - 2": 50000, "Group Stage - 3": 50000,
+    "Round of 32": 80000, "Round of 16": 100000,
+    "Quarter-finals": 150000, "Semi-finals": 200000,
+    "3rd Place Final": 180000, "Final": 300000,
+  };
+  const SELECCIONES_TOP = new Set(["France","Spain","Argentina","England","Portugal","Brazil","Netherlands","Morocco","Belgium","Germany","Colombia"]);
+  const MULTIPLICADOR: Record<string, number> = { BARRA: 1, GENERAL: 2, PALCO: 3.5 };
 
+  const calcularPrecio = (ronda: string | undefined, cat: string) => {
+    const base = PRECIO_POR_RONDA[ronda ?? ""] ?? 50000;
+    const hayTop = partidoSeleccionado
+      ? SELECCIONES_TOP.has(partidoSeleccionado.local) || SELECCIONES_TOP.has(partidoSeleccionado.visitante)
+      : false;
+    return base * (hayTop ? 1.5 : 1) * (MULTIPLICADOR[cat] ?? 1);
+  };
+
+  const formatPrecio = (v: number) => `$${v.toLocaleString("es-CO")} COP`;
   const refresh = useCallback(async () => {
     if (!user) return;
     const [ticketsData, matchesData, partidosData] = await Promise.all([
@@ -153,7 +180,7 @@ export default function Tickets() {
     try {
       setLoading(true);
       setMsg(null);
-await reserveTicket(user.id, selectedMatchId, quantity, categoria);
+await reserveTicket(user.id, selectedMatchId, quantity, categoria, sector, fila);
       setMsg({ text: "Reserva creada. Tienes 15 minutos para pagarla.", severity: "success" });
       await refresh();
     } catch (e) {
@@ -297,22 +324,167 @@ await reserveTicket(user.id, selectedMatchId, quantity, categoria);
             disabled={loading}
             sx={{ minWidth: { md: 180 } }}
           />
-          <TextField
-            select
-            label="Categoría"
-            value={categoria}
-            onChange={(e) => setCategoria(e.target.value)}
-            disabled={loading}
-            sx={{ minWidth: { md: 180 } }}
-          >
-            <MenuItem value="GENERAL">General</MenuItem>
-            <MenuItem value="PREFERENCIAL">Preferencial</MenuItem>
-            <MenuItem value="VIP">VIP</MenuItem>
-          </TextField>
+        </Stack>
+
+        {/* Mapa visual del estadio + selección de zona */}
+        <Box sx={{ mt: 2 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+            Selecciona una zona
+          </Typography>
+
+          {/* Mini mapa SVG del estadio - rectangular coherente */}
+<Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
+         <svg viewBox="0 0 380 260" width="100%" style={{ maxWidth: 480 }}>
+              {/* Fondo */}
+              <rect x="0" y="0" width="380" height="260" rx="12" fill="#151f15" />
+
+             {/* PALCO - franja superior izquierda (30% del ancho) */}
+              <rect x="62" y="4" width="90" height="26" rx="5"
+                fill={categoria === "PALCO" ? "rgba(180,100,255,0.5)" : "rgba(180,100,255,0.15)"}
+                stroke={categoria === "PALCO" ? "#b464ff" : "#b464ff44"}
+                strokeWidth="1.5" style={{ cursor: "pointer" }}
+                onClick={() => { setCategoria("PALCO"); setSector("Occidental VIP"); }}
+              />
+              <text x="107" y="21" fill={categoria === "PALCO" ? "#b464ff" : "#b464ff99"} fontSize="7" textAnchor="middle" fontWeight="700" style={{ pointerEvents: "none" }}>
+                PALCO {partidoSeleccionado ? `· ${Math.floor(partidoSeleccionado.capacidadDisponible * 0.1).toLocaleString()}` : ""}
+              </text>
+
+              {/* GENERAL OCCIDENTAL - franja superior derecha (70% del ancho) */}
+              <rect x="158" y="4" width="160" height="26" rx="5"
+                fill={categoria === "GENERAL" && sector === "Occidental" ? "rgba(255,180,0,0.5)" : "rgba(255,180,0,0.15)"}
+                stroke={categoria === "GENERAL" ? "#ffb400" : "#ffb40044"}
+                strokeWidth="1.5" style={{ cursor: "pointer" }}
+                onClick={() => { setCategoria("GENERAL"); setSector("Occidental"); }}
+              />
+              <text x="238" y="21" fill={categoria === "GENERAL" ? "#ffb400" : "#ffb40099"} fontSize="7" textAnchor="middle" fontWeight="700" style={{ pointerEvents: "none" }}>
+                GENERAL OCC {partidoSeleccionado ? `· ${Math.floor(partidoSeleccionado.capacidadDisponible * 0.2).toLocaleString()}` : ""}
+              </text>
+
+              {/* BARRA NORTE - lateral izquierdo */}
+              <rect x="4" y="34" width="52" height="192" rx="6"
+                fill={categoria === "BARRA" && sector === "Norte" ? "rgba(100,180,100,0.5)" : "rgba(100,180,100,0.15)"}
+                stroke={categoria === "BARRA" ? "#64b464" : "#64b46444"}
+                strokeWidth="1.5" style={{ cursor: "pointer" }}
+                onClick={() => { setCategoria("BARRA"); setSector("Norte"); }}
+              />
+              <text x="30" y="130" fill={categoria === "BARRA" ? "#64b464" : "#64b46499"} fontSize="8" textAnchor="middle" fontWeight="700" transform="rotate(-90,30,130)" style={{ pointerEvents: "none" }}>
+                BARRA NORTE {partidoSeleccionado ? `· ${Math.floor(partidoSeleccionado.capacidadDisponible * 0.2).toLocaleString()}` : ""}
+              </text>
+
+              {/* BARRA SUR - lateral derecho */}
+              <rect x="324" y="34" width="52" height="192" rx="6"
+                fill={categoria === "BARRA" && sector === "Sur" ? "rgba(100,180,100,0.5)" : "rgba(100,180,100,0.15)"}
+                stroke={categoria === "BARRA" ? "#64b464" : "#64b46444"}
+                strokeWidth="1.5" style={{ cursor: "pointer" }}
+                onClick={() => { setCategoria("BARRA"); setSector("Sur"); }}
+              />
+              <text x="350" y="130" fill={categoria === "BARRA" ? "#64b464" : "#64b46499"} fontSize="8" textAnchor="middle" fontWeight="700" transform="rotate(90,350,130)" style={{ pointerEvents: "none" }}>
+                BARRA SUR {partidoSeleccionado ? `· ${Math.floor(partidoSeleccionado.capacidadDisponible * 0.2).toLocaleString()}` : ""}
+              </text>
+
+              {/* GENERAL ORIENTAL - abajo */}
+              <rect x="62" y="230" width="256" height="26" rx="5"
+                fill={categoria === "GENERAL" && sector === "Oriental" ? "rgba(255,180,0,0.5)" : "rgba(255,180,0,0.15)"}
+                stroke={categoria === "GENERAL" ? "#ffb400" : "#ffb40044"}
+                strokeWidth="1.5" style={{ cursor: "pointer" }}
+                onClick={() => { setCategoria("GENERAL"); setSector("Oriental"); }}
+              />
+              <text x="190" y="247" fill={categoria === "GENERAL" ? "#ffb400" : "#ffb40099"} fontSize="8" textAnchor="middle" fontWeight="700" style={{ pointerEvents: "none" }}>
+                GENERAL ORIENTAL {partidoSeleccionado ? `· ${Math.floor(partidoSeleccionado.capacidadDisponible * 0.3).toLocaleString()}` : ""}
+              </text>
+
+              {/* Gradas ovaladas */}
+              <ellipse cx="190" cy="132" rx="118" ry="88" fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="8" style={{ pointerEvents: "none" }} />
+              <ellipse cx="190" cy="132" rx="106" ry="76" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="5" style={{ pointerEvents: "none" }} />
+
+              {/* Cancha */}
+              <rect x="82" y="54" width="236" height="156" rx="4" fill="#2d6e2d" stroke="#4a9e4a" strokeWidth="1.5" style={{ pointerEvents: "none" }} />
+              <line x1="200" y1="54" x2="200" y2="210" stroke="#4a9e4a" strokeWidth="1" style={{ pointerEvents: "none" }} />
+              <circle cx="200" cy="132" r="22" fill="none" stroke="#4a9e4a" strokeWidth="1" style={{ pointerEvents: "none" }} />
+              <rect x="82" y="97" width="20" height="70" fill="none" stroke="#4a9e4a" strokeWidth="1" style={{ pointerEvents: "none" }} />
+              <rect x="298" y="97" width="20" height="70" fill="none" stroke="#4a9e4a" strokeWidth="1" style={{ pointerEvents: "none" }} />
+            </svg>
+          </Box>
+
+          {/* Tarjetas de zona */}
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
+            {(["BARRA", "GENERAL", "PALCO"] as const).map((cat) => {
+              const precio = calcularPrecio(partidoSeleccionado?.ronda, cat);
+              const colores: Record<string, { border: string; bg: string; text: string; sectores: string[] }> = {
+              BARRA:   { border: "#64b464", bg: "rgba(100,180,100,0.08)", text: "#64b464", sectores: ["Norte", "Sur"] },
+                GENERAL: { border: "#ffb400", bg: "rgba(255,180,0,0.08)",   text: "#ffb400", sectores: ["Oriental", "Occidental"] },
+                PALCO:   { border: "#b464ff", bg: "rgba(180,100,255,0.08)", text: "#b464ff", sectores: ["Occidental VIP"] },
+              };
+              const c = colores[cat];
+              const selected = categoria === cat;
+              return (
+                <Box key={cat} onClick={() => { setCategoria(cat); setSector(c.sectores[0]); }}
+                  sx={{
+                    flex: 1, p: 2, borderRadius: 2, cursor: "pointer", textAlign: "center",
+                    border: `2px solid ${selected ? c.border : "rgba(255,255,255,0.1)"}`,
+                    bgcolor: selected ? c.bg : "rgba(255,255,255,0.03)",
+                    transition: "all 0.2s",
+                    "&:hover": { border: `2px solid ${c.border}`, bgcolor: c.bg },
+                  }}
+                >
+                  <Typography sx={{ fontWeight: 800, color: selected ? c.text : "text.primary", fontSize: 13 }}>
+                    {cat}
+                  </Typography>
+                  <Typography sx={{ fontWeight: 900, fontSize: 16, color: c.text, mt: 0.5 }}>
+                    {formatPrecio(precio)}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {c.sectores.join(" · ")}
+                  </Typography>
+                </Box>
+              );
+            })}
+          </Stack>
+
+          {/* Selector de sector y fila */}
+          {categoria && (
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ mt: 2 }}>
+              <TextField
+                select
+                label="Sector"
+                value={sector}
+                onChange={(e) => setSector(e.target.value)}
+                disabled={loading}
+                fullWidth
+              >
+                {(categoria === "BARRA" ? ["Norte", "Sur"] : categoria === "GENERAL" ? ["Oriental", "Occidental"] : ["Occidental VIP"]).map((s) => (
+                  <MenuItem key={s} value={s}>{s}</MenuItem>
+                ))}
+              </TextField>
+              <TextField
+                select
+                label="Fila"
+                value={fila}
+                onChange={(e) => setFila(e.target.value)}
+                disabled={loading}
+                fullWidth
+              >
+                {["A", "B", "C", "D"].map((f) => (
+                  <MenuItem key={f} value={f}>
+                    Fila {f}{f === "A" ? " · Más cerca del campo" : f === "D" ? " · Más alta" : ""}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Stack>
+          )}
+
+          {selectedMatchId && (
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block" }}>
+              Total estimado: <strong>{formatPrecio(calcularPrecio(partidoSeleccionado?.ronda, categoria) * quantity)}</strong>
+            </Typography>
+          )}
+        </Box>
+
+        <Box sx={{ mt: 2 }}>
           <Button variant="contained" onClick={onReserve} disabled={loading || filteredPartidos.length === 0}>
             Reservar
           </Button>
-        </Stack>
+        </Box>
       </Paper>
 
       <Paper sx={{ p: 2.5 }}>
@@ -351,7 +523,9 @@ await reserveTicket(user.id, selectedMatchId, quantity, categoria);
                       </Stack>
                       <Typography color="text.secondary">
                         Cantidad: {ticket.quantity}
-{ticket.categoria ? ` · Categoría: ${ticket.categoria}` : ""}
+                        {ticket.categoria ? ` · ${ticket.categoria}` : ""}
+                        {ticket.sector ? ` · ${ticket.sector}` : ""}
+                        {ticket.fila ? ` · Fila ${ticket.fila}` : ""}
                       </Typography>
                       {(match || partido) && (
                         <Typography color="text.secondary">
@@ -381,8 +555,8 @@ await reserveTicket(user.id, selectedMatchId, quantity, categoria);
                       )}
                       {ticket.status === "PAGADA" && (
                         <>
-                          <Button variant="outlined" onClick={() => navigate("/payments")}>
-                            Ver pago
+                         <Button variant="outlined" onClick={() => navigate(`/entrada/${ticket.id}`)}>
+                            Ver entrada
                           </Button>
                           <Button variant="outlined" color="warning" onClick={() => onOpenTransfer(ticket.id)}>
                             Transferir

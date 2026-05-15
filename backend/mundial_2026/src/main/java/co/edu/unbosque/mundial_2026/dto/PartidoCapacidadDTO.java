@@ -7,7 +7,7 @@ public class PartidoCapacidadDTO {
     private String estadio;
     private String ciudad;
     private Integer capacidadDisponible;
-
+private String ronda;
     public PartidoCapacidadDTO() {
         //Constructor vacio
     }
@@ -59,4 +59,11 @@ public class PartidoCapacidadDTO {
     public void setCapacidadDisponible(Integer capacidadDisponible) {
         this.capacidadDisponible = capacidadDisponible;
     }
+    public String getRonda() {
+    return ronda;
+}
+
+public void setRonda(String ronda) {
+    this.ronda = ronda;
+}
 }

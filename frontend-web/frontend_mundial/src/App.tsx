@@ -24,6 +24,7 @@ import Support from "./pages/Support";
 import Maps from "./pages/Maps";
 import Checkout from "./pages/Checkout";
 import Tickets from "./pages/Tickets";
+import EntradaDigital from "./pages/EntradaDigital";
 import Payments from "./pages/Payments";
 import Store from "./pages/Store";
 import Cart from "./pages/Cart";
@@ -103,6 +104,7 @@ export default function App() {
         <Route path="maps" element={<UserOnly><Maps /></UserOnly>} />
         <Route path="checkout" element={<UserOnly><Checkout /></UserOnly>} />
         <Route path="tickets" element={<UserOnly><Tickets /></UserOnly>} />
+        <Route path="entrada/:ticketId" element={<UserOnly><EntradaDigital /></UserOnly>} />
         <Route path="payments" element={<UserOnly><Payments /></UserOnly>} />
 <Route path="store" element={<UserOnly><Store /></UserOnly>} />
 <Route path="cart" element={<UserOnly><Cart /></UserOnly>} />
