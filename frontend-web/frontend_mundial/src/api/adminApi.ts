@@ -264,6 +264,7 @@ export type Categoria = {
   id: number;
   nombre: string;
   descripcion: string;
+  activo: boolean;
 };
 
 export type CategoriaPayload = {
@@ -300,7 +301,7 @@ export type ProductoActualizarPayload = {
 };
 export async function adminGetCategorias(): Promise<Categoria[]> {
   if (!USE_MOCK) {
-    return http.get<Categoria[]>("/api/categorias");
+    return http.get<Categoria[]>("/api/categorias/todas");
   }
   await sleep(150);
   return [];
@@ -311,7 +312,7 @@ export async function adminCrearCategoria(payload: CategoriaPayload): Promise<Ca
     return http.post<Categoria>("/api/categorias", payload);
   }
   await sleep(200);
-  return { id: Date.now(), nombre: payload.nombre, descripcion: payload.descripcion ?? "" };
+return { id: Date.now(), nombre: payload.nombre, descripcion: payload.descripcion ?? "", activo: true };
 }
 
 export async function adminActualizarCategoria(id: number, payload: CategoriaPayload): Promise<Categoria> {
@@ -319,15 +320,23 @@ export async function adminActualizarCategoria(id: number, payload: CategoriaPay
     return http.put<Categoria>(`/api/categorias/${id}`, payload);
   }
   await sleep(200);
-  return { id, nombre: payload.nombre, descripcion: payload.descripcion ?? "" };
+  return { id, nombre: payload.nombre, descripcion: payload.descripcion ?? "", activo: true };
 }
 
-export async function adminEliminarCategoria(id: number): Promise<void> {
+export async function adminDesactivarCategoria(id: number): Promise<{ categoria: Categoria; productosAfectados: Producto[] }> {
   if (!USE_MOCK) {
-    await http.delete(`/api/categorias/${id}`);
-    return;
+    return http.patch(`/api/categorias/${id}/desactivar`);
   }
   await sleep(150);
+  return { categoria: { id, nombre: "", descripcion: "", activo: false }, productosAfectados: [] };
+}
+
+export async function adminReactivarCategoria(id: number): Promise<{ categoria: Categoria; productos: Producto[] }> {
+  if (!USE_MOCK) {
+    return http.patch(`/api/categorias/${id}/reactivar`);
+  }
+  await sleep(150);
+  return { categoria: { id, nombre: "", descripcion: "", activo: true }, productos: [] };
 }
 
 export async function adminGetProductos(): Promise<Producto[]> {
@@ -365,6 +374,13 @@ export async function adminEliminarProducto(id: number): Promise<void> {
 export async function adminReactivarProducto(id: number): Promise<void> {
   if (!USE_MOCK) {
     await http.patch(`/api/productos/${id}/reactivar`);
+    return;
+  }
+  await sleep(150);
+}
+export async function adminActivarProductosLote(ids: number[]): Promise<void> {
+  if (!USE_MOCK) {
+    await http.patch(`/api/productos/activar-lote`, { ids });
     return;
   }
   await sleep(150);
@@ -476,4 +492,11 @@ export async function adminNotificarPorPartido(
     return;
   }
   await sleep(200);
+}
+export async function adminGetProductosDeCategoria(id: number): Promise<Producto[]> {
+  if (!USE_MOCK) {
+    return http.get<Producto[]>(`/api/categorias/${id}/productos`);
+  }
+  await sleep(150);
+  return [];
 }

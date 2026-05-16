@@ -12,7 +12,7 @@ import co.edu.unbosque.mundial_2026.entity.Producto;
 public interface ProductoRepository extends JpaRepository<Producto, Long> {
     List<Producto> findByActivoTrue();
     List<Producto> findByCategoriaIdAndActivoTrue(Long categoriaId);
-    List<Producto> findByCategoriaId(Long categoriaId);
+  
     @Query("SELECT DISTINCT p FROM Producto p LEFT JOIN FETCH p.variantes WHERE p.activo = true")
 List<Producto> findByActivoTrueWithVariantes();
 @Query("SELECT DISTINCT p FROM Producto p LEFT JOIN FETCH p.variantes WHERE p.activo = true")
@@ -29,8 +29,10 @@ long countByActivoTrue();
        "GROUP BY p.id, p.nombre, p.descripcion, p.precio, p.imagenUrl, " +
        "p.categoria.nombre, p.equipo, p.bandera, p.destacado")
 List<ProductoListadoDTO> findAllLiviano();
-long countByCategoriaId(Long categoriaId);
+
 long countByCategoriaIdAndActivoTrue(Long categoriaId);
 @Query("SELECT DISTINCT p FROM Producto p LEFT JOIN FETCH p.variantes")
 List<Producto> findAllWithVariantes();
+List<Producto> findByCategoriaId(Long categoriaId);
+long countByCategoriaId(Long categoriaId);
 }

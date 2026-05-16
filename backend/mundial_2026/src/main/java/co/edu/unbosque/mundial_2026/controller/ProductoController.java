@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import co.edu.unbosque.mundial_2026.dto.request.ActivarLoteRequestDTO;
 import co.edu.unbosque.mundial_2026.dto.request.ProductoActualizarRequestDTO;
 import co.edu.unbosque.mundial_2026.dto.request.ProductoRequestDTO;
 import co.edu.unbosque.mundial_2026.dto.response.ProductoListadoDTO;
@@ -85,4 +86,10 @@ public class ProductoController {
 public ResponseEntity<List<ProductoListadoDTO>> listarLiviano() {
     return ResponseEntity.ok(productoService.listarTodosLiviano());
 } 
+@PreAuthorize("hasRole('ADMIN')")
+    @PatchMapping("/activar-lote")
+    public ResponseEntity<Void> activarLote(@RequestBody ActivarLoteRequestDTO dto) {
+        productoService.activarLote(dto.getIds());
+        return ResponseEntity.noContent().build();
+    }
 }

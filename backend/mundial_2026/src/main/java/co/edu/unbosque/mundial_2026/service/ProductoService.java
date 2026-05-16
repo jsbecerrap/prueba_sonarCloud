@@ -22,4 +22,5 @@ public interface ProductoService {
     void actualizarStock(Long productoId, int cantidad);
    
 List<ProductoListadoDTO> listarTodosLiviano();
+void activarLote(List<Long> ids);
 }

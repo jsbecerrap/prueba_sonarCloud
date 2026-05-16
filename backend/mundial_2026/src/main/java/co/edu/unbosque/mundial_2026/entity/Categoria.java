@@ -21,9 +21,18 @@ public class Categoria {
     @Column
     private String descripcion;
 
+    @Column(nullable = false)
+private Boolean activo = true;
     public Categoria() {
         //Constructor vacio
     }
+    public Boolean getActivo() {
+    return activo;
+}
+
+public void setActivo(Boolean activo) {
+    this.activo = activo;
+}
 
     public Long getId() {
         return id;

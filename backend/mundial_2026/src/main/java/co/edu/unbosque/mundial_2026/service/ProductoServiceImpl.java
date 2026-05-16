@@ -208,4 +208,13 @@ public class ProductoServiceImpl implements ProductoService {
 public List<ProductoListadoDTO> listarTodosLiviano() {
     return productoRepository.findAllLiviano();
 }
+@Override
+@Transactional
+public void activarLote(List<Long> ids) {
+    List<Producto> productos = productoRepository.findAllById(ids);
+    for (Producto p : productos) {
+        p.setActivo(true);
+        productoRepository.save(p);
+    }
+}
 }

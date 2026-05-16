@@ -40,7 +40,9 @@ import {
   adminGetCategorias,
   adminCrearCategoria,
   adminActualizarCategoria,
-  adminEliminarCategoria,
+  adminDesactivarCategoria,
+adminReactivarCategoria,
+adminActivarProductosLote,
   adminGetProductos,
   adminCrearProducto,
   adminActualizarProducto,
@@ -56,6 +58,7 @@ adminEliminarApuesta,
 adminForzarPuntos,
 adminEnviarMasiva,
 adminNotificarPorPartido,
+adminGetProductosDeCategoria,
 } from "../api/adminApi";
 import type { UsuarioSistema, Categoria, Producto, PartidoCapacidad, Apuesta } from "../api/adminApi";
 const statusLabels: Record<MatchStatus, string> = {
@@ -166,7 +169,10 @@ const [nuevaCategoriaDesc, setNuevaCategoriaDesc] = useState("");
 const [editCategoria, setEditCategoria] = useState<Categoria | null>(null);
 const [editCategoriaNombre, setEditCategoriaNombre] = useState("");
 const [editCategoriaDesc, setEditCategoriaDesc] = useState("");
-
+const [reactivarCategoriaProductos, setReactivarCategoriaProductos] = useState<Producto[]>([]);
+const [reactivarCategoriaId, setReactivarCategoriaId] = useState<number | null>(null);
+const [productosSeleccionados, setProductosSeleccionados] = useState<number[]>([]);
+const [categoriasInactivas, setCategoriasInactivas] = useState<Categoria[]>([]);
 const [productos, setProductos] = useState<Producto[]>([]);
 const [prodNombre, setProdNombre] = useState("");
 const [prodDesc, setProdDesc] = useState("");
@@ -187,8 +193,9 @@ const refreshProductos = async () => {
 };
 
 const refreshCategorias = async () => {
-  const cats = await adminGetCategorias().catch(() => [] as Categoria[]);
-  setCategorias(cats);
+  const todas = await adminGetCategorias().catch(() => [] as Categoria[]);
+  setCategorias(todas.filter((c) => c.activo));
+  setCategoriasInactivas(todas.filter((c) => !c.activo));
 };
 
 const refreshUsuarios = async () => {
@@ -225,7 +232,8 @@ const refreshPartidos = async () => {
 setMatches(ms.slice().sort((a, b) => a.startTimeISO.localeCompare(b.startTimeISO)));
 setEvents(evs);
 setUsuarios(us);
-setCategorias(cats);
+setCategorias(cats.filter((c) => c.activo));
+setCategoriasInactivas(cats.filter((c) => !c.activo));
 setProductos(prods);
 setPartidos(parts);
 setCapacidades(caps);
@@ -416,16 +424,46 @@ const onActualizarCategoria = async () => {
   finally { setLoading(false); }
 };
 
-const onEliminarCategoria = async (c: Categoria) => {
+const onDesactivarCategoria = async (c: Categoria) => {
   try {
     setLoading(true); setMsg(null);
-    await adminEliminarCategoria(c.id);
-    setMsg({ text: `Categoría ${c.nombre} eliminada y productos desactivados.`, severity: "success" });
+    await adminDesactivarCategoria(c.id);
+    setReactivarCategoriaId(null);
+    setReactivarCategoriaProductos([]);
+    setProductosSeleccionados([]);
+    setMsg({ text: `Categoría ${c.nombre} desactivada junto con sus productos.`, severity: "success" });
     await Promise.all([refreshCategorias(), refreshProductos()]);
   } catch (e) { setMsg({ text: (e as Error).message, severity: "error" }); }
   finally { setLoading(false); }
 };
 
+const onReactivarCategoria = async (c: Categoria) => {
+  try {
+    setLoading(true); setMsg(null);
+    const productos = await adminGetProductosDeCategoria(c.id);
+    setReactivarCategoriaId(c.id);
+    setReactivarCategoriaProductos(productos);
+    setProductosSeleccionados([]);
+    setMsg({ text: `Selecciona los productos que deseas activar para "${c.nombre}".`, severity: "info" });
+  } catch (e) { setMsg({ text: (e as Error).message, severity: "error" }); }
+  finally { setLoading(false); }
+};
+
+const onActivarProductosSeleccionados = async () => {
+  try {
+    setLoading(true); setMsg(null);
+    await adminReactivarCategoria(reactivarCategoriaId!);
+    if (productosSeleccionados.length > 0) {
+      await adminActivarProductosLote(productosSeleccionados);
+    }
+    setMsg({ text: `Categoría reactivada con ${productosSeleccionados.length} producto(s) activado(s).`, severity: "success" });
+    setReactivarCategoriaId(null);
+    setReactivarCategoriaProductos([]);
+    setProductosSeleccionados([]);
+    await Promise.all([refreshCategorias(), refreshProductos()]);
+  } catch (e) { setMsg({ text: (e as Error).message, severity: "error" }); }
+  finally { setLoading(false); }
+};
 const onCrearProducto = async () => {
  if (!prodNombre || !prodPrecio || !prodCategoriaId || prodVariantes.length === 0) {
   setMsg({ text: "Nombre, precio, categoría y al menos una variante son obligatorios.", severity: "error" }); return;
@@ -882,7 +920,8 @@ const onEnviarNotificacion = async () => {
                   </Box>
                   <Stack direction="row" spacing={1}>
                     <Button size="small" variant="outlined" disabled={loading} onClick={() => { setEditCategoria(c); setEditCategoriaNombre(c.nombre); setEditCategoriaDesc(c.descripcion); }}>Editar</Button>
-                    <Button size="small" color="error" variant="outlined" disabled={loading} onClick={() => onEliminarCategoria(c)}>Eliminar</Button>
+                <Button size="small" color="warning" variant="outlined" disabled={loading} onClick={() => onDesactivarCategoria(c)}>Desactivar</Button>
+
                   </Stack>
                 </Stack>
               )}
@@ -891,6 +930,55 @@ const onEnviarNotificacion = async () => {
         </Stack>
       )}
     </Paper>
+
+    {categoriasInactivas.length > 0 && (
+  <Paper sx={{ p: 2.5 }}>
+    <Typography variant="h6" color="text.secondary">Categorías inactivas</Typography>
+    <Stack spacing={1} sx={{ mt: 2 }}>
+      {categoriasInactivas.map((c) => (
+        <Paper key={c.id} variant="outlined" sx={{ p: 2, opacity: 0.7 }}>
+          {reactivarCategoriaId === c.id && reactivarCategoriaProductos.length > 0 ? (
+            <Stack spacing={1}>
+              <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                Selecciona los productos que deseas activar:
+              </Typography>
+              <Stack spacing={0.5}>
+                {reactivarCategoriaProductos.map((p) => (
+                  <FormControlLabel
+                    key={p.id}
+                    control={
+                      <Switch
+                        size="small"
+                        checked={productosSeleccionados.includes(p.id)}
+                        onChange={(e) => setProductosSeleccionados((prev) =>
+                          e.target.checked ? [...prev, p.id] : prev.filter((id) => id !== p.id)
+                        )}
+                      />
+                    }
+                    label={`${p.nombre} (actualmente ${p.activo ? "activo" : "inactivo"})`}
+                  />
+                ))}
+              </Stack>
+              <Stack direction="row" spacing={1}>
+                <Button size="small" variant="contained" disabled={loading} onClick={onActivarProductosSeleccionados}>Confirmar</Button>
+                <Button size="small" variant="outlined" disabled={loading} onClick={() => { setReactivarCategoriaId(null); setReactivarCategoriaProductos([]); setProductosSeleccionados([]); }}>Cancelar</Button>
+              </Stack>
+            </Stack>
+          ) : (
+            <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ sm: "center" }} spacing={1}>
+              <Box>
+                <Typography sx={{ fontWeight: 700, color: "text.disabled" }}>{c.nombre}</Typography>
+                <Typography color="text.secondary">{c.descripcion}</Typography>
+              </Box>
+              <Button size="small" color="success" variant="outlined" disabled={loading} onClick={() => onReactivarCategoria(c)}>Reactivar</Button>
+            </Stack>
+          )}
+        </Paper>
+      ))}
+    </Stack>
+  </Paper>
+)}
+
   </Stack>
 )}
 
