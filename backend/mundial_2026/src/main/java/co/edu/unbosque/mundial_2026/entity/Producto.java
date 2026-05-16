@@ -56,6 +56,14 @@ public class Producto {
     @OneToMany(mappedBy = "producto", fetch = FetchType.LAZY)
     private List<VarianteProducto> variantes = new ArrayList<>();
 
+    public List<VarianteProducto> getVariantes() {
+        return variantes;
+    }
+
+    public void setVariantes(List<VarianteProducto> variantes) {
+        this.variantes = variantes;
+    }
+
     public Producto() {
     }
 
@@ -147,15 +155,6 @@ public class Producto {
         this.categoria = categoria;
     }
 
-    public List<VarianteProducto> getVariantes() {
-        return variantes;
-    }
-
-    public void setVariantes(List<VarianteProducto> variantes) {
-        this.variantes = variantes;
-    }
-
-  
     public Integer getStock() {
         return variantes.stream().mapToInt(VarianteProducto::getStock).sum();
     }

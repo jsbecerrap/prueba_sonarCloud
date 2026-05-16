@@ -242,3 +242,17 @@ export async function getPartidosConCapacidad(): Promise<PartidoCapacidad[]> {
   }
   return [];
 }
+export interface CuposZona {
+  zona: string;
+  limite: number;
+  vendidos: number;
+  disponibles: number;
+}
+
+export async function getCuposPorZona(partidoId: string): Promise<CuposZona[]> {
+  if (!USE_MOCK) {
+    return http.get<CuposZona[]>(`/api/entradas/cupos-zona/${partidoId}`);
+  }
+  return [];
+
+}

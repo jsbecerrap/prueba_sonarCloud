@@ -17,6 +17,7 @@ import com.stripe.param.PaymentIntentCreateParams;
 import co.edu.unbosque.mundial_2026.dto.request.AgregarItemDTO;
 import co.edu.unbosque.mundial_2026.dto.request.ConfirmarOrdenDTO;
 import co.edu.unbosque.mundial_2026.dto.response.ItemOrdenResponseDTO;
+import co.edu.unbosque.mundial_2026.dto.response.OrdenHistorialDTO;
 import co.edu.unbosque.mundial_2026.dto.response.OrdenResponseDTO;
 import co.edu.unbosque.mundial_2026.entity.ItemOrden;
 import co.edu.unbosque.mundial_2026.entity.MetodoPago;
@@ -251,22 +252,21 @@ public class OrdenServiceImpl implements OrdenService {
 
     @Override
     @Transactional
-    public OrdenResponseDTO cancelarOrden(String correo) {
-        Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
-        Orden orden = ordenRepository.findByUsuarioIdAndEstado(usuario.getId(), ESTADO_PENDIENTE)
-                .orElseThrow(() -> new OrdenNotFoundException(CARRITO_NO_ACTIVO));
-        List<ItemOrden> items = itemOrdenRepository.findByOrdenId(orden.getId());
-        orden.setEstado(ESTADO_CANCELADA);
-        ordenRepository.save(orden);
-        auditoriaService.registrar(
-                "ORDEN_CANCELADA",
-                PREFIJO_USUARIO + usuario.getId() + " canceló la orden " + orden.getId(),
-                usuario.getId(),
-                PREFIJO_ORDEN + orden.getId(),
-                TIPO_ORDEN);
-        return toOrdenDTO(orden, items);
-    }
-
+   public OrdenResponseDTO cancelarOrden(String correo) {
+    Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
+    Orden orden = ordenRepository.findByUsuarioIdAndEstado(usuario.getId(), ESTADO_PENDIENTE)
+            .orElseThrow(() -> new OrdenNotFoundException(CARRITO_NO_ACTIVO));
+    List<ItemOrden> items = itemOrdenRepository.findByOrdenId(orden.getId());
+    itemOrdenRepository.deleteAll(items);
+    ordenRepository.delete(orden);
+    auditoriaService.registrar(
+            "ORDEN_CANCELADA",
+            PREFIJO_USUARIO + usuario.getId() + " vació el carrito",
+            usuario.getId(),
+            PREFIJO_ORDEN + orden.getId(),
+            TIPO_ORDEN);
+    return toOrdenDTO(orden, items);
+}
     private ItemOrdenResponseDTO toItemDTO(ItemOrden item) {
         ItemOrdenResponseDTO response = new ItemOrdenResponseDTO();
         response.setId(item.getId());
@@ -300,4 +300,37 @@ public class OrdenServiceImpl implements OrdenService {
         response.setItems(itemDTOs);
         return response;
     }
+    @Override
+@Transactional(readOnly = true)
+public List<OrdenHistorialDTO> historialLiviano(String correo) {
+    Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
+    List<Orden> ordenes = ordenRepository.findHistorialByUsuarioIdAndEstadoIn(
+        usuario.getId(),
+        List.of(ESTADO_PAGADA, "REEMBOLSADA")
+    );
+    List<OrdenHistorialDTO> resultado = new ArrayList<>();
+    for (Orden o : ordenes) {
+        OrdenHistorialDTO dto = new OrdenHistorialDTO();
+        dto.setId(o.getId());
+        dto.setEstado(o.getEstado());
+        dto.setTotal(o.getTotal());
+        dto.setFechaCreacion(o.getFechaCreacion());
+        dto.setFechaPago(o.getFechaPago());
+        dto.setPaymentRef(o.getPaymentRef());
+       dto.setMetodoPagoLabel(o.getMetodoPago() != null ? o.getMetodoPago().getLabel() : null);
+        List<OrdenHistorialDTO.ItemHistorialDTO> items = new ArrayList<>();
+        for (ItemOrden item : o.getItems()) {
+            OrdenHistorialDTO.ItemHistorialDTO itemDto = new OrdenHistorialDTO.ItemHistorialDTO();
+            itemDto.setProductoNombre(item.getProducto().getNombre());
+            itemDto.setCategoriaNombre(item.getProducto().getCategoria().getNombre());
+            itemDto.setCantidad(item.getCantidad());
+            itemDto.setPrecioUnitario(item.getPrecioUnitario());
+            itemDto.setSubtotal(item.getCantidad() * item.getPrecioUnitario());
+            items.add(itemDto);
+        }
+        dto.setItems(items);
+        resultado.add(dto);
+    }
+    return resultado;
+}
 }

@@ -18,8 +18,8 @@ import {
 import { useNavigate } from "react-router-dom";
 import StadiumMap from "../components/StadiumMap";
 import { getMatches } from "../api/matchesApi";
-import { cancelTicket, getMyTickets, reserveTicket, transferTicket, getPartidosConCapacidad, markTicketAsRefunded } from "../api/ticketsApi";
-import type { PartidoCapacidad } from "../api/ticketsApi";
+import { cancelTicket, getMyTickets, reserveTicket, transferTicket, getPartidosConCapacidad, markTicketAsRefunded, getCuposPorZona } from "../api/ticketsApi";
+import type { PartidoCapacidad, CuposZona } from "../api/ticketsApi";
 import { useApp } from "../context/AppContext";
 import type { Match } from "../types/match";
 import type { Ticket } from "../types/ticket";
@@ -65,7 +65,8 @@ export default function Tickets() {
 
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);
   const [transferTicketId, setTransferTicketId] = useState("");
-  const [correoDestino, setCorreoDestino] = useState("");
+ const [correoDestino, setCorreoDestino] = useState("");
+const [cuposZona, setCuposZona] = useState<CuposZona[]>([]);
 
   const matchById = useMemo(() => new Map(matches.map((match) => [match.id, match])), [matches]);
 
@@ -117,7 +118,7 @@ const PRECIO_POR_RONDA: Record<string, number> = {
     "3rd Place Final": 180000, "Final": 300000,
   };
   const SELECCIONES_TOP = new Set(["France","Spain","Argentina","England","Portugal","Brazil","Netherlands","Morocco","Belgium","Germany","Colombia"]);
-  const MULTIPLICADOR: Record<string, number> = { BARRA: 1, GENERAL: 2, PALCO: 3.5 };
+ const MULTIPLICADOR: Record<string, number> = { BARRA: 1, GENERAL: 2, PALCO: 3.5, ESQUINA: 0.7 };
 
   const calcularPrecio = (ronda: string | undefined, cat: string) => {
     const base = PRECIO_POR_RONDA[ronda ?? ""] ?? 50000;
@@ -127,7 +128,9 @@ const PRECIO_POR_RONDA: Record<string, number> = {
     return base * (hayTop ? 1.5 : 1) * (MULTIPLICADOR[cat] ?? 1);
   };
 
-  const formatPrecio = (v: number) => `$${v.toLocaleString("es-CO")} COP`;
+ const formatPrecio = (v: number) => `$${v.toLocaleString("es-CO")} COP`;
+const cuposDeZona = (zona: string) =>
+  cuposZona.find((c) => c.zona === zona)?.disponibles ?? null;
   const refresh = useCallback(async () => {
     if (!user) return;
     const [ticketsData, matchesData, partidosData] = await Promise.all([
@@ -138,12 +141,21 @@ const PRECIO_POR_RONDA: Record<string, number> = {
     setItems(ticketsData ?? []);
     setMatches(matchesData ?? []);
     setPartidosCapacidad(partidosData ?? []);
-    setSelectedMatchId((current) => current || String(partidosData[0]?.id) || "");
+  setSelectedMatchId((current) => {
+  const id = current || String(partidosData[0]?.id) || "";
+  if (id) void getCuposPorZona(id).then(setCuposZona);
+  return id;
+});
   }, [user]);
 
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
+useEffect(() => {
+  void refresh();
+}, [refresh]);
+
+useEffect(() => {
+  if (!selectedMatchId) return;
+  void getCuposPorZona(selectedMatchId).then(setCuposZona);
+}, [selectedMatchId]);
 
 const summary = useMemo(
   () => ({
@@ -344,12 +356,13 @@ await reserveTicket(user.id, selectedMatchId, quantity, categoria, sector, fila)
 
 {/* Tarjetas de zona */}
 <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-            {(["BARRA", "GENERAL", "PALCO"] as const).map((cat) => {
+           {(["BARRA", "GENERAL", "PALCO", "ESQUINA"] as const).map((cat) => {
               const precio = calcularPrecio(partidoSeleccionado?.ronda, cat);
               const colores: Record<string, { border: string; bg: string; text: string; sectores: string[] }> = {
               BARRA:   { border: "#64b464", bg: "rgba(100,180,100,0.08)", text: "#64b464", sectores: ["Norte", "Sur"] },
                 GENERAL: { border: "#ffb400", bg: "rgba(255,180,0,0.08)",   text: "#ffb400", sectores: ["Oriental", "Occidental"] },
                 PALCO:   { border: "#b464ff", bg: "rgba(180,100,255,0.08)", text: "#b464ff", sectores: ["Occidental VIP"] },
+              ESQUINA: { border: "#2196f3", bg: "rgba(33,150,243,0.08)", text: "#2196f3", sectores: ["Noroccidental", "Nororiental", "Suroccidental", "Suroriental"] },
               };
               const c = colores[cat];
               const selected = categoria === cat;
@@ -370,8 +383,13 @@ await reserveTicket(user.id, selectedMatchId, quantity, categoria, sector, fila)
                     {formatPrecio(precio)}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    {c.sectores.join(" · ")}
-                  </Typography>
+  {c.sectores.join(" · ")}
+</Typography>
+{cuposDeZona(cat) !== null && (
+  <Typography variant="caption" sx={{ color: c.text, display: "block", mt: 0.5, fontWeight: 700 }}>
+    {cuposDeZona(cat)!.toLocaleString("es-CO")} cupos
+  </Typography>
+)}
                 </Box>
               );
             })}
@@ -388,7 +406,7 @@ await reserveTicket(user.id, selectedMatchId, quantity, categoria, sector, fila)
                 disabled={loading}
                 fullWidth
               >
-                {(categoria === "BARRA" ? ["Norte", "Sur"] : categoria === "GENERAL" ? ["Oriental", "Occidental"] : ["Occidental VIP"]).map((s) => (
+              {(categoria === "BARRA" ? ["Norte", "Sur"] : categoria === "GENERAL" ? ["Oriental", "Occidental"] : categoria === "ESQUINA" ? ["Noroccidental", "Nororiental", "Suroccidental", "Suroriental"] : ["Occidental VIP"]).map((s) => (
                   <MenuItem key={s} value={s}>{s}</MenuItem>
                 ))}
               </TextField>

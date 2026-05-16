@@ -139,7 +139,7 @@ export async function setDefaultPaymentMethod(
 export async function getMyPaymentTxs(userId: string): Promise<PaymentTx[]> {
   if (!USE_MOCK) {
     const [ordenes, entradas] = await Promise.all([
-      http.get<any[]>("/api/ordenes/historial"),
+http.get<any[]>("/api/ordenes/historial/liviano"),
       http.get<any[]>("/api/entradas/usuario"),
     ]);
 

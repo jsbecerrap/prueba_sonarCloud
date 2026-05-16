@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import co.edu.unbosque.mundial_2026.dto.request.AgregarItemDTO;
 import co.edu.unbosque.mundial_2026.dto.request.ConfirmarOrdenDTO;
+import co.edu.unbosque.mundial_2026.dto.response.OrdenHistorialDTO;
 import co.edu.unbosque.mundial_2026.dto.response.OrdenResponseDTO;
 import co.edu.unbosque.mundial_2026.service.OrdenService;
 import jakarta.validation.Valid;
@@ -66,4 +67,9 @@ public class OrdenController {
             @AuthenticationPrincipal String username) {
         return ResponseEntity.ok(ordenService.cancelarOrden(username));
     }
+    @GetMapping("/historial/liviano")
+public ResponseEntity<List<OrdenHistorialDTO>> historialLiviano(
+        @AuthenticationPrincipal String username) {
+    return ResponseEntity.ok(ordenService.historialLiviano(username));
+}
 }

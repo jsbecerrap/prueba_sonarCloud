@@ -1,6 +1,7 @@
 package co.edu.unbosque.mundial_2026.service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -17,6 +18,7 @@ import com.stripe.model.Refund;
 import com.stripe.param.PaymentIntentCreateParams;
 import com.stripe.param.RefundCreateParams;
 
+import co.edu.unbosque.mundial_2026.dto.CuposZonaDTO;
 import co.edu.unbosque.mundial_2026.dto.PartidoCapacidadDTO;
 import co.edu.unbosque.mundial_2026.dto.request.EntradaRequestDTO;
 import co.edu.unbosque.mundial_2026.dto.request.TransferenciaRequestDTO;
@@ -81,6 +83,14 @@ static {
     MULTIPLICADOR_CATEGORIA.put("BARRA", 1.0);
     MULTIPLICADOR_CATEGORIA.put("GENERAL", 2.0);
     MULTIPLICADOR_CATEGORIA.put("PALCO", 3.5);
+    MULTIPLICADOR_CATEGORIA.put("ESQUINA", 0.7);
+}
+private static final Map<String, Double> PORCENTAJE_ZONA = new HashMap<>();
+static {
+    PORCENTAJE_ZONA.put("BARRA", 0.33);
+    PORCENTAJE_ZONA.put("GENERAL", 0.37);
+    PORCENTAJE_ZONA.put("PALCO", 0.15);
+    PORCENTAJE_ZONA.put("ESQUINA", 0.15);
 }
     public EntradaServiceImpl(EntradaRepository entradaRepository,
     UsuarioService usuarioService,
@@ -94,7 +104,7 @@ static {
     Stripe.apiKey = stripeApiKey; }
 @Override
 public EntradaResponseDTO reservarEntrada(String correo, EntradaRequestDTO dto) {
-    Usuario u = usuarioService.obtenerEntidadPorCorreo(correo); 
+    Usuario u = usuarioService.obtenerEntidadPorCorreo(correo);
     Long usuarioId = u.getId();
 
     Partido partido = partidoService.obtenerPartidoEntidadPorId(dto.getPartidoId());
@@ -124,21 +134,40 @@ public EntradaResponseDTO reservarEntrada(String correo, EntradaRequestDTO dto) 
         throw new LimiteSuperadoException("Límite diario de 12 entradas alcanzado");
     }
 
+    String categoria = (dto.getCategoria() != null && !dto.getCategoria().isBlank())
+            ? dto.getCategoria().toUpperCase()
+            : "BARRA";
+    String sector = (dto.getSector() != null && !dto.getSector().isBlank())
+            ? dto.getSector()
+            : "Norte";
+    String fila = (dto.getFila() != null && !dto.getFila().isBlank())
+            ? dto.getFila().toUpperCase()
+            : "C";
+
+    // Validar cupo por zona
+    int totalVendidoPartido = entradaRepository.sumCantidadByPartidoAndEstados(
+        partido.getId(), List.of(ESTADO_RESERVADA, ESTADO_PAGADA)
+    );
+    int capacidadTotal = partido.getCapacidadDisponible() + totalVendidoPartido;
+    double porcentajeZona = PORCENTAJE_ZONA.getOrDefault(categoria, 0.33);
+    int limiteZona = (int)(capacidadTotal * porcentajeZona);
+
+    int vendidosZona = entradaRepository.sumCantidadByPartidoAndCategoriaAndEstados(
+        partido.getId(), categoria, List.of(ESTADO_RESERVADA, ESTADO_PAGADA)
+    );
+
+    if (vendidosZona + dto.getCantidad() > limiteZona) {
+        throw new CupoNoDisponibleException(
+            "No hay cupos disponibles en la zona " + categoria +
+            ". Disponibles: " + (limiteZona - vendidosZona)
+        );
+    }
+
     Entrada entrada = new Entrada();
     entrada.setUsuario(u);
     entrada.setCantidad(dto.getCantidad());
     entrada.setEstado(ESTADO_RESERVADA);
     entrada.setPartido(partido);
- String categoria = (dto.getCategoria() != null && !dto.getCategoria().isBlank())
-        ? dto.getCategoria().toUpperCase()
-        : "BARRA";
-    String sector = (dto.getSector() != null && !dto.getSector().isBlank())
-        ? dto.getSector()
-        : "Norte";
-    String fila = (dto.getFila() != null && !dto.getFila().isBlank())
-        ? dto.getFila().toUpperCase()
-        : "C";
-
     entrada.setCategoria(categoria);
     entrada.setSector(sector);
     entrada.setFila(fila);
@@ -441,5 +470,27 @@ private Double calcularPrecio(Partido partido, String categoria) {
         categoria != null ? categoria.toUpperCase() : "BARRA", 1.0
     );
     return precioBase * multiplicador;
+}
+@Override
+public List<CuposZonaDTO> obtenerCuposPorZona(Long partidoId) {
+    Partido partido = partidoService.obtenerPartidoEntidadPorId(partidoId);
+
+    int totalVendido = entradaRepository.sumCantidadByPartidoAndEstados(
+        partidoId, List.of(ESTADO_RESERVADA, ESTADO_PAGADA)
+    );
+   int capacidadTotal = (partido.getCapacidadDisponible() != null ? partido.getCapacidadDisponible() : 0) + totalVendido;
+
+    List<String> zonas = List.of("BARRA", "GENERAL", "PALCO", "ESQUINA");
+    List<CuposZonaDTO> resultado = new ArrayList<>();
+
+    for (String zona : zonas) {
+        int limite = (int)(capacidadTotal * PORCENTAJE_ZONA.get(zona));
+        int vendidos = entradaRepository.sumCantidadByPartidoAndCategoriaAndEstados(
+            partidoId, zona, List.of(ESTADO_RESERVADA, ESTADO_PAGADA)
+        );
+        resultado.add(new CuposZonaDTO(zona, limite, vendidos));
+    }
+
+    return resultado;
 }
 }

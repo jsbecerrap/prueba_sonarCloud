@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import co.edu.unbosque.mundial_2026.dto.CuposZonaDTO;
 import co.edu.unbosque.mundial_2026.dto.PartidoCapacidadDTO;
 import co.edu.unbosque.mundial_2026.dto.request.EntradaRequestDTO;
 import co.edu.unbosque.mundial_2026.dto.request.TransferenciaRequestDTO;
@@ -28,6 +29,15 @@ public class EntradaRestController {
     public EntradaRestController(EntradaService entradaService) {
         this.entradaService = entradaService;
     }
+    @GetMapping("/cupos-zona/{partidoId}")
+public ResponseEntity<List<CuposZonaDTO>> cuposPorZona(@PathVariable Long partidoId) {
+    return ResponseEntity.ok(entradaService.obtenerCuposPorZona(partidoId));
+}
+
+@GetMapping("/{entradaId}")
+public ResponseEntity<EntradaResponseDTO> obtener(@PathVariable Long entradaId) {
+    return ResponseEntity.ok(entradaService.obtenerEntrada(entradaId));
+}
 
     @PostMapping("/reservar")
     public ResponseEntity<EntradaResponseDTO> reservar(
@@ -71,13 +81,11 @@ public class EntradaRestController {
         return ResponseEntity.ok(entradaService.listarEntradasUsuario(username));
     }
 
-    @GetMapping("/{entradaId}")
-    public ResponseEntity<EntradaResponseDTO> obtener(@PathVariable Long entradaId) {
-        return ResponseEntity.ok(entradaService.obtenerEntrada(entradaId));
-    }
+   
 
     @GetMapping("/partidos")
     public ResponseEntity<List<PartidoCapacidadDTO>> listarPartidos() {
         return ResponseEntity.ok(entradaService.listarPartidosConCapacidad());
     }
+  
 }

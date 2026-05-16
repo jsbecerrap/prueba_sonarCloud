@@ -14,14 +14,6 @@ type ProfileFallback = {
   avatarUrl?: string;
 };
 
-type BackendProfile = {
-  id: number;
-  correoUsuario: string;
-  nombre: string;
-  apellido: string;
-  rol: string;
-};
-
 type BackendPreferencia = {
   id: number;
   nombre: string;
@@ -51,17 +43,16 @@ export async function getMyProfile(
   fallback?: ProfileFallback
 ): Promise<Profile> {
   if (!USE_MOCK) {
-    const [res, selecciones, ciudades] = await Promise.all([
-      http.get<BackendProfile>("/api/usuarios/perfil"),
+    const [selecciones, ciudades] = await Promise.all([
       http.get<BackendPreferencia[]>("/api/usuarios/seleccionesFavoritas"),
       http.get<BackendPreferencia[]>("/api/usuarios/ciudadesFav"),
     ]);
 
     return {
-      userId: String(res.id),
-      name: res.nombre,
-      lastName: res.apellido,
-      email: res.correoUsuario,
+      userId,
+      name: fallback?.name ?? "",
+      lastName: fallback?.lastName ?? "",
+      email: fallback?.email ?? "",
       favoriteTeams: selecciones.map((s) => s.nombre),
       favoriteCities: ciudades.map((c) => c.nombre),
       notificationsEnabled: true,

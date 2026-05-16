@@ -1,7 +1,9 @@
 package co.edu.unbosque.mundial_2026.controller;
 
 import java.util.List;
+import java.util.Map;
 
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import co.edu.unbosque.mundial_2026.dto.request.ProductoActualizarRequestDTO;
 import co.edu.unbosque.mundial_2026.dto.request.ProductoRequestDTO;
+import co.edu.unbosque.mundial_2026.dto.response.ProductoListadoDTO;
 import co.edu.unbosque.mundial_2026.dto.response.ProductoResponseDTO;
 import co.edu.unbosque.mundial_2026.service.ProductoService;
 import jakarta.validation.Valid;
@@ -78,4 +81,8 @@ public class ProductoController {
     public ResponseEntity<ProductoResponseDTO> obtenerPorId(@PathVariable Long id) {
         return ResponseEntity.ok(productoService.obtenerPorId(id));
     }
+   @GetMapping("/listado")
+public ResponseEntity<List<ProductoListadoDTO>> listarLiviano() {
+    return ResponseEntity.ok(productoService.listarTodosLiviano());
+} 
 }

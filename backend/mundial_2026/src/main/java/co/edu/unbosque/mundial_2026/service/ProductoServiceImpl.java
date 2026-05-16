@@ -1,13 +1,17 @@
 package co.edu.unbosque.mundial_2026.service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import co.edu.unbosque.mundial_2026.dto.request.ProductoActualizarRequestDTO;
 import co.edu.unbosque.mundial_2026.dto.request.ProductoRequestDTO;
+import co.edu.unbosque.mundial_2026.dto.response.ProductoListadoDTO;
 import co.edu.unbosque.mundial_2026.dto.response.ProductoResponseDTO;
 import co.edu.unbosque.mundial_2026.dto.response.ProductoResponseDTO.VarianteResponseDTO;
 import co.edu.unbosque.mundial_2026.entity.Categoria;
@@ -93,7 +97,7 @@ public class ProductoServiceImpl implements ProductoService {
     @Override
     @Transactional(readOnly = true)
     public List<ProductoResponseDTO> listarTodos() {
-        List<Producto> productos = productoRepository.findByActivoTrue();
+     List<Producto> productos = productoRepository.findByActivoTrueWithVariantes();
         List<ProductoResponseDTO> responseDTOs = new ArrayList<>();
         for (int i = 0; i < productos.size(); i++) {
             responseDTOs.add(toDTO(productos.get(i)));
@@ -169,7 +173,7 @@ public class ProductoServiceImpl implements ProductoService {
         response.setBandera(producto.getBandera());
         response.setDestacado(producto.getDestacado());
 
-        List<VarianteProducto> variantes = varianteRepository.findByProductoId(producto.getId());
+       List<VarianteProducto> variantes = producto.getVariantes();
         List<VarianteResponseDTO> varianteDTOs = new ArrayList<>();
         int stockTotal = 0;
         for (VarianteProducto v : variantes) {
@@ -199,4 +203,9 @@ public class ProductoServiceImpl implements ProductoService {
         producto.setDestacado(Boolean.TRUE.equals(dto.getDestacado()));
         return producto;
     }
+    @Override
+@Transactional(readOnly = true)
+public List<ProductoListadoDTO> listarTodosLiviano() {
+    return productoRepository.findAllLiviano();
+}
 }

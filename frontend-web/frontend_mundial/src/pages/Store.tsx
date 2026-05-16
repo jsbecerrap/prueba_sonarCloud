@@ -18,6 +18,10 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+   Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import { useEffect, useMemo, useState } from "react";
@@ -25,8 +29,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { bannerImages } from "../theme/bannerImages";
-import { getProductos, getCategorias, agregarAlCarrito } from "../api/storeApi";
-import type { ProductoResponse, CategoriaResponse } from "../api/storeApi";
+import { getProductosListado, getCategorias, agregarAlCarrito, getProductoPorId } from "../api/storeApi";
+import type { ProductoListadoResponse, CategoriaResponse } from "../api/storeApi";
 
 function formatPrecio(value: number) {
   return `$${value.toLocaleString("es-CO")} COP`;
@@ -41,8 +45,8 @@ function ProductCard({
   onChangeVariante,
 }: {
 
-  product: ProductoResponse;
-  onAdd: (product: ProductoResponse, qty: number) => void;
+ product: ProductoListadoResponse;
+  onAdd: (product: ProductoListadoResponse, qty: number) => void;
   loading: boolean;
   quantity: number;
   onChangeQty: (productId: number, delta: number, maxStock: number) => void;
@@ -95,57 +99,21 @@ function ProductCard({
       <Typography variant="h6" sx={{ fontWeight: 900 }}>
         {formatPrecio(product.precio)}
       </Typography>
-{product.variantes.length > 1 && (
-  <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
-    {product.variantes.map((v) => (
-      <Chip
-        key={v.id}
-        label={v.especificacion ?? "Única"}
-        size="small"
-        variant={varianteSeleccionada === v.id ? "filled" : "outlined"}
-        color={varianteSeleccionada === v.id ? "primary" : "default"}
-        disabled={v.stock === 0}
-        onClick={() => onChangeVariante(product.id, v.id)}
-        sx={{ cursor: "pointer" }}
-      />
-    ))}
-  </Stack>
-)}
-      {(() => {
-        const variante = product.variantes.find((v) => v.id === varianteSeleccionada) ?? product.variantes[0];
-        const stockVariante = variante?.stock ?? 0;
-        if (product.stockTotal === 0) return <Button variant="outlined" disabled size="small">Sin stock</Button>;
-        if (quantity === 0) return (
-          <Button variant="contained" size="small"
-            disabled={loading || (!varianteSeleccionada && product.variantes.length > 1)}
-            onClick={() => onChangeQty(product.id, 1, stockVariante)}>
+{product.stockTotal === 0
+        ? <Button variant="outlined" disabled size="small">Sin stock</Button>
+        : <Button variant="contained" size="small"
+            disabled={loading}
+            onClick={() => onAdd(product, 1)}>
             Agregar al carrito
           </Button>
-        );
-        return (
-          <Stack spacing={0.75}>
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Button variant="outlined" size="small"
-                sx={{ minWidth: 32, width: 32, height: 32, borderRadius: "50%", p: 0 }}
-                onClick={() => onChangeQty(product.id, -1, stockVariante)}>−</Button>
-              <Typography sx={{ fontWeight: 900, minWidth: 20, textAlign: "center" }}>{quantity}</Typography>
-              <Button variant="outlined" size="small"
-                sx={{ minWidth: 32, width: 32, height: 32, borderRadius: "50%", p: 0 }}
-                disabled={quantity >= stockVariante}
-                onClick={() => onChangeQty(product.id, 1, stockVariante)}>+</Button>
-              <Typography variant="caption" color="text.secondary">máx. {stockVariante}</Typography>
-            </Stack>
-            <Button variant="contained" size="small" disabled={loading} onClick={() => onAdd(product, quantity)}>Confirmar</Button>
-          </Stack>
-        );
-      })()}
+      }
     </Paper>
   );
 }
 
 export default function Store() {
   const navigate = useNavigate();
-  const [productos, setProductos] = useState<ProductoResponse[]>([]);
+ const [productos, setProductos] = useState<ProductoListadoResponse[]>([]);
   const [categorias, setCategorias] = useState<CategoriaResponse[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -163,14 +131,24 @@ export default function Store() {
   const [precioMax, setPrecioMax] = useState(0);
   const [ordenar, setOrdenar] = useState<string>("destacados");
 const [limite, setLimite] = useState(12);
+const [dialogProducto, setDialogProducto] = useState<{
+  producto: ProductoListadoResponse;
+  variantes: { id: number; especificacion: string | null; stock: number }[];
+  varianteId: number | null;
+  cantidad: number;
+} | null>(null);
+const [cargandoDialog, setCargandoDialog] = useState(false);
   useEffect(() => {
     const cargar = async () => {
       try {
-        const [prods, cats] = await Promise.all([getProductos(), getCategorias()]);
-        setProductos(prods);
-        setCategorias(cats);
-        if (prods.length > 0) {
-          const max = Math.max(...prods.map((p) => p.precio));
+    const [prods, cats] = await Promise.all([
+  getProductosListado(),
+  getCategorias(),
+]);
+setProductos(prods ?? []);
+setCategorias(cats ?? []);
+if (prods.length > 0) {
+  const max = Math.max(...prods.map((p) => p.precio));
           setPrecioMax(max);
           setRangoPrecios([0, max]);
         }
@@ -183,26 +161,40 @@ const [limite, setLimite] = useState(12);
     cargar();
   }, []);
 
-  const [variantesSeleccionadas, setVariantesSeleccionadas] = useState<Record<number, number>>({});
-
-const handleConfirmar = async (product: ProductoResponse, qty: number) => {
-    try {
-      setAgregando(product.id);
-    const varianteId = variantesSeleccionadas[product.id] ?? product.variantes[0]?.id;
-if (!varianteId) return;
-await agregarAlCarrito({ productoId: product.id, varianteId, cantidad: qty });
-      setCantidades((prev) => {
-        const next = { ...prev };
-        delete next[product.id];
-        return next;
-      });
-      setSnackbar({ open: true, msg: `"${product.nombre}" agregado al carrito.` });
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setAgregando(null);
-    }
-  };
+ 
+const handleConfirmarDialog = async () => {
+  if (!dialogProducto || !dialogProducto.varianteId) return;
+  try {
+    setAgregando(dialogProducto.producto.id);
+    await agregarAlCarrito({
+      productoId: dialogProducto.producto.id,
+      varianteId: dialogProducto.varianteId,
+      cantidad: dialogProducto.cantidad,
+    });
+    setSnackbar({ open: true, msg: `"${dialogProducto.producto.nombre}" agregado al carrito.` });
+    setDialogProducto(null);
+  } catch (e) {
+    setError((e as Error).message);
+  } finally {
+    setAgregando(null);
+  }
+};
+const handleConfirmar = async (product: ProductoListadoResponse, qty: number) => {
+  try {
+    setCargandoDialog(true);
+    const detalle = await getProductoPorId(product.id);
+    setDialogProducto({
+      producto: product,
+      variantes: detalle.variantes,
+      varianteId: detalle.variantes[0]?.id ?? null,
+      cantidad: 1,
+    });
+  } catch (e) {
+    setError((e as Error).message);
+  } finally {
+    setCargandoDialog(false);
+  }
+};
 
 
 
@@ -232,7 +224,7 @@ const handleChangeQty = (productId: number, delta: number, maxStock: number) => 
     setCategoriasSeleccionadas([]);
     setRangoPrecios([0, precioMax]);
     setOrdenar("destacados");
-    setLimite(12);
+      setLimite(12);
   };
 
   const productosFiltrados = useMemo(() => {
@@ -500,22 +492,92 @@ const productosPaginados = productosFiltrados.slice(0, limite);
                   loading={agregando === product.id}
                   quantity={cantidades[product.id] ?? 0}
                   onChangeQty={handleChangeQty}
-varianteSeleccionada={variantesSeleccionadas[product.id] ?? product.variantes[0]?.id ?? null}
-onChangeVariante={(pid, vid) => setVariantesSeleccionadas((prev) => ({ ...prev, [pid]: vid }))}
+varianteSeleccionada={null}
+onChangeVariante={() => {}}
 />
               ))}
             </Box>
           )}
-          {productosFiltrados.length > limite && (
-            <Stack alignItems="center" sx={{ mt: 2 }}>
-              <Button variant="outlined" onClick={() => setLimite((prev) => prev + 12)}>
-                Ver más ({productosFiltrados.length - limite} restantes)
-              </Button>
-            </Stack>
-          )}
+         {productosFiltrados.length > limite && (
+  <Button variant="outlined" onClick={() => setLimite((prev) => prev + 12)}>
+    Ver más ({productosFiltrados.length - limite} restantes)
+  </Button>
+)}
+          
         </Stack>
       </Stack>
-
+<Dialog open={!!dialogProducto} onClose={() => setDialogProducto(null)} maxWidth="xs" fullWidth>
+  <DialogTitle>{dialogProducto?.producto.nombre}</DialogTitle>
+  <DialogContent>
+    {cargandoDialog ? (
+      <Stack alignItems="center" py={2}><CircularProgress /></Stack>
+    ) : (
+      <Stack spacing={2} sx={{ mt: 1 }}>
+        {dialogProducto && dialogProducto.variantes.length > 1 && (
+          <Box>
+            <Typography variant="body2" sx={{ mb: 1, fontWeight: 700 }}>
+              Selecciona una opción:
+            </Typography>
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+              {dialogProducto.variantes.map((v) => (
+                <Chip
+                  key={v.id}
+                  label={v.especificacion ?? "Única"}
+                  size="small"
+                  variant={dialogProducto.varianteId === v.id ? "filled" : "outlined"}
+                  color={dialogProducto.varianteId === v.id ? "primary" : "default"}
+                  disabled={v.stock === 0}
+                  onClick={() => setDialogProducto((prev) =>
+                    prev ? { ...prev, varianteId: v.id } : null
+                  )}
+                  sx={{ cursor: "pointer" }}
+                />
+              ))}
+            </Stack>
+          </Box>
+        )}
+        <Box>
+          <Typography variant="body2" sx={{ mb: 1, fontWeight: 700 }}>
+            Cantidad:
+          </Typography>
+          <Stack direction="row" spacing={1} alignItems="center">
+            <Button variant="outlined" size="small"
+              sx={{ minWidth: 32, width: 32, height: 32, borderRadius: "50%", p: 0 }}
+              disabled={dialogProducto?.cantidad === 1}
+              onClick={() => setDialogProducto((prev) =>
+                prev ? { ...prev, cantidad: prev.cantidad - 1 } : null
+              )}>−</Button>
+            <Typography sx={{ fontWeight: 900, minWidth: 20, textAlign: "center" }}>
+              {dialogProducto?.cantidad}
+            </Typography>
+            <Button variant="outlined" size="small"
+              sx={{ minWidth: 32, width: 32, height: 32, borderRadius: "50%", p: 0 }}
+              disabled={
+                (dialogProducto?.cantidad ?? 0) >=
+                (dialogProducto?.variantes.find((v) => v.id === dialogProducto?.varianteId)?.stock ?? 0)
+              }
+              onClick={() => setDialogProducto((prev) =>
+                prev ? { ...prev, cantidad: prev.cantidad + 1 } : null
+              )}>+</Button>
+            <Typography variant="caption" color="text.secondary">
+              máx. {dialogProducto?.variantes.find((v) => v.id === dialogProducto?.varianteId)?.stock ?? 0}
+            </Typography>
+          </Stack>
+        </Box>
+      </Stack>
+    )}
+  </DialogContent>
+  <DialogActions>
+    <Button onClick={() => setDialogProducto(null)}>Cancelar</Button>
+    <Button
+      variant="contained"
+      disabled={!dialogProducto?.varianteId || agregando === dialogProducto?.producto.id}
+      onClick={handleConfirmarDialog}
+    >
+      Agregar al carrito
+    </Button>
+  </DialogActions>
+</Dialog>
       <Snackbar
         open={snackbar.open}
         autoHideDuration={3000}

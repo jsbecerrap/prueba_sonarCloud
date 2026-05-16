@@ -2,6 +2,7 @@ package co.edu.unbosque.mundial_2026.service;
 
 import java.util.List;
 
+import co.edu.unbosque.mundial_2026.dto.CuposZonaDTO;
 import co.edu.unbosque.mundial_2026.dto.PartidoCapacidadDTO;
 import co.edu.unbosque.mundial_2026.dto.request.EntradaRequestDTO;
 import co.edu.unbosque.mundial_2026.dto.request.TransferenciaRequestDTO;
@@ -26,4 +27,5 @@ public interface EntradaService {
     void expirarReservasVencidas();
 
     List<PartidoCapacidadDTO> listarPartidosConCapacidad();
+  List<CuposZonaDTO> obtenerCuposPorZona(Long partidoId);
 }

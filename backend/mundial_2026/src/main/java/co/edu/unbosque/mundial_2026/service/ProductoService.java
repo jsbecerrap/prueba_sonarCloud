@@ -1,8 +1,11 @@
 package co.edu.unbosque.mundial_2026.service;
 
 import java.util.List;
+import java.util.Map;
+ import org.springframework.data.domain.Pageable;
 import co.edu.unbosque.mundial_2026.dto.request.ProductoActualizarRequestDTO;
 import co.edu.unbosque.mundial_2026.dto.request.ProductoRequestDTO;
+import co.edu.unbosque.mundial_2026.dto.response.ProductoListadoDTO;
 import co.edu.unbosque.mundial_2026.dto.response.ProductoResponseDTO;
 import co.edu.unbosque.mundial_2026.entity.Producto;
 
@@ -17,4 +20,6 @@ public interface ProductoService {
     ProductoResponseDTO obtenerPorId(Long id);
     Producto obtenerEntidadPorId(Long id);
     void actualizarStock(Long productoId, int cantidad);
+   
+List<ProductoListadoDTO> listarTodosLiviano();
 }

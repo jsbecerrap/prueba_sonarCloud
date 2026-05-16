@@ -44,15 +44,16 @@ export function AppProvider({ children }: { readonly children: React.ReactNode }
   const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
-    (async () => {
-      try {
-        const me = await getMeApi();
-        setUser(me);
-      } finally {
-        setAuthLoading(false);
-      }
-    })();
-  }, []);
+  (async () => {
+    try {
+      const me = await getMeApi();
+      setUser(me);
+      setAuthLoading(false);
+    } catch {
+      setAuthLoading(false);
+    }
+  })();
+}, []);
 
   useEffect(() => {
     const rawPool = localStorage.getItem(LS_POOL);

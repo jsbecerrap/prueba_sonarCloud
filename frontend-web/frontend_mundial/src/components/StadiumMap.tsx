@@ -7,12 +7,106 @@ interface Props {
 }
 
 const StadiumMap: FC<Props> = ({ categoria, sector, onSelect }) => {
+  const esq = (sec: string) => categoria === "ESQUINA" && sector === sec;
+
   return (
     <svg viewBox="0 0 480 300" width="100%" style={{ maxWidth: 560 }}>
       <rect x="0" y="0" width="480" height="300" rx="16" fill="#0d1a0d"/>
 
-      {/* BARRA NORTE - izquierda */}
-      <rect x="4" y="4" width="66" height="292" rx="12"
+      {/* ESQUINA NOROCCIDENTAL - arriba izquierda */}
+      <rect x="4" y="4" width="66" height="56" rx="10"
+        fill={esq("Noroccidental") ? "rgba(33,150,243,0.35)" : "rgba(33,150,243,0.08)"}
+        stroke={esq("Noroccidental") ? "#2196f3" : "#0d2a4a"}
+        strokeWidth={esq("Noroccidental") ? "2" : "1"}
+        style={{ cursor: "pointer" }}
+        onClick={() => onSelect("ESQUINA", "Noroccidental")}
+      />
+      {[10, 18, 26, 34, 42].map((dy) => (
+        <rect key={dy} x="12" y={4 + dy} width="50" height="5" rx="2"
+          fill={esq("Noroccidental") ? "rgba(33,150,243,0.45)" : "rgba(33,150,243,0.12)"}
+          style={{ pointerEvents: "none" }}
+        />
+      ))}
+      <text x="37" y="35"
+        fill={esq("Noroccidental") ? "#64b5f6" : "#1a3a5a"}
+        fontSize="6" textAnchor="middle" fontWeight="800"
+        style={{ pointerEvents: "none" }}>NOR</text>
+      <text x="37" y="44"
+        fill={esq("Noroccidental") ? "#64b5f6" : "#1a3a5a"}
+        fontSize="6" textAnchor="middle" fontWeight="800"
+        style={{ pointerEvents: "none" }}>OCC</text>
+
+      {/* ESQUINA SUROCCIDENTAL - abajo izquierda */}
+      <rect x="4" y="240" width="66" height="56" rx="10"
+        fill={esq("Suroccidental") ? "rgba(33,150,243,0.35)" : "rgba(33,150,243,0.08)"}
+        stroke={esq("Suroccidental") ? "#2196f3" : "#0d2a4a"}
+        strokeWidth={esq("Suroccidental") ? "2" : "1"}
+        style={{ cursor: "pointer" }}
+        onClick={() => onSelect("ESQUINA", "Suroccidental")}
+      />
+      {[10, 18, 26, 34, 42].map((dy) => (
+        <rect key={dy} x="12" y={240 + dy} width="50" height="5" rx="2"
+          fill={esq("Suroccidental") ? "rgba(33,150,243,0.45)" : "rgba(33,150,243,0.12)"}
+          style={{ pointerEvents: "none" }}
+        />
+      ))}
+      <text x="37" y="271"
+        fill={esq("Suroccidental") ? "#64b5f6" : "#1a3a5a"}
+        fontSize="6" textAnchor="middle" fontWeight="800"
+        style={{ pointerEvents: "none" }}>SUR</text>
+      <text x="37" y="280"
+        fill={esq("Suroccidental") ? "#64b5f6" : "#1a3a5a"}
+        fontSize="6" textAnchor="middle" fontWeight="800"
+        style={{ pointerEvents: "none" }}>OCC</text>
+
+      {/* ESQUINA NORORIENTAL - arriba derecha */}
+      <rect x="410" y="4" width="66" height="56" rx="10"
+        fill={esq("Nororiental") ? "rgba(33,150,243,0.35)" : "rgba(33,150,243,0.08)"}
+        stroke={esq("Nororiental") ? "#2196f3" : "#0d2a4a"}
+        strokeWidth={esq("Nororiental") ? "2" : "1"}
+        style={{ cursor: "pointer" }}
+        onClick={() => onSelect("ESQUINA", "Nororiental")}
+      />
+      {[10, 18, 26, 34, 42].map((dy) => (
+        <rect key={dy} x="418" y={4 + dy} width="50" height="5" rx="2"
+          fill={esq("Nororiental") ? "rgba(33,150,243,0.45)" : "rgba(33,150,243,0.12)"}
+          style={{ pointerEvents: "none" }}
+        />
+      ))}
+      <text x="443" y="35"
+        fill={esq("Nororiental") ? "#64b5f6" : "#1a3a5a"}
+        fontSize="6" textAnchor="middle" fontWeight="800"
+        style={{ pointerEvents: "none" }}>NOR</text>
+      <text x="443" y="44"
+        fill={esq("Nororiental") ? "#64b5f6" : "#1a3a5a"}
+        fontSize="6" textAnchor="middle" fontWeight="800"
+        style={{ pointerEvents: "none" }}>ORI</text>
+
+      {/* ESQUINA SURORIENTAL - abajo derecha */}
+      <rect x="410" y="240" width="66" height="56" rx="10"
+        fill={esq("Suroriental") ? "rgba(33,150,243,0.35)" : "rgba(33,150,243,0.08)"}
+        stroke={esq("Suroriental") ? "#2196f3" : "#0d2a4a"}
+        strokeWidth={esq("Suroriental") ? "2" : "1"}
+        style={{ cursor: "pointer" }}
+        onClick={() => onSelect("ESQUINA", "Suroriental")}
+      />
+      {[10, 18, 26, 34, 42].map((dy) => (
+        <rect key={dy} x="418" y={240 + dy} width="50" height="5" rx="2"
+          fill={esq("Suroriental") ? "rgba(33,150,243,0.45)" : "rgba(33,150,243,0.12)"}
+          style={{ pointerEvents: "none" }}
+        />
+      ))}
+      <text x="443" y="271"
+        fill={esq("Suroriental") ? "#64b5f6" : "#1a3a5a"}
+        fontSize="6" textAnchor="middle" fontWeight="800"
+        style={{ pointerEvents: "none" }}>SUR</text>
+      <text x="443" y="280"
+        fill={esq("Suroriental") ? "#64b5f6" : "#1a3a5a"}
+        fontSize="6" textAnchor="middle" fontWeight="800"
+        style={{ pointerEvents: "none" }}>ORI</text>
+
+      {/* BARRA NORTE - izquierda (centro) */}
+      <rect x="4" y="64" width="66" height="172"
         fill={categoria === "BARRA" && sector === "Norte" ? "rgba(100,200,100,0.22)" : "rgba(100,180,100,0.07)"}
         stroke={categoria === "BARRA" && sector === "Norte" ? "#4caf50" : "#2a4a2a"}
         strokeWidth={categoria === "BARRA" && sector === "Norte" ? "2" : "1"}
@@ -20,7 +114,7 @@ const StadiumMap: FC<Props> = ({ categoria, sector, onSelect }) => {
         onClick={() => onSelect("BARRA", "Norte")}
       />
       {[14, 24, 34, 44, 54].map((x) => (
-        <rect key={x} x={x} y="12" width="6" height="276" rx="3"
+        <rect key={x} x={x} y="72" width="6" height="156" rx="3"
           fill={categoria === "BARRA" && sector === "Norte" ? "rgba(76,175,80,0.35)" : "rgba(76,175,80,0.1)"}
           style={{ pointerEvents: "none" }}
         />
@@ -32,8 +126,8 @@ const StadiumMap: FC<Props> = ({ categoria, sector, onSelect }) => {
         BARRA NORTE
       </text>
 
-      {/* BARRA SUR - derecha */}
-      <rect x="410" y="4" width="66" height="292" rx="12"
+      {/* BARRA SUR - derecha (centro) */}
+      <rect x="410" y="64" width="66" height="172"
         fill={categoria === "BARRA" && sector === "Sur" ? "rgba(100,200,100,0.22)" : "rgba(100,180,100,0.07)"}
         stroke={categoria === "BARRA" && sector === "Sur" ? "#4caf50" : "#2a4a2a"}
         strokeWidth={categoria === "BARRA" && sector === "Sur" ? "2" : "1"}
@@ -41,7 +135,7 @@ const StadiumMap: FC<Props> = ({ categoria, sector, onSelect }) => {
         onClick={() => onSelect("BARRA", "Sur")}
       />
       {[416, 426, 436, 446, 456].map((x) => (
-        <rect key={x} x={x} y="12" width="6" height="276" rx="3"
+        <rect key={x} x={x} y="72" width="6" height="156" rx="3"
           fill={categoria === "BARRA" && sector === "Sur" ? "rgba(76,175,80,0.35)" : "rgba(76,175,80,0.1)"}
           style={{ pointerEvents: "none" }}
         />

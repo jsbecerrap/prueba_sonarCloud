@@ -59,10 +59,23 @@ export interface OrdenResponse {
   metodoPagoNombre: string | null;
   items: ItemOrdenResponse[];
 }
-
+export interface ProductoListadoResponse {
+  id: number;
+  nombre: string;
+  descripcion: string;
+  precio: number;
+  imagenUrl: string;
+  categoriaNombre: string;
+  equipo: string | null;
+  bandera: string | null;
+  destacado: boolean;
+  stockTotal: number;
+  tieneVariantes: boolean;
+}
 export async function getProductos(): Promise<ProductoResponse[]> {
   return http.get<ProductoResponse[]>("/api/productos");
 }
+
 
 export async function getProductosPorCategoria(categoriaId: number): Promise<ProductoResponse[]> {
   return http.get<ProductoResponse[]>(`/api/productos?categoriaId=${categoriaId}`);
@@ -98,4 +111,7 @@ export async function confirmarOrden(data: ConfirmarOrdenRequest): Promise<Orden
 
 export async function getHistorialOrdenes(): Promise<OrdenResponse[]> {
   return http.get<OrdenResponse[]>("/api/ordenes/historial");
+}
+export async function getProductosListado(): Promise<ProductoListadoResponse[]> {
+  return http.get<ProductoListadoResponse[]>("/api/productos/listado");
 }

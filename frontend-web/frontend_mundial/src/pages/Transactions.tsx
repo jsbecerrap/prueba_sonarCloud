@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Alert, Button, Chip, Paper, Stack, Typography } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { getMyPaymentTxs } from "../api/paymentsApi";
@@ -24,20 +24,19 @@ function formatPrecio(value: number, currency: string) {
 }
 
 export default function Transactions() {
-  const { user } = useApp();
-  const navigate = useNavigate();
-  const [txs, setTxs] = useState<PaymentTx[]>([]);
-  const [loading, setLoading] = useState(true);
+ const { user, authLoading } = useApp();
+const navigate = useNavigate();
+const [txs, setTxs] = useState<PaymentTx[]>([]);
+const [loading, setLoading] = useState(true);
 
-  const refresh = useCallback(async () => {
-    if (!user) return;
-    setLoading(true);
-    const data = await getMyPaymentTxs(user.id);
-    setTxs(data ?? []);
-    setLoading(false);
-  }, [user]);
+useEffect(() => {
+  if (!user?.id) return;
+  setLoading(true);
+  getMyPaymentTxs(user.id)
+    .then((data) => setTxs(data ?? []))
+    .finally(() => setLoading(false));
+}, []);
 
-  useEffect(() => { void refresh(); }, [refresh]);
 
   if (!user) return <Alert severity="warning">Debes iniciar sesión.</Alert>;
 

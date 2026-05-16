@@ -17,4 +17,9 @@ public interface EntradaRepository extends JpaRepository<Entrada, Long> {
     List<Entrada> findByEstadoAndTtlReservaLessThan(String estado, LocalDateTime fecha);
 
     List<Entrada> findByUsuarioIdAndFechaCompraBetween(Long usuarioId, LocalDateTime inicio, LocalDateTime fin);
+   @Query("SELECT COALESCE(SUM(e.cantidad), 0) FROM Entrada e WHERE e.partido.id = :partidoId AND e.estado IN :estados")
+int sumCantidadByPartidoAndEstados(@Param("partidoId") Long partidoId, @Param("estados") List<String> estados);
+
+@Query("SELECT COALESCE(SUM(e.cantidad), 0) FROM Entrada e WHERE e.partido.id = :partidoId AND UPPER(e.categoria) = :categoria AND e.estado IN :estados")
+int sumCantidadByPartidoAndCategoriaAndEstados(@Param("partidoId") Long partidoId, @Param("categoria") String categoria, @Param("estados") List<String> estados);
 }
