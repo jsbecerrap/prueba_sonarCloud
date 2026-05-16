@@ -272,7 +272,7 @@ public class ApuestaServiceImpl implements ApuestaService {
         pronosticos.stream()
                 .map(p -> p.getPartido().getFecha().toLocalDate().toString())
                 .distinct()
-                .forEach(fecha -> partidoService.sincronizarPorFechaYLiga(fecha, 1, 2026));
+                .forEach(fecha -> partidoService.sincronizarPorFechaYLiga(fecha, 239, 2026));
 
         final List<PronosticoDTO> resultado = new ArrayList<>();
         for (final Pronostico pronostico : pronosticoRepository.findByApuestaId(apuestaId)) {

@@ -23,6 +23,11 @@ public class EventoAuditoriaController {
         this.eventoService = eventoService;
     }
 
+    @GetMapping("/todos")
+    public ResponseEntity<List<EventoAuditoriaDTO>> obtenerTodos() {
+        return ResponseEntity.ok(eventoService.obtenerTodos());
+    }
+
     @GetMapping("/usuario/{usuarioId}")
     public ResponseEntity<List<EventoAuditoriaDTO>> buscarPorUsuario(@PathVariable Long usuarioId) {
         return ResponseEntity.ok(eventoService.buscarPorUsuario(usuarioId));
@@ -49,8 +54,4 @@ public class EventoAuditoriaController {
     public ResponseEntity<List<EventoAuditoriaDTO>> buscarPorEntidad(@PathVariable String entidad) {
         return ResponseEntity.ok(eventoService.buscarPorEntidad(entidad));
     }
-    @GetMapping("/txs")
-public ResponseEntity<List<EventoAuditoriaDTO>> obtenerTxsUsuario(@RequestParam Long userId) {
-    return ResponseEntity.ok(eventoService.buscarPorUsuario(userId));
-}
 }

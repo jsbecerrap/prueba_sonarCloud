@@ -76,21 +76,32 @@ const statusColors: Record<MatchStatus, "default" | "success" | "warning" | "inf
 };
 
 const eventLabels: Record<SystemEventType, string> = {
-  AUTH_LOGIN: "Inicio de sesión",
-  AUTH_LOGOUT: "Cierre de sesión",
-  USER_REGISTERED: "Registro",
-  PROFILE_UPDATED: "Perfil actualizado",
-  MATCH_CREATED: "Partido creado",
-  MATCH_STATUS_CHANGED: "Estado de partido",
-  MATCH_RESULT_PUBLISHED: "Resultado publicado",
-  TICKET_RESERVED: "Entrada reservada",
-  TICKET_CANCELLED: "Entrada cancelada",
-  PAYMENT_CREATED: "Pago creado",
-  PAYMENT_CONFIRMED: "Pago confirmado",
-  PAYMENT_FAILED: "Pago fallido",
-  PAYMENT_REFUNDED: "Pago reembolsado",
-  SUPPORT_REQUEST_CREATED: "Soporte creado",
-  SUPPORT_REQUEST_UPDATED: "Soporte actualizado",
+  USUARIO_REGISTRADO: "Usuario registrado",
+  USUARIO_ELIMINADO: "Usuario eliminado",
+  USUARIO_ACTUALIZADO: "Usuario actualizado",
+  APUESTA_CREADA: "Polla creada",
+  APUESTA_UNIRSE: "Unirse a polla",
+  PRONOSTICO_REGISTRADO: "Pronóstico registrado",
+  PRONOSTICO_EDITADO: "Pronóstico editado",
+  PRONOSTICO_ELIMINADO: "Pronóstico eliminado",
+  ORDEN_CREADA: "Orden creada",
+  ORDEN_CONFIRMADA: "Orden confirmada",
+  ORDEN_CANCELADA: "Orden cancelada",
+  ENTRADA_COMPRADA: "Entrada comprada",
+  ENTRADA_TRANSFERIDA: "Entrada transferida",
+  ENTRADA_REEMBOLSADA: "Entrada reembolsada",
+  ENTRADA_LOTE_ACTIVADO: "Lote de entradas activado",
+  PRODUCTO_CREADO: "Producto creado",
+  PRODUCTO_ACTUALIZADO: "Producto actualizado",
+  PRODUCTO_DESACTIVADO: "Producto desactivado",
+  CATEGORIA_CREADA: "Categoría creada",
+  CATEGORIA_ACTUALIZADA: "Categoría actualizada",
+  CATEGORIA_DESACTIVADA: "Categoría desactivada",
+  CATEGORIA_REACTIVADA: "Categoría reactivada",
+  METODO_PAGO_AGREGADO: "Método de pago agregado",
+  METODO_PAGO_ELIMINADO: "Método de pago eliminado",
+  PARTIDO_RESULTADO_ACTUALIZADO: "Resultado de partido actualizado",
+  PARTIDOS_SINCRONIZADOS: "Partidos sincronizados",
 };
 
 function toLocalDatetimeInputValue(iso: string) {
@@ -218,8 +229,8 @@ const refreshPartidos = async () => {
 };
  const refresh = async () => {
   try {
-    const [ms, evs, us, cats, prods, parts, caps, ap, ps] = await Promise.all([
-  adminGetMatches().catch(() => [] as Match[]),
+   const [evs, us, cats, prods, parts, caps, ap, ps] = await Promise.all([
+
   getSystemEvents().catch(() => [] as SystemEvent[]),
   adminGetUsuarios().catch(() => [] as UsuarioSistema[]),
   adminGetCategorias().catch(() => [] as Categoria[]),
@@ -229,7 +240,7 @@ const refreshPartidos = async () => {
   adminGetApuestas().catch(() => [] as Apuesta[]),
   getPools(0).catch(() => [] as Pool[]),
 ]);
-setMatches(ms.slice().sort((a, b) => a.startTimeISO.localeCompare(b.startTimeISO)));
+setMatches(parts.slice().sort((a, b) => a.startTimeISO.localeCompare(b.startTimeISO)))
 setEvents(evs);
 setUsuarios(us);
 setCategorias(cats.filter((c) => c.activo));
@@ -271,10 +282,10 @@ setPools(ps);
 }, [partidos, filtroEquipo, filtroEstadoPartido]);
   const eventsFiltered = useMemo(() => {
     if (eventFilter === "ALL") return events;
-    return events.filter((e) => e.type === eventFilter);
+    return events.filter((e) => e.tipo === eventFilter);
   }, [events, eventFilter]);
 
-  const eventTypes = useMemo(() => Array.from(new Set(events.map((e) => e.type))).sort((a, b) => a.localeCompare(b)), [events]);
+  const eventTypes = useMemo(() => Array.from(new Set(events.map((e) => e.tipo))).sort((a, b) => a.localeCompare(b)), [events]);
 const productosFiltrados = useMemo(() => {
   return productos.filter((p) => {
     if (prodFiltroNombre && !p.nombre.toLowerCase().includes(prodFiltroNombre.toLowerCase())) return false;
@@ -815,14 +826,15 @@ const onEnviarNotificacion = async () => {
                 <Paper key={event.id} variant="outlined" sx={{ p: 2 }}>
                   <Stack direction={{ xs: "column", sm: "row" }} spacing={1} justifyContent="space-between">
                     <Box>
-                      <Typography sx={{ fontWeight: 900 }}>{eventLabels[event.type] ?? event.type}</Typography>
-                      <Typography color="text.secondary">{event.message}</Typography>
+                      <Typography sx={{ fontWeight: 900 }}>{eventLabels[event.tipo] ?? event.tipo}</Typography>
+                      <Typography color="text.secondary">{event.descripcion}</Typography>
                     </Box>
-                    <Typography variant="caption" color="text.secondary">{new Date(event.createdAt).toLocaleString()}</Typography>
+                    <Typography variant="caption" color="text.secondary">{new Date(event.fecha).toLocaleString()}</Typography>
                   </Stack>
                   <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mt: 1 }}>
-                    {event.actorName && <Chip size="small" label={`Actor: ${event.actorName}`} />}
-                    {event.entityType && <Chip size="small" label={`Entidad: ${event.entityType}`} variant="outlined" />}
+                    {event.usuarioId && <Chip size="small" label={`Usuario ID: ${event.usuarioId}`} />}
+                    {event.entidadCorrelacion && <Chip size="small" label={`Entidad: ${event.entidadCorrelacion}`} variant="outlined" />}
+                    {event.idCorrelacion && <Chip size="small" label={`Ref: ${event.idCorrelacion}`} variant="outlined" />}
                   </Stack>
                 </Paper>
               ))}

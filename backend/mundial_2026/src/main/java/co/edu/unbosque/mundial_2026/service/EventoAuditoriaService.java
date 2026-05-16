@@ -12,4 +12,5 @@ public interface EventoAuditoriaService {
     List<EventoAuditoriaDTO> buscarPorCorrelacion(String correlacion);
     List<EventoAuditoriaDTO> buscarPorEntidad(String entidadCorrelacion);
     List<EventoAuditoriaDTO> buscarPorFecha(LocalDateTime fechaInicio, LocalDateTime fechaFin);
+    List<EventoAuditoriaDTO> obtenerTodos();
 }

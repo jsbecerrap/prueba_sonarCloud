@@ -97,6 +97,17 @@ public class EventoAuditoriaServiceImpl implements EventoAuditoriaService {
         return dtos;
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<EventoAuditoriaDTO> obtenerTodos() {
+        List<EventoAuditoria> lista = repository.findAll();
+        List<EventoAuditoriaDTO> dtos = new ArrayList<>();
+        for (EventoAuditoria e : lista) {
+            dtos.add(toDTO(e));
+        }
+        return dtos;
+    }
+
     private EventoAuditoriaDTO toDTO(EventoAuditoria evento) {
         Long usuarioId = evento.getUsuario() != null ? evento.getUsuario().getId() : null;
         return new EventoAuditoriaDTO(
