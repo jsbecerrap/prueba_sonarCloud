@@ -44,14 +44,16 @@ private static final String APUESTA_NO_ENCONTRADA = "Apuesta no encontrada";
 private static final String PRONOSTICO_NO_ENCONTRADO = "Pronostico no encontrado";
    
     private final PartidoService partidoService;
+    private final NotificacionService notificacionService;
  public ApuestaServiceImpl(ApuestaRepository apuestaRepository, PronosticoRepository pronosticoRepository,
-                ParticipacionRepository participacionRepository, UsuarioService usuarioService,
-                PartidoService partidoService) {
-        this.apuestaRepository = apuestaRepository;
-        this.pronosticoRepository = pronosticoRepository;
-        this.participacionRepository = participacionRepository;
-        this.usuarioService = usuarioService;
-        this.partidoService = partidoService;
+        ParticipacionRepository participacionRepository, UsuarioService usuarioService,
+        PartidoService partidoService, NotificacionService notificacionService) {
+    this.apuestaRepository = apuestaRepository;
+    this.pronosticoRepository = pronosticoRepository;
+    this.participacionRepository = participacionRepository;
+    this.usuarioService = usuarioService;
+    this.partidoService = partidoService;
+    this.notificacionService = notificacionService;
 }
    
     // EventoAuditoriaService pendiente de migrar
@@ -115,27 +117,27 @@ private static final String PRONOSTICO_NO_ENCONTRADO = "Pronostico no encontrado
     }
     
 @Transactional
-    @Override
-    public ApuestaDTO unirseApuesta(String codigo, Long usuarioId) {
-     final Usuario usuario = usuarioService.obtenerEntidadPorId(usuarioId);
-        final Apuesta apuesta = apuestaRepository.findByCodigoInvitacion(codigo)
-                .orElseThrow(() -> new CodigoInvalidoException("Codigo no coincide"));
+@Override
+public ApuestaDTO unirseApuesta(String codigo, Long usuarioId) {
+    final Usuario usuario = usuarioService.obtenerEntidadPorId(usuarioId);
+    final Apuesta apuesta = apuestaRepository.findByCodigoInvitacion(codigo)
+            .orElseThrow(() -> new CodigoInvalidoException("Codigo no coincide"));
 
-        participacionRepository.findByUsuarioIdAndApuestaId(usuario.getId(), apuesta.getId())
-                .ifPresent(p -> { throw new UsuarioYaEnApuestaException("Usuario ya está en la polla"); });
+    participacionRepository.findByUsuarioIdAndApuestaId(usuario.getId(), apuesta.getId())
+            .ifPresent(p -> { throw new UsuarioYaEnApuestaException("Usuario ya está en la polla"); });
 
-        final Participacion participacion = new Participacion();
-        participacion.setUsuario(usuario);
-        participacion.setApuesta(apuesta);
-        participacion.setPuntos(0);
-        participacionRepository.save(participacion);
+    final Participacion participacion = new Participacion();
+    participacion.setUsuario(usuario);
+    participacion.setApuesta(apuesta);
+    participacion.setPuntos(0);
+    participacionRepository.save(participacion);
 
-        // eventoAuditoriaService.registrar(...) // pendiente
+    notificacionService.notificarApuestaUnirse(usuario, apuesta.getCreadaPor(), apuesta.getNombre());
 
-        final Long creadoPorId = apuesta.getCreadaPor().getId();
-        return new ApuestaDTO(apuesta.getId(), apuesta.getNombre(), apuesta.getEstado(),
-                apuesta.getCodigoInvitacion(), apuesta.getFechaCierre(), creadoPorId);
-    }
+    final Long creadoPorId = apuesta.getCreadaPor().getId();
+    return new ApuestaDTO(apuesta.getId(), apuesta.getNombre(), apuesta.getEstado(),
+            apuesta.getCodigoInvitacion(), apuesta.getFechaCierre(), creadoPorId);
+}
 @Transactional(readOnly = true)
     @Override
     public List<ParticipacionDTO> obtenerRanking(Long apuestaId) {
@@ -145,60 +147,69 @@ private static final String PRONOSTICO_NO_ENCONTRADO = "Pronostico no encontrado
                 .toList();
     }
 @Transactional
-    @Override
-    public List<PronosticoDTO> calcularPuntos(Long apuestaId) {
-        final Apuesta apuesta = apuestaRepository.findById(apuestaId)
-                .orElseThrow(() -> new ApuestaNotFoundException("La apuesta no existe"));
+@Override
+public List<PronosticoDTO> calcularPuntos(Long apuestaId) {
+    final Apuesta apuesta = apuestaRepository.findById(apuestaId)
+            .orElseThrow(() -> new ApuestaNotFoundException("La apuesta no existe"));
 
-     if (!ESTADO_CERRADA.equalsIgnoreCase(apuesta.getEstado())) {
-    throw new EstadoInvalidoException("La apuesta debe estar cerrada para calcular puntos"); // ← cambio
-}
-
-        final List<Participacion> participaciones = participacionRepository.findByApuestaId(apuestaId);
-        for (final Participacion p : participaciones) {
-            p.setPuntos(0);
-            participacionRepository.save(p);
-        }
-
-        final List<Pronostico> pronosticos = pronosticoRepository.findByApuestaId(apuestaId);
-        pronosticos.stream()
-                .map(p -> p.getPartido().getFecha().toLocalDate().toString())
-                .distinct()
-                .forEach(fecha -> partidoService.sincronizarPorFechaYLiga(fecha, 1, 2026));
-
-        final List<PronosticoDTO> resultado = new ArrayList<>();
-        for (final Pronostico pronostico : pronosticoRepository.findByApuestaId(apuestaId)) {
-            final Partido partido = pronostico.getPartido();
-            if (partido.getGolesLocal() == null || partido.getGolesVisitante() == null) continue;
-
-            final String resultadoReal = determinarResultado(partido);
-            final int puntos = calcularPuntosPronostico(partido, pronostico, resultadoReal);
-
-            pronostico.setPuntosObtenidos(puntos);
-            pronosticoRepository.save(pronostico);
-
-            final Participacion participacion = participacionRepository
-                    .findByUsuarioIdAndApuestaId(pronostico.getUsuario().getId(), apuestaId)
-                    .orElseThrow(() ->  new ParticipacionNotFoundException("Participacion no encontrada"));
-            participacion.setPuntos(puntos + participacion.getPuntos());
-            participacionRepository.save(participacion);
-
-            resultado.add(new PronosticoDTO(pronostico.getId(), pronostico.getResultadoPronosticado(),
-                    pronostico.getGolesLocalPronosticados(), pronostico.getGolesVisitantePronosticados(),
-                    pronostico.getPuntosObtenidos(), pronostico.getUsuario().getId(),
-                    pronostico.getApuesta().getId(), pronostico.getPartido().getId()));
-        }
-
-        int posicion = 1;
-        for (final Participacion p : participacionRepository.findByApuestaIdOrderByPuntosDesc(apuestaId)) {
-            p.setPosicionRanking(posicion++);
-            participacionRepository.save(p);
-        }
-
-        // eventoAuditoriaService.registrar(...) // pendiente
-
-        return resultado;
+    if (!ESTADO_CERRADA.equalsIgnoreCase(apuesta.getEstado())) {
+        throw new EstadoInvalidoException("La apuesta debe estar cerrada para calcular puntos");
     }
+
+    final List<Participacion> participaciones = participacionRepository.findByApuestaId(apuestaId);
+    for (final Participacion p : participaciones) {
+        p.setPuntos(0);
+        participacionRepository.save(p);
+    }
+
+    final List<Pronostico> pronosticos = pronosticoRepository.findByApuestaId(apuestaId);
+    pronosticos.stream()
+            .map(p -> p.getPartido().getFecha().toLocalDate().toString())
+            .distinct()
+            .forEach(fecha -> partidoService.sincronizarPorFechaYLiga(fecha, 1, 2026));
+
+    final List<PronosticoDTO> resultado = new ArrayList<>();
+    for (final Pronostico pronostico : pronosticoRepository.findByApuestaId(apuestaId)) {
+        final Partido partido = pronostico.getPartido();
+        if (partido.getGolesLocal() == null || partido.getGolesVisitante() == null) continue;
+
+        final String resultadoReal = determinarResultado(partido);
+        final int puntos = calcularPuntosPronostico(partido, pronostico, resultadoReal);
+
+        pronostico.setPuntosObtenidos(puntos);
+        pronosticoRepository.save(pronostico);
+
+        final Participacion participacion = participacionRepository
+                .findByUsuarioIdAndApuestaId(pronostico.getUsuario().getId(), apuestaId)
+                .orElseThrow(() -> new ParticipacionNotFoundException("Participacion no encontrada"));
+        participacion.setPuntos(puntos + participacion.getPuntos());
+        participacionRepository.save(participacion);
+
+        resultado.add(new PronosticoDTO(pronostico.getId(), pronostico.getResultadoPronosticado(),
+                pronostico.getGolesLocalPronosticados(), pronostico.getGolesVisitantePronosticados(),
+                pronostico.getPuntosObtenidos(), pronostico.getUsuario().getId(),
+                pronostico.getApuesta().getId(), pronostico.getPartido().getId()));
+    }
+
+    int posicion = 1;
+    for (final Participacion p : participacionRepository.findByApuestaIdOrderByPuntosDesc(apuestaId)) {
+        p.setPosicionRanking(posicion++);
+        participacionRepository.save(p);
+    }
+
+    List<Participacion> participacionesFinales = participacionRepository.findByApuestaIdOrderByPuntosDesc(apuestaId);
+    for (int i = 0; i < participacionesFinales.size(); i++) {
+        Participacion p = participacionesFinales.get(i);
+        notificacionService.notificarPuntosCalculados(
+            p.getUsuario(),
+            apuesta.getNombre(),
+            p.getPosicionRanking(),
+            p.getPuntos()
+        );
+    }
+
+    return resultado;
+}
 
     private String determinarResultado(final Partido partido) {
         if (partido.getGolesLocal() > partido.getGolesVisitante()) return "LOCAL";
@@ -217,19 +228,25 @@ private static final String PRONOSTICO_NO_ENCONTRADO = "Pronostico no encontrado
         return puntos;
     }
 @Transactional
-    @Override
-    public ApuestaDTO cerrarApuesta(Long apuestaId) {
-        final Apuesta apuesta = apuestaRepository.findById(apuestaId)
-                .orElseThrow(() -> new ApuestaNotFoundException(APUESTA_NO_ENCONTRADA));
-     if (!ESTADO_ABIERTA.equalsIgnoreCase(apuesta.getEstado())) {
-    throw new ApuestaCerradaException("La apuesta ya no está abierta"); 
-}
-        apuesta.setEstado(ESTADO_CERRADA);
-        apuestaRepository.save(apuesta);
-        // eventoAuditoriaService.registrar(...) // pendiente
-        return new ApuestaDTO(apuesta.getId(), apuesta.getNombre(), apuesta.getEstado(),
-                apuesta.getCodigoInvitacion(), apuesta.getFechaCierre(), apuesta.getCreadaPor().getId());
+@Override
+public ApuestaDTO cerrarApuesta(Long apuestaId) {
+    final Apuesta apuesta = apuestaRepository.findById(apuestaId)
+            .orElseThrow(() -> new ApuestaNotFoundException(APUESTA_NO_ENCONTRADA));
+    if (!ESTADO_ABIERTA.equalsIgnoreCase(apuesta.getEstado())) {
+        throw new ApuestaCerradaException("La apuesta ya no está abierta");
     }
+    apuesta.setEstado(ESTADO_CERRADA);
+    apuestaRepository.save(apuesta);
+
+    List<Usuario> participantes = participacionRepository.findByApuestaId(apuestaId)
+            .stream()
+            .map(Participacion::getUsuario)
+            .toList();
+    notificacionService.notificarApuestaCerrada(participantes, apuesta.getNombre());
+
+    return new ApuestaDTO(apuesta.getId(), apuesta.getNombre(), apuesta.getEstado(),
+            apuesta.getCodigoInvitacion(), apuesta.getFechaCierre(), apuesta.getCreadaPor().getId());
+}
 @Transactional(readOnly = true)
     @Override
     public ApuestaDTO obtenerApuesta(Long apuestaId) {

@@ -21,7 +21,33 @@ public interface NotificacionService {
 
     void notificarPorPartido(Long partidoId, String tipo, String titulo, String mensaje);
 
-    void notificarRegistro(Usuario usuario);
+    void notificarEntradaPagada(Usuario usuario, String partido, String categoria, String sector, String fila);
+
+void notificarEntradaPagoFallido(Usuario usuario);
+
+void notificarOrdenConfirmada(Usuario usuario, double total);
+
+void notificarEntradaReembolsada(Usuario usuario, Long entradaId);
+
+void notificarEntradaReembolsoFallido(Usuario usuario, Long entradaId);
+
+void notificarEntradaTransferida(Usuario usuarioOrigen, String correoDestino, String partido);
+
+void notificarEntradaRecibida(Usuario usuarioDestino, String correoOrigen, String partido);
+
+void notificarReservaExpirada(Usuario usuario, String partido);
+
+void notificarReservaPorExpirar(Usuario usuario, String partido);
+
+void notificarApuestaUnirse(Usuario usuarioNuevo, Usuario creador, String nombreApuesta);
+
+void notificarApuestaCerrada(List<Usuario> participantes, String nombreApuesta);
+
+void notificarPuntosCalculados(Usuario usuario, String nombreApuesta, int posicion, int puntos);
+
+void notificarCarritoAbandonado(Usuario usuario);
 
     void notificarActualizacionPerfil(Usuario usuario);
+    void notificarRegistro(Usuario usuario);
+    void notificarOrdenFallida(Usuario usuario);
 }

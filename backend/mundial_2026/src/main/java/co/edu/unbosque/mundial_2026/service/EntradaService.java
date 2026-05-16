@@ -28,4 +28,5 @@ public interface EntradaService {
 
     List<PartidoCapacidadDTO> listarPartidosConCapacidad();
   List<CuposZonaDTO> obtenerCuposPorZona(Long partidoId);
+  void avisarReservasPorExpirar();
 }

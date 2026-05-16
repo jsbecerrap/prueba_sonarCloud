@@ -49,7 +49,21 @@ private static final String ESTADO_TRANSFERIDA = "TRANSFERIDA";
 private static final String ENTRADA_NO_ENCONTRADA = "Entrada no encontrada";
 private static final String TIPO_ENTRADA = "ENTRADA";
 private static final String PREFIJO_USUARIO = "Usuario ";
+private final NotificacionService notificacionService;
 
+public EntradaServiceImpl(EntradaRepository entradaRepository,
+    UsuarioService usuarioService,
+    PartidoService partidoService,
+    EventoAuditoriaService auditoriaService,
+    NotificacionService notificacionService,
+    @Value("${stripe.api.key}") String stripeApiKey) {
+    this.entradaRepository = entradaRepository;
+    this.usuarioService = usuarioService;
+    this.partidoService = partidoService;
+    this.auditoriaService = auditoriaService;
+    this.notificacionService = notificacionService;
+    Stripe.apiKey = stripeApiKey;
+}
 
 
     private static final Map<String, Long> PRECIO_POR_RONDA = new HashMap<>();
@@ -92,16 +106,7 @@ static {
     PORCENTAJE_ZONA.put("PALCO", 0.15);
     PORCENTAJE_ZONA.put("ESQUINA", 0.15);
 }
-    public EntradaServiceImpl(EntradaRepository entradaRepository,
-    UsuarioService usuarioService,
-    PartidoService partidoService,
-    EventoAuditoriaService auditoriaService,
-    @Value("${stripe.api.key}") String stripeApiKey) {
-    this.entradaRepository = entradaRepository;
-    this.usuarioService = usuarioService;
-    this.partidoService = partidoService;
-    this.auditoriaService = auditoriaService;
-    Stripe.apiKey = stripeApiKey; }
+
 @Override
 public EntradaResponseDTO reservarEntrada(String correo, EntradaRequestDTO dto) {
     Usuario u = usuarioService.obtenerEntidadPorCorreo(correo);
@@ -144,7 +149,7 @@ public EntradaResponseDTO reservarEntrada(String correo, EntradaRequestDTO dto) 
             ? dto.getFila().toUpperCase()
             : "C";
 
-    // Validar cupo por zona
+    
     int totalVendidoPartido = entradaRepository.sumCantidadByPartidoAndEstados(
         partido.getId(), List.of(ESTADO_RESERVADA, ESTADO_PAGADA)
     );
@@ -192,63 +197,72 @@ public EntradaResponseDTO reservarEntrada(String correo, EntradaRequestDTO dto) 
 
     return toDTO(entrada);
 }
+@Override
+public EntradaResponseDTO confirmarPago(Long entradaId, String paymentRef) {
+    Entrada entrada = entradaRepository.findById(entradaId)
+            .orElseThrow(() -> new EntradaNotFoundException(ENTRADA_NO_ENCONTRADA));
 
-    @Override
-    public EntradaResponseDTO confirmarPago(Long entradaId, String paymentRef) {
-        Entrada entrada = entradaRepository.findById(entradaId).orElseThrow(() -> new EntradaNotFoundException(ENTRADA_NO_ENCONTRADA));
-
-        if (!entrada.getEstado().equals(ESTADO_RESERVADA)) {
-            throw new EstadoInvalidoException("La entrada no está en estado RESERVADA");
-        }
-
-        if (entrada.getTtlReserva().isBefore(LocalDateTime.now())) {
-           throw new EstadoInvalidoException("La reserva ha expirado");
-        }
-
-        try {
-    
-PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
-    .setAmount((long)(entrada.getPrecio() * 100))
-    .setCurrency("usd")
-    .setConfirm(true)
-    .setPaymentMethod(paymentRef)
-    .setAutomaticPaymentMethods(
-        PaymentIntentCreateParams.AutomaticPaymentMethods.builder()
-            .setEnabled(true)
-            .setAllowRedirects(PaymentIntentCreateParams.AutomaticPaymentMethods.AllowRedirects.NEVER)
-            .build()
-    )
-    .build();
-
-            PaymentIntent intent = PaymentIntent.create(params);
-
-            entrada.setEstado(ESTADO_PAGADA);
-            entrada.setPaymentRef(intent.getId());
-            entrada.setFechaPago(LocalDateTime.now());
-            entrada.setTtlReserva(null);
-            entradaRepository.save(entrada);
-
-            auditoriaService.registrar(
-                "ENTRADA_PAGADA",
-                "Pago confirmado para entrada " + entradaId + " con ref " + intent.getId(),
-                entrada.getUsuario().getId(),
-                String.valueOf(entradaId),
-                TIPO_ENTRADA
-            );
-
-        } catch (StripeException e) {
-            auditoriaService.registrar(
-                "ENTRADA_PAGO_FALLIDO",
-                "Fallo en pago de entrada " + entradaId + ": " + e.getMessage(),
-                entrada.getUsuario().getId(),
-                String.valueOf(entradaId),
-                TIPO_ENTRADA
-            );
-         throw new PagoStripeException("Error al procesar el pago. Revisa los datos de tu tarjeta e intenta de nuevo.");
-        }
-
-        return toDTO(entrada);
+    if (!entrada.getEstado().equals(ESTADO_RESERVADA)) {
+        throw new EstadoInvalidoException("La entrada no está en estado RESERVADA");
     }
+
+    if (entrada.getTtlReserva().isBefore(LocalDateTime.now())) {
+        throw new EstadoInvalidoException("La reserva ha expirado");
+    }
+
+    try {
+        PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
+            .setAmount((long)(entrada.getPrecio() * 100))
+            .setCurrency("usd")
+            .setConfirm(true)
+            .setPaymentMethod(paymentRef)
+            .setAutomaticPaymentMethods(
+                PaymentIntentCreateParams.AutomaticPaymentMethods.builder()
+                    .setEnabled(true)
+                    .setAllowRedirects(PaymentIntentCreateParams.AutomaticPaymentMethods.AllowRedirects.NEVER)
+                    .build()
+            )
+            .build();
+
+        PaymentIntent intent = PaymentIntent.create(params);
+
+        entrada.setEstado(ESTADO_PAGADA);
+        entrada.setPaymentRef(intent.getId());
+        entrada.setFechaPago(LocalDateTime.now());
+        entrada.setTtlReserva(null);
+        entradaRepository.save(entrada);
+
+        auditoriaService.registrar(
+            "ENTRADA_PAGADA",
+            "Pago confirmado para entrada " + entradaId + " con ref " + intent.getId(),
+            entrada.getUsuario().getId(),
+            String.valueOf(entradaId),
+            TIPO_ENTRADA
+        );
+
+        String nombrePartido = entrada.getPartido().getSeleccionLocal() + " vs " + entrada.getPartido().getSeleccionVisitante();
+        notificacionService.notificarEntradaPagada(
+            entrada.getUsuario(),
+            nombrePartido,
+            entrada.getCategoria(),
+            entrada.getSector(),
+            entrada.getFila()
+        );
+
+    } catch (StripeException e) {
+        auditoriaService.registrar(
+            "ENTRADA_PAGO_FALLIDO",
+            "Fallo en pago de entrada " + entradaId + ": " + e.getMessage(),
+            entrada.getUsuario().getId(),
+            String.valueOf(entradaId),
+            TIPO_ENTRADA
+        );
+        notificacionService.notificarEntradaPagoFallido(entrada.getUsuario());
+        throw new PagoStripeException("Error al procesar el pago. Revisa los datos de tu tarjeta e intenta de nuevo.");
+    }
+
+    return toDTO(entrada);
+}
 
  @Override
 public EntradaResponseDTO cancelarReserva(String correo, Long entradaId) {
@@ -281,10 +295,9 @@ public EntradaResponseDTO cancelarReserva(String correo, Long entradaId) {
 
     return toDTO(entrada);
 }
-
-   @Override
+@Override
 public EntradaResponseDTO transferirEntrada(Long entradaId, TransferenciaRequestDTO dto, String correo) {
-    Usuario u = usuarioService.obtenerEntidadPorCorreo(correo); 
+    Usuario u = usuarioService.obtenerEntidadPorCorreo(correo);
     Long usuarioId = u.getId();
 
     Entrada entrada = entradaRepository.findById(entradaId)
@@ -339,12 +352,15 @@ public EntradaResponseDTO transferirEntrada(Long entradaId, TransferenciaRequest
         TIPO_ENTRADA
     );
 
+    String nombrePartido = entrada.getPartido().getSeleccionLocal() + " vs " + entrada.getPartido().getSeleccionVisitante();
+    notificacionService.notificarEntradaTransferida(u, dto.getCorreoDestino(), nombrePartido);
+    notificacionService.notificarEntradaRecibida(usuarioRecibe, u.getCorreoUsuario(), nombrePartido);
+
     return toDTO(nuevaEntrada);
 }
-
-   @Override
+@Override
 public EntradaResponseDTO reembolsarEntrada(String correo, Long entradaId) {
-    Usuario u = usuarioService.obtenerEntidadPorCorreo(correo); 
+    Usuario u = usuarioService.obtenerEntidadPorCorreo(correo);
     Long usuarioId = u.getId();
 
     Entrada entrada = entradaRepository.findById(entradaId)
@@ -359,8 +375,6 @@ public EntradaResponseDTO reembolsarEntrada(String correo, Long entradaId) {
     }
 
     try {
-       
-
         RefundCreateParams params = RefundCreateParams.builder()
             .setPaymentIntent(entrada.getPaymentRef())
             .build();
@@ -381,6 +395,8 @@ public EntradaResponseDTO reembolsarEntrada(String correo, Long entradaId) {
             TIPO_ENTRADA
         );
 
+        notificacionService.notificarEntradaReembolsada(u, entradaId);
+
     } catch (StripeException e) {
         auditoriaService.registrar(
             "ENTRADA_REEMBOLSO_FALLIDO",
@@ -389,7 +405,8 @@ public EntradaResponseDTO reembolsarEntrada(String correo, Long entradaId) {
             String.valueOf(entradaId),
             TIPO_ENTRADA
         );
-       throw new PagoStripeException("Error al procesar el reembolso. Intenta de nuevo más tarde.");
+        notificacionService.notificarEntradaReembolsoFallido(u, entradaId);
+        throw new PagoStripeException("Error al procesar el reembolso. Intenta de nuevo más tarde.");
     }
 
     return toDTO(entrada);
@@ -411,25 +428,41 @@ public List<EntradaResponseDTO> listarEntradasUsuario(String correo) {
     }
 
     @Override
-    public void expirarReservasVencidas() {
-        List<Entrada> vencidas = entradaRepository.findByEstadoAndTtlReservaLessThan(ESTADO_RESERVADA, LocalDateTime.now());
+public void expirarReservasVencidas() {
+    List<Entrada> vencidas = entradaRepository.findByEstadoAndTtlReservaLessThan(ESTADO_RESERVADA, LocalDateTime.now());
 
-        for (int i = 0; i < vencidas.size(); i++) {
-            Entrada entrada = vencidas.get(i);
-            entrada.setEstado("EXPIRADA");
-            entradaRepository.save(entrada);
+    for (int i = 0; i < vencidas.size(); i++) {
+        Entrada entrada = vencidas.get(i);
+        entrada.setEstado("EXPIRADA");
+        entradaRepository.save(entrada);
 
-            partidoService.actualizarCapacidad(entrada.getPartido().getId(), entrada.getCantidad());
+        partidoService.actualizarCapacidad(entrada.getPartido().getId(), entrada.getCantidad());
 
-            auditoriaService.registrar(
-                "ENTRADA_EXPIRADA",
-                "Entrada " + entrada.getId() + " expiró por TTL",
-                entrada.getUsuario().getId(),
-                String.valueOf(entrada.getId()),
-                TIPO_ENTRADA
-            );
-        }
+        auditoriaService.registrar(
+            "ENTRADA_EXPIRADA",
+            "Entrada " + entrada.getId() + " expiró por TTL",
+            entrada.getUsuario().getId(),
+            String.valueOf(entrada.getId()),
+            TIPO_ENTRADA
+        );
+
+        String nombrePartido = entrada.getPartido().getSeleccionLocal() + " vs " + entrada.getPartido().getSeleccionVisitante();
+        notificacionService.notificarReservaExpirada(entrada.getUsuario(), nombrePartido);
     }
+}
+@Override
+public void avisarReservasPorExpirar() {
+    LocalDateTime ahora = LocalDateTime.now();
+    LocalDateTime en6Minutos = ahora.plusMinutes(6);
+    LocalDateTime en4Minutos = ahora.plusMinutes(4);
+    List<Entrada> porExpirar = entradaRepository.findByEstadoAndTtlReservaBetween(ESTADO_RESERVADA, en4Minutos, en6Minutos);
+
+    for (int i = 0; i < porExpirar.size(); i++) {
+        Entrada entrada = porExpirar.get(i);
+        String nombrePartido = entrada.getPartido().getSeleccionLocal() + " vs " + entrada.getPartido().getSeleccionVisitante();
+        notificacionService.notificarReservaPorExpirar(entrada.getUsuario(), nombrePartido);
+    }
+}
 
     private EntradaResponseDTO toDTO(Entrada entrada) {
     EntradaResponseDTO dto = new EntradaResponseDTO();

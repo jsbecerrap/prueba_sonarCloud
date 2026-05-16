@@ -55,23 +55,27 @@ public class OrdenServiceImpl implements OrdenService {
     private static final String CARRITO_NO_ACTIVO = "No tienes un carrito activo";
     private static final String PREFIJO_USUARIO = "Usuario ";
 
-    public OrdenServiceImpl(OrdenRepository ordenRepository,
-            ItemOrdenRepository itemOrdenRepository,
-            VarianteProductoRepository varianteRepository,
-            UsuarioService usuarioService,
-            ProductoService productoService,
-            MetodoPagoService metodoPagoService,
-            EventoAuditoriaService auditoriaService,
-            @Value("${stripe.api.key}") String stripeApiKey) {
-        this.ordenRepository = ordenRepository;
-        this.itemOrdenRepository = itemOrdenRepository;
-        this.varianteRepository = varianteRepository;
-        this.usuarioService = usuarioService;
-        this.productoService = productoService;
-        this.metodoPagoService = metodoPagoService;
-        this.auditoriaService = auditoriaService;
-        Stripe.apiKey = stripeApiKey;
-    }
+    private final NotificacionService notificacionService;
+
+public OrdenServiceImpl(OrdenRepository ordenRepository,
+        ItemOrdenRepository itemOrdenRepository,
+        VarianteProductoRepository varianteRepository,
+        UsuarioService usuarioService,
+        ProductoService productoService,
+        MetodoPagoService metodoPagoService,
+        EventoAuditoriaService auditoriaService,
+        NotificacionService notificacionService,
+        @Value("${stripe.api.key}") String stripeApiKey) {
+    this.ordenRepository = ordenRepository;
+    this.itemOrdenRepository = itemOrdenRepository;
+    this.varianteRepository = varianteRepository;
+    this.usuarioService = usuarioService;
+    this.productoService = productoService;
+    this.metodoPagoService = metodoPagoService;
+    this.auditoriaService = auditoriaService;
+    this.notificacionService = notificacionService;
+    Stripe.apiKey = stripeApiKey;
+}
 
     @Override
     @Transactional
@@ -175,67 +179,68 @@ public class OrdenServiceImpl implements OrdenService {
         return toOrdenDTO(ordenActual, itemsRestantes);
     }
 
-    @Override
-    @Transactional
-    public OrdenResponseDTO confirmarOrden(String correo, ConfirmarOrdenDTO dto) {
-        Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
-        Long usuarioId = usuario.getId();
-        Orden ordenAPagar = ordenRepository.findByUsuarioIdAndEstado(usuarioId, ESTADO_PENDIENTE)
-                .orElseThrow(() -> new OrdenNotFoundException(CARRITO_NO_ACTIVO));
-        List<ItemOrden> items = itemOrdenRepository.findByOrdenId(ordenAPagar.getId());
-        if (items.isEmpty()) {
-            throw new CarritoVacioException("El carrito está vacío");
+   @Override
+@Transactional
+public OrdenResponseDTO confirmarOrden(String correo, ConfirmarOrdenDTO dto) {
+    Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
+    Long usuarioId = usuario.getId();
+    Orden ordenAPagar = ordenRepository.findByUsuarioIdAndEstado(usuarioId, ESTADO_PENDIENTE)
+            .orElseThrow(() -> new OrdenNotFoundException(CARRITO_NO_ACTIVO));
+    List<ItemOrden> items = itemOrdenRepository.findByOrdenId(ordenAPagar.getId());
+    if (items.isEmpty()) {
+        throw new CarritoVacioException("El carrito está vacío");
+    }
+    MetodoPago metodoPago = metodoPagoService.obtenerEntidadPorId(dto.getMetodoPagoId());
+    if (!metodoPago.getUsuario().getId().equals(usuarioId)) {
+        throw new MetodoPagoInvalidoException("El método de pago no pertenece al usuario");
+    }
+    for (int i = 0; i < items.size(); i++) {
+        ItemOrden item = items.get(i);
+        if (item.getVariante().getStock() < item.getCantidad()) {
+            throw new StockInsuficienteException("Stock insuficiente para " + item.getProducto().getNombre()
+                    + (item.getVariante().getEspecificacion() != null
+                            ? " (" + item.getVariante().getEspecificacion() + ")"
+                            : ""));
         }
-        MetodoPago metodoPago = metodoPagoService.obtenerEntidadPorId(dto.getMetodoPagoId());
-        if (!metodoPago.getUsuario().getId().equals(usuarioId)) {
-            throw new MetodoPagoInvalidoException("El método de pago no pertenece al usuario");
-        }
+    }
+    try {
+        long totalCentavos = (long) (ordenAPagar.getTotal() * 100);
+        PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
+                .setAmount(totalCentavos)
+                .setCurrency("usd")
+                .setPaymentMethod(metodoPago.getDetails())
+                .setConfirm(true)
+                .setAutomaticPaymentMethods(
+                        PaymentIntentCreateParams.AutomaticPaymentMethods.builder()
+                                .setEnabled(true)
+                                .setAllowRedirects(
+                                        PaymentIntentCreateParams.AutomaticPaymentMethods.AllowRedirects.NEVER)
+                                .build())
+                .build();
+        PaymentIntent paymentIntent = PaymentIntent.create(params);
+        ordenAPagar.setEstado(ESTADO_PAGADA);
+        ordenAPagar.setFechaPago(LocalDateTime.now());
+        ordenAPagar.setPaymentRef(paymentIntent.getId());
+        ordenAPagar.setMetodoPago(metodoPago);
         for (int i = 0; i < items.size(); i++) {
             ItemOrden item = items.get(i);
-            if (item.getVariante().getStock() < item.getCantidad()) {
-                throw new StockInsuficienteException("Stock insuficiente para " + item.getProducto().getNombre()
-                        + (item.getVariante().getEspecificacion() != null
-                                ? " (" + item.getVariante().getEspecificacion() + ")"
-                                : ""));
-            }
+            productoService.actualizarStock(item.getVariante().getId(), item.getCantidad());
         }
-        try {
-            long totalCentavos = (long) (ordenAPagar.getTotal() * 100);
-            PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
-                    .setAmount(totalCentavos)
-                    .setCurrency("usd")
-                    .setPaymentMethod(metodoPago.getDetails())
-                    .setConfirm(true)
-                    .setAutomaticPaymentMethods(
-                            PaymentIntentCreateParams.AutomaticPaymentMethods.builder()
-                                    .setEnabled(true)
-                                    .setAllowRedirects(
-                                            PaymentIntentCreateParams.AutomaticPaymentMethods.AllowRedirects.NEVER)
-                                    .build())
-                    .build();
-            PaymentIntent paymentIntent = PaymentIntent.create(params);
-            ordenAPagar.setEstado(ESTADO_PAGADA);
-            ordenAPagar.setFechaPago(LocalDateTime.now());
-            ordenAPagar.setPaymentRef(paymentIntent.getId());
-            ordenAPagar.setMetodoPago(metodoPago);
-
-            for (int i = 0; i < items.size(); i++) {
-                ItemOrden item = items.get(i);
-                productoService.actualizarStock(item.getVariante().getId(), item.getCantidad());
-            }
-            ordenRepository.save(ordenAPagar);
-            auditoriaService.registrar(
-                    "ORDEN_PAGADA",
-                    PREFIJO_USUARIO + usuarioId + " pagó la orden " + ordenAPagar.getId() + " por $"
-                            + ordenAPagar.getTotal(),
-                    usuarioId,
-                    PREFIJO_ORDEN + ordenAPagar.getId(),
-                    TIPO_ORDEN);
-        } catch (StripeException e) {
-            throw new PagoStripeException("Error al procesar el pago. Revisa los datos de tu tarjeta e intenta de nuevo.");
-        }
-        return toOrdenDTO(ordenAPagar, items);
-    }
+        ordenRepository.save(ordenAPagar);
+        auditoriaService.registrar(
+                "ORDEN_PAGADA",
+                PREFIJO_USUARIO + usuarioId + " pagó la orden " + ordenAPagar.getId() + " por $"
+                        + ordenAPagar.getTotal(),
+                usuarioId,
+                PREFIJO_ORDEN + ordenAPagar.getId(),
+                TIPO_ORDEN);
+        notificacionService.notificarOrdenConfirmada(usuario, ordenAPagar.getTotal());
+   } catch (StripeException e) {
+    notificacionService.notificarOrdenFallida(usuario);
+    throw new PagoStripeException("Error al procesar el pago. Revisa los datos de tu tarjeta e intenta de nuevo.");
+}
+    return toOrdenDTO(ordenAPagar, items);
+}
 
     @Override
     @Transactional(readOnly = true)
@@ -332,5 +337,17 @@ public List<OrdenHistorialDTO> historialLiviano(String correo) {
         resultado.add(dto);
     }
     return resultado;
+}
+@Transactional
+@org.springframework.scheduling.annotation.Scheduled(fixedRate = 300000)
+public void notificarCarritosAbandonados() {
+    LocalDateTime haceUnaHora = LocalDateTime.now().minusHours(1);
+    List<Orden> abandonadas = ordenRepository.findByEstadoAndFechaCreacionBefore(ESTADO_PENDIENTE, haceUnaHora);
+    for (Orden orden : abandonadas) {
+        List<ItemOrden> items = itemOrdenRepository.findByOrdenId(orden.getId());
+        if (!items.isEmpty()) {
+            notificacionService.notificarCarritoAbandonado(orden.getUsuario());
+        }
+    }
 }
 }

@@ -22,4 +22,5 @@ int sumCantidadByPartidoAndEstados(@Param("partidoId") Long partidoId, @Param("e
 
 @Query("SELECT COALESCE(SUM(e.cantidad), 0) FROM Entrada e WHERE e.partido.id = :partidoId AND UPPER(e.categoria) = :categoria AND e.estado IN :estados")
 int sumCantidadByPartidoAndCategoriaAndEstados(@Param("partidoId") Long partidoId, @Param("categoria") String categoria, @Param("estados") List<String> estados);
+List<Entrada> findByEstadoAndTtlReservaBetween(String estado, LocalDateTime inicio, LocalDateTime fin);
 }

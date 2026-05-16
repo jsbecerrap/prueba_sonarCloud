@@ -1,5 +1,6 @@
 package co.edu.unbosque.mundial_2026.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -41,4 +42,5 @@ public interface OrdenRepository extends JpaRepository<Orden, Long> {
 List<Orden> findHistorialByUsuarioIdAndEstadoIn(
     @Param("usuarioId") Long usuarioId,
     @Param("estados") List<String> estados);
+    List<Orden> findByEstadoAndFechaCreacionBefore(String estado, LocalDateTime fecha);
 }
