@@ -24,10 +24,15 @@ public class CategoriaServiceImpl implements CategoriaService {
     private final ProductoRepository productoRepository;
     private static final String CATEGORIA_NO_ENCONTRADA = "Categoría no encontrada con id: ";
 
+    private final EventoAuditoriaService auditoriaService;
+    private static final String ENTIDAD_CATEGORIA = "Categoria";
+
     public CategoriaServiceImpl(CategoriaRepository categoriaRepository,
-            ProductoRepository productoRepository) {
+            ProductoRepository productoRepository,
+            EventoAuditoriaService auditoriaService) {
         this.categoriaRepository = categoriaRepository;
         this.productoRepository = productoRepository;
+        this.auditoriaService = auditoriaService;
     }
 
     @Override
@@ -39,39 +44,45 @@ public class CategoriaServiceImpl implements CategoriaService {
         }
         Categoria categoria = toEntity(dto);
         categoriaRepository.save(categoria);
+
+        auditoriaService.registrar(
+                "CATEGORIA_CREADA",
+                "Categoria creada: '" + categoria.getNombre() + "'",
+                null,
+                UUID.randomUUID().toString(),
+                ENTIDAD_CATEGORIA);
+
         return toDTO(categoria);
     }
 
-    @Override
-@Transactional(readOnly = true)
-public List<CategoriaResponseDTO> listar() {
-    return categoriaRepository.findByActivoTrue().stream()
-            .map(this::toDTO)
-            .toList();
-}
-@Override
-@Transactional(readOnly = true)
-public List<CategoriaResponseDTO> listarTodas() {
-    return categoriaRepository.findAll().stream()
-            .map(this::toDTO)
-            .toList();
-}
     @Override
     @Transactional
     public CategoriaResponseDTO actualizar(Long id, CategoriaRequestDTO dto) {
         Categoria categoria = categoriaRepository.findByIdAndActivoTrue(id)
                 .orElseThrow(() -> new CategoriaNotFoundException(CATEGORIA_NO_ENCONTRADA + id));
+
+        final StringBuilder cambios = new StringBuilder();
         if (dto.getNombre() != null && !dto.getNombre().isBlank()) {
             Optional<Categoria> existente = categoriaRepository.findByNombre(dto.getNombre());
             if (existente.isPresent() && !existente.get().getId().equals(id)) {
                 throw new CategoriaYaExisteException("Ya existe una categoría con ese nombre");
             }
+            cambios.append(" | nombre: ").append(categoria.getNombre()).append(" -> ").append(dto.getNombre());
             categoria.setNombre(dto.getNombre());
         }
         if (dto.getDescripcion() != null && !dto.getDescripcion().isBlank()) {
+            cambios.append(" | descripcion actualizada");
             categoria.setDescripcion(dto.getDescripcion());
         }
         categoriaRepository.save(categoria);
+
+        auditoriaService.registrar(
+                "CATEGORIA_ACTUALIZADA",
+                "Categoria actualizada (id: " + id + ")" + cambios,
+                null,
+                UUID.randomUUID().toString(),
+                ENTIDAD_CATEGORIA);
+
         return toDTO(categoria);
     }
 
@@ -89,6 +100,14 @@ public List<CategoriaResponseDTO> listarTodas() {
             p.setActivo(false);
             productoRepository.save(p);
         }
+
+        auditoriaService.registrar(
+                "CATEGORIA_DESACTIVADA",
+                "Categoria desactivada: '" + categoria.getNombre() + "' (id: " + id + ")"
+                        + " | productos afectados: " + productos.size(),
+                null,
+                UUID.randomUUID().toString(),
+                ENTIDAD_CATEGORIA);
 
         List<ProductoResponseDTO> productosAfectados = productos.stream()
                 .map(this::toProductoDTO)
@@ -113,10 +132,34 @@ public List<CategoriaResponseDTO> listarTodas() {
                 .map(this::toProductoDTO)
                 .toList();
 
+        auditoriaService.registrar(
+                "CATEGORIA_REACTIVADA",
+                "Categoria reactivada: '" + categoria.getNombre() + "' (id: " + id + ")"
+                        + " | productos visibles nuevamente: " + productos.size(),
+                null,
+                UUID.randomUUID().toString(),
+                ENTIDAD_CATEGORIA);
+
         ReactivarCategoriaResponseDTO response = new ReactivarCategoriaResponseDTO();
         response.setCategoria(toDTO(categoria));
         response.setProductos(productos);
         return response;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CategoriaResponseDTO> listar() {
+        return categoriaRepository.findByActivoTrue().stream()
+                .map(this::toDTO)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CategoriaResponseDTO> listarTodas() {
+        return categoriaRepository.findAll().stream()
+                .map(this::toDTO)
+                .toList();
     }
 
     @Override
@@ -153,11 +196,13 @@ public List<CategoriaResponseDTO> listarTodas() {
         dto.setCategoriaNombre(p.getCategoria().getNombre());
         return dto;
     }
+
     @Override
-@Transactional(readOnly = true)
-public List<ProductoResponseDTO> obtenerProductosPorCategoria(Long id) {
-    return productoRepository.findByCategoriaId(id).stream()
-            .map(this::toProductoDTO)
-            .toList();
-}
+    @Transactional(readOnly = true)
+    public List<ProductoResponseDTO> obtenerProductosPorCategoria(Long id) {
+        return productoRepository.findByCategoriaId(id).stream()
+                .map(this::toProductoDTO)
+                .toList();
+    }
+
 }

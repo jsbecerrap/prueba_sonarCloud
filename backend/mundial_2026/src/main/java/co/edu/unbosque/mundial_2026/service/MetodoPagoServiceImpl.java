@@ -3,6 +3,7 @@ package co.edu.unbosque.mundial_2026.service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,11 +22,86 @@ public class MetodoPagoServiceImpl implements MetodoPagoService {
     private final UsuarioService usuarioService;
     
 
-    public MetodoPagoServiceImpl(MetodoPagoRepository metodoPagoRepository, UsuarioService usuarioService) {
+
+private final EventoAuditoriaService auditoriaService;
+private static final String ENTIDAD_METODO_PAGO = "MetodoPago";
+
+public MetodoPagoServiceImpl(MetodoPagoRepository metodoPagoRepository,
+        UsuarioService usuarioService,
+        EventoAuditoriaService auditoriaService) {
     this.metodoPagoRepository = metodoPagoRepository;
     this.usuarioService = usuarioService;
+    this.auditoriaService = auditoriaService;
 }
 
+
+
+@Override
+public MetodoPagoResponseDTO agregar(String correo, MetodoPagoRequestDTO dto) {
+    Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
+    List<MetodoPago> existentes = metodoPagoRepository.findByUsuarioId(usuario.getId());
+    boolean esElPrimero = existentes.isEmpty();
+
+    MetodoPago metodo = new MetodoPago();
+    metodo.setUsuario(usuario);
+    metodo.setTipo(dto.getType());
+    metodo.setLabel(dto.getLabel());
+    metodo.setDetails(dto.getDetails());
+    metodo.setDefault(esElPrimero);
+    metodo.setCreatedAt(LocalDateTime.now().toString());
+
+    metodoPagoRepository.save(metodo);
+
+    auditoriaService.registrar(
+            "METODO_PAGO_AGREGADO",
+            "Metodo de pago agregado para " + usuario.getCorreoUsuario()
+                    + " | tipo: " + dto.getType()
+                    + " | label: " + dto.getLabel()
+                    + (esElPrimero ? " | asignado como default" : ""),
+            usuario.getId(),
+            UUID.randomUUID().toString(),
+            ENTIDAD_METODO_PAGO);
+
+    return toDTO(metodo);
+}
+
+
+
+@Override
+@Transactional
+public void eliminar(String correo, Long id) {
+    Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
+    MetodoPago metodo = metodoPagoRepository.findById(id)
+            .orElseThrow(() -> new MetodoPagoNotFoundException("Método de pago no encontrado"));
+    if (!metodo.getUsuario().getId().equals(usuario.getId())) {
+        throw new MetodoPagoNotFoundException("Este método de pago no pertenece al usuario");
+    }
+
+    boolean eraDefault = metodo.isDefault();
+    String tipo = metodo.getTipo();
+    String label = metodo.getLabel();
+
+    metodoPagoRepository.delete(metodo);
+
+    if (eraDefault) {
+        List<MetodoPago> restantes = metodoPagoRepository
+                .findByUsuarioIdOrderByCreatedAtDesc(usuario.getId());
+        if (!restantes.isEmpty()) {
+            restantes.get(0).setDefault(true);
+            metodoPagoRepository.save(restantes.get(0));
+        }
+    }
+
+    auditoriaService.registrar(
+            "METODO_PAGO_ELIMINADO",
+            "Metodo de pago eliminado para " + usuario.getCorreoUsuario()
+                    + " | tipo: " + tipo
+                    + " | label: " + label
+                    + (eraDefault ? " | era el metodo default" : ""),
+            usuario.getId(),
+            UUID.randomUUID().toString(),
+            ENTIDAD_METODO_PAGO);
+}
    @Override
 public MetodoPagoResponseDTO agregar(MetodoPagoRequestDTO dto) {
  Usuario usuario = usuarioService.obtenerEntidadPorId(dto.getUsuarioId());
@@ -94,23 +170,7 @@ public MetodoPago obtenerEntidadPorId(final Long id) {
             .orElseThrow(() -> new MetodoPagoNotFoundException(
                     "Método de pago no encontrado con id: " + id));
 }
-@Override
-public MetodoPagoResponseDTO agregar(String correo, MetodoPagoRequestDTO dto) {
-    Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
-    List<MetodoPago> existentes = metodoPagoRepository.findByUsuarioId(usuario.getId());
-    boolean esElPrimero = existentes.isEmpty();
 
-    MetodoPago metodo = new MetodoPago();
-    metodo.setUsuario(usuario);
-    metodo.setTipo(dto.getType());
-    metodo.setLabel(dto.getLabel());
-    metodo.setDetails(dto.getDetails());
-    metodo.setDefault(esElPrimero);
-    metodo.setCreatedAt(LocalDateTime.now().toString());
-
-    metodoPagoRepository.save(metodo);
-    return toDTO(metodo);
-}
 
 @Override
 public List<MetodoPagoResponseDTO> listarPorCorreo(String correo) {
@@ -140,25 +200,7 @@ public void setDefaultPorCorreo(String correo, Long metodoPagoId) {
     target.setDefault(true);
     metodoPagoRepository.saveAll(todos);
 }
-@Override
-@Transactional
-public void eliminar(String correo, Long id) {
-    Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
-    MetodoPago metodo = metodoPagoRepository.findById(id)
-            .orElseThrow(() -> new MetodoPagoNotFoundException("Método de pago no encontrado"));
-    if (!metodo.getUsuario().getId().equals(usuario.getId())) {
-        throw new MetodoPagoNotFoundException("Este método de pago no pertenece al usuario");
-    }
-    boolean eraDefault = metodo.isDefault();
-    metodoPagoRepository.delete(metodo);
-    if (eraDefault) {
-        List<MetodoPago> restantes = metodoPagoRepository.findByUsuarioIdOrderByCreatedAtDesc(usuario.getId());
-        if (!restantes.isEmpty()) {
-            restantes.get(0).setDefault(true);
-            metodoPagoRepository.save(restantes.get(0));
-        }
-    }
-}
+
 
 @Override
 @Transactional

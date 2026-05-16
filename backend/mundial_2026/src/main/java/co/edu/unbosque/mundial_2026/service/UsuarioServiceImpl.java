@@ -29,7 +29,7 @@ import co.edu.unbosque.mundial_2026.repository.EstadioRepository;
 import co.edu.unbosque.mundial_2026.repository.RolRepository;
 import co.edu.unbosque.mundial_2026.repository.SeleccionRepository;
 import co.edu.unbosque.mundial_2026.repository.UsuarioRepository;
-
+import java.util.UUID;
 @Service
 public class UsuarioServiceImpl implements UsuarioService {
 
@@ -41,13 +41,16 @@ public class UsuarioServiceImpl implements UsuarioService {
     private final SeleccionRepository seleccionRepository;
     private final EstadioRepository estadioRepository;
     private final CiudadRepository ciudadRepository;
+private final EventoAuditoriaService auditoriaService;
+
+
 
    private final NotificacionService notificacionService;
 
 public UsuarioServiceImpl(UsuarioRepository repository, RolRepository rolRepository,
         PasswordEncoder passwordEncoder, SeleccionRepository seleccionRepository,
         EstadioRepository estadioRepository, CiudadRepository ciudadRepository,
-        NotificacionService notificacionService) {
+        NotificacionService notificacionService,EventoAuditoriaService auditoriaService) {
     this.repository = repository;
     this.rolRepository = rolRepository;
     this.passwordEncoder = passwordEncoder;
@@ -55,6 +58,7 @@ public UsuarioServiceImpl(UsuarioRepository repository, RolRepository rolReposit
     this.estadioRepository = estadioRepository;
     this.ciudadRepository = ciudadRepository;
     this.notificacionService = notificacionService;
+    this.auditoriaService = auditoriaService;
 }
 //retorna el dto de los usuarios que estan registrados en el aplicativo
     @Override
@@ -67,24 +71,31 @@ public UsuarioServiceImpl(UsuarioRepository repository, RolRepository rolReposit
 //Registra al usuario guardandolo en la base de datos verificando los datos,aplicando las excepciones,hasheando la contraseña 
 //En caso de que no ponga rol por defecto se le asginara ROL_USUARIO
     @Override
-    @Transactional
-    public UsuarioResponseDTO registrarUsuario(final UsuarioRequestDTO dto) {
-        if (repository.findByCorreoUsuario(dto.getCorreoUsuario()).isPresent()) {
-            throw new CorreoEnUsoException("El correo ya está en uso: " + dto.getCorreoUsuario());
-        }
-        final String nombreRol = determinarRol(dto.getRol());
-        final Rol rol = rolRepository.findByNombre(nombreRol)
-                .orElseThrow(() -> new RolNotFoundException("Rol no encontrado: " + nombreRol));
-        final Usuario usuario = new Usuario();
-        usuario.setCorreoUsuario(dto.getCorreoUsuario());
-        usuario.setContrasena(passwordEncoder.encode(dto.getContrasena()));
-        usuario.setRol(rol);
-        usuario.setNombre(dto.getNombre());
-        usuario.setApellido(dto.getApellido());
-        Usuario guardado = repository.save(usuario);
-return toResponseDTO(guardado);
+@Transactional
+public UsuarioResponseDTO registrarUsuario(final UsuarioRequestDTO dto) {
+    if (repository.findByCorreoUsuario(dto.getCorreoUsuario()).isPresent()) {
+        throw new CorreoEnUsoException("El correo ya está en uso: " + dto.getCorreoUsuario());
     }
-
+    final String nombreRol = determinarRol(dto.getRol());
+    final Rol rol = rolRepository.findByNombre(nombreRol)
+            .orElseThrow(() -> new RolNotFoundException("Rol no encontrado: " + nombreRol));
+    final Usuario usuario = new Usuario();
+    usuario.setCorreoUsuario(dto.getCorreoUsuario());
+    usuario.setContrasena(passwordEncoder.encode(dto.getContrasena()));
+    usuario.setRol(rol);
+    usuario.setNombre(dto.getNombre());
+    usuario.setApellido(dto.getApellido());
+    Usuario guardado = repository.save(usuario);
+ 
+    auditoriaService.registrar(
+            "USUARIO_REGISTRADO",
+            "Nuevo usuario registrado: " + guardado.getCorreoUsuario() + " con rol " + nombreRol,
+            guardado.getId(),
+            UUID.randomUUID().toString(),
+            "Usuario");
+ 
+    return toResponseDTO(guardado);
+}
     @Override
     @Transactional(readOnly = true)
     public UsuarioResponseDTO obtenerUsuario(final Long usuarioId) {
@@ -100,32 +111,58 @@ return toResponseDTO(guardado);
     }
 
     @Override
-    @Transactional
-    public void eliminarUsuario(final Long usuarioId) {
-        final Usuario usuario = repository.findById(usuarioId)
-                .orElseThrow(() -> new UsuarioNotFoundException(USUARIO_NO_ENCONTRADO));
-        usuario.setActivo(false);
-        repository.save(usuario);
-    }
+@Transactional
+public void eliminarUsuario(final Long usuarioId) {
+    final Usuario usuario = repository.findById(usuarioId)
+            .orElseThrow(() -> new UsuarioNotFoundException(USUARIO_NO_ENCONTRADO));
+    usuario.setActivo(false);
+    repository.save(usuario);
+ 
+    auditoriaService.registrar(
+            "USUARIO_ELIMINADO",
+            "Usuario desactivado: " + usuario.getCorreoUsuario(),
+            usuario.getId(),
+            UUID.randomUUID().toString(),
+            "Usuario");
+}
 //Actualiza los valores del usuario, es importante mandar si cambio el correo ya que se debe generar un nuevo token y hacer log out con el anterior
-    @Override
-    @Transactional
-    public Map<String, Object> actualizarPerfil(final String correoUsuario,
-            final UsuarioActualizarRequestDTO dto) {
-        final Usuario usuario = repository.findByCorreoUsuario(correoUsuario)
-                .orElseThrow(() -> new UsuarioNotFoundException(USUARIO_NO_ENCONTRADO));
-        final String contrasenaOrig = usuario.getContrasena();
-        actualizarNombre(usuario, dto);
-        actualizarApellido(usuario, dto);
-        actualizarContrasena(usuario, dto, contrasenaOrig);
-        final boolean correoCambio = actualizarCorreo(usuario, dto, contrasenaOrig);
-        final Usuario usuarioGuardado = repository.save(usuario);
-notificacionService.notificarActualizacionPerfil(usuarioGuardado);
-final Map<String, Object> resultado = new HashMap<>();
-resultado.put("usuario", toResponseDTO(usuarioGuardado));
-resultado.put("correocambio", correoCambio);
-return resultado;
-    }
+  @Override
+@Transactional
+public Map<String, Object> actualizarPerfil(final String correoUsuario,
+        final UsuarioActualizarRequestDTO dto) {
+    final Usuario usuario = repository.findByCorreoUsuario(correoUsuario)
+            .orElseThrow(() -> new UsuarioNotFoundException(USUARIO_NO_ENCONTRADO));
+    final String contrasenaOrig = usuario.getContrasena();
+    actualizarNombre(usuario, dto);
+    actualizarApellido(usuario, dto);
+    actualizarContrasena(usuario, dto, contrasenaOrig);
+    final boolean correoCambio = actualizarCorreo(usuario, dto, contrasenaOrig);
+    final Usuario usuarioGuardado = repository.save(usuario);
+    notificacionService.notificarActualizacionPerfil(usuarioGuardado);
+ 
+    final StringBuilder descripcion = new StringBuilder();
+    descripcion.append("Perfil actualizado para: ").append(usuarioGuardado.getCorreoUsuario());
+    if (dto.getNombre() != null && !dto.getNombre().isBlank())
+        descripcion.append(" | nombre cambiado");
+    if (dto.getApellido() != null && !dto.getApellido().isBlank())
+        descripcion.append(" | apellido cambiado");
+    if (dto.getContrasenaNueva() != null && !dto.getContrasenaNueva().isBlank())
+        descripcion.append(" | contrasena cambiada");
+    if (correoCambio)
+        descripcion.append(" | correo cambiado");
+ 
+    auditoriaService.registrar(
+            "USUARIO_ACTUALIZADO",
+            descripcion.toString(),
+            usuarioGuardado.getId(),
+            UUID.randomUUID().toString(),
+            "Usuario");
+ 
+    final Map<String, Object> resultado = new HashMap<>();
+    resultado.put("usuario", toResponseDTO(usuarioGuardado));
+    resultado.put("correocambio", correoCambio);
+    return resultado;
+}
 
 
     @Override

@@ -1,29 +1,47 @@
-// src/types/systemEvent.ts
+
+
 export type SystemEventType =
-  | "AUTH_LOGIN"
-  | "AUTH_LOGOUT"
-  | "USER_REGISTERED"
-  | "PROFILE_UPDATED"
-  | "MATCH_CREATED"
-  | "MATCH_STATUS_CHANGED"
-  | "MATCH_RESULT_PUBLISHED"
-  | "TICKET_RESERVED"
-  | "TICKET_CANCELLED"
-  | "PAYMENT_CREATED"
-  | "PAYMENT_CONFIRMED"
-  | "PAYMENT_FAILED"
-  | "PAYMENT_REFUNDED"
-  | "SUPPORT_REQUEST_CREATED"
-  | "SUPPORT_REQUEST_UPDATED";
+
+  | "USUARIO_REGISTRADO"
+  | "USUARIO_ELIMINADO"
+  | "USUARIO_ACTUALIZADO"
+
+  | "APUESTA_CREADA"
+  | "APUESTA_UNIRSE"
+  | "PRONOSTICO_REGISTRADO"
+  | "PRONOSTICO_EDITADO"
+  | "PRONOSTICO_ELIMINADO"
+ 
+  | "ORDEN_CREADA"
+  | "ORDEN_CONFIRMADA"
+  | "ORDEN_CANCELADA"
+ 
+  | "ENTRADA_COMPRADA"
+  | "ENTRADA_TRANSFERIDA"
+  | "ENTRADA_REEMBOLSADA"
+  | "ENTRADA_LOTE_ACTIVADO"
+
+  | "PRODUCTO_CREADO"
+  | "PRODUCTO_ACTUALIZADO"
+  | "PRODUCTO_DESACTIVADO"
+ 
+  | "CATEGORIA_CREADA"
+  | "CATEGORIA_ACTUALIZADA"
+  | "CATEGORIA_DESACTIVADA"
+  | "CATEGORIA_REACTIVADA"
+
+  | "METODO_PAGO_AGREGADO"
+  | "METODO_PAGO_ELIMINADO"
+
+  | "PARTIDO_RESULTADO_ACTUALIZADO"
+  | "PARTIDOS_SINCRONIZADOS";
 
 export type SystemEvent = {
   id: string;
-  type: SystemEventType;
-  actorId?: string;
-  actorName?: string;
-  entityId?: string;
-  entityType?: "USER" | "MATCH" | "PROFILE" | "AUTH" | "TICKET" | "PAYMENT" | "SUPPORT";
-  message: string;
-  createdAt: string;
-  data?: Record<string, unknown>;
+  tipo: SystemEventType;
+  descripcion: string;
+  fecha: string;
+  idCorrelacion?: string;
+  entidadCorrelacion?: string;
+  usuarioId?: number;
 };

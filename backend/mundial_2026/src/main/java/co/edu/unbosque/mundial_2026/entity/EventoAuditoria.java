@@ -7,12 +7,18 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "eventos_auditoria")
+@Table(name = "eventos_auditoria", indexes = {
+    @Index(name = "idx_auditoria_usuario",  columnList = "usuario_id"),
+    @Index(name = "idx_auditoria_tipo",     columnList = "tipo"),
+    @Index(name = "idx_auditoria_fecha",    columnList = "fecha"),
+    @Index(name = "idx_auditoria_entidad",  columnList = "entidad_correlacion")
+})
 public class EventoAuditoria {
 
     @Id
@@ -23,7 +29,7 @@ public class EventoAuditoria {
     private String tipo;
 
     @Column(nullable = false, columnDefinition = "TEXT")
-private String descripcion;
+    private String descripcion;
 
     @Column(nullable = false)
     private LocalDateTime fecha;

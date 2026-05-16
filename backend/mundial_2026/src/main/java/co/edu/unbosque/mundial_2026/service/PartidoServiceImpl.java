@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -61,13 +61,21 @@ static {
     private static final Logger logger = Logger.getLogger(PartidoServiceImpl.class.getName());
 
    
-    public PartidoServiceImpl(RestClient footballClient, PartidoRepository partidoRepository,
-        UsuarioService usuarioService, SeleccionRepository seleccionRepository) {
+   private final EventoAuditoriaService auditoriaService;
+private static final String ENTIDAD_PARTIDO = "Partido";
+
+public PartidoServiceImpl(RestClient footballClient,
+        PartidoRepository partidoRepository,
+        UsuarioService usuarioService,
+        SeleccionRepository seleccionRepository,
+        EventoAuditoriaService auditoriaService) {
     this.footballClient = footballClient;
     this.partidoRepository = partidoRepository;
     this.usuarioService = usuarioService;
     this.seleccionRepository = seleccionRepository;
+    this.auditoriaService = auditoriaService;
 }
+
 
     @Override
     public List<PartidoDTO> obtenerPartidos() {
@@ -144,35 +152,7 @@ public List<EquipoMundialDTO> obtenerSelecciones() {
         return response.getPartidos();
     }
 
-    @Override
-    public int sincronizarDesdeAPI() {
-        final PartidoResponseDTO response = footballClient.get()
-                .uri(BASE_FIXTURES)
-                .retrieve()
-                .body(PartidoResponseDTO.class);
-
-        if (response == null || response.getPartidos() == null || response.getPartidos().isEmpty()) {
-        logger.warning("La API no devolvió partidos, se omite sincronización.");
-        return 0;
-    }
-        final List<Partido> partidos = response.getPartidos().stream().map(dto -> {
-            final Partido partido = new Partido();
-            partido.setId(dto.getInformacion().getId());
-            partido.setFecha(LocalDateTime.parse(dto.getInformacion().getFecha(),
-                    DateTimeFormatter.ISO_OFFSET_DATE_TIME));
-            partido.setEstado(dto.getInformacion().getEstado().getCodigo());
-            partido.setRonda(dto.getLiga().getRonda());
-            partido.setSeleccionLocal(dto.getEquipos().getLocal().getNombre());
-            partido.setSeleccionVisitante(dto.getEquipos().getVisitante().getNombre());
-            partido.setEstadio(dto.getInformacion().getEstadio().getNombre());
-            partido.setGolesLocal(dto.getGoles().getLocal());
-            partido.setGolesVisitante(dto.getGoles().getVisitante());
-            return partido;
-        }).toList();
-
-        partidoRepository.saveAll(partidos);
-        return partidos.size();
-    }
+   
 
     @Override
     public int sincronizarPorFechaYLiga(String fecha, int liga, int temporada) {
@@ -189,17 +169,7 @@ public List<EquipoMundialDTO> obtenerSelecciones() {
         return partidos.size();
     }
 
-    @Override
-    public int actualizarResultado(Long partidoId, int golesLocal, int golesVisitante, int estadoPartido) {
-        final Partido partido = partidoRepository.findById(partidoId)
-                .orElseThrow(() -> new PartidoNotFoundException("Partido no encontrado con id: " + partidoId));
-        partido.setGolesLocal(golesLocal);
-        partido.setGolesVisitante(golesVisitante);
-        partido.setEstado(String.valueOf(estadoPartido));
-        partidoRepository.save(partido);
-        return 1;
-    }
-
+  
     
 
  @Override
@@ -342,4 +312,78 @@ public List<Partido> listarDesdeBD() {
     return partidoRepository.findAll();
 }
 
+
+
+@Override
+public int actualizarResultado(Long partidoId, int golesLocal,
+        int golesVisitante, int estadoPartido) {
+    final Partido partido = partidoRepository.findById(partidoId)
+            .orElseThrow(() -> new PartidoNotFoundException(
+                    "Partido no encontrado con id: " + partidoId));
+
+    final Integer golesLocalAnterior = partido.getGolesLocal();
+    final Integer golesVisitanteAnterior = partido.getGolesVisitante();
+    final String estadoAnterior = partido.getEstado();
+
+    partido.setGolesLocal(golesLocal);
+    partido.setGolesVisitante(golesVisitante);
+    partido.setEstado(String.valueOf(estadoPartido));
+    partidoRepository.save(partido);
+
+    auditoriaService.registrar(
+            "PARTIDO_RESULTADO_ACTUALIZADO",
+            "Resultado actualizado para partido " + partidoId
+                    + " | " + partido.getSeleccionLocal()
+                    + " vs " + partido.getSeleccionVisitante()
+                    + " | antes: " + golesLocalAnterior + "-" + golesVisitanteAnterior
+                    + " estado: " + estadoAnterior
+                    + " | despues: " + golesLocal + "-" + golesVisitante
+                    + " estado: " + estadoPartido,
+            null,
+            UUID.randomUUID().toString(),
+            ENTIDAD_PARTIDO);
+
+    return 1;
+}
+
+
+@Override
+public int sincronizarDesdeAPI() {
+    final PartidoResponseDTO response = footballClient.get()
+            .uri(BASE_FIXTURES)
+            .retrieve()
+            .body(PartidoResponseDTO.class);
+
+    if (response == null || response.getPartidos() == null
+            || response.getPartidos().isEmpty()) {
+        logger.warning("La API no devolvió partidos, se omite sincronización.");
+        return 0;
+    }
+
+    final List<Partido> partidos = response.getPartidos().stream().map(dto -> {
+        final Partido partido = new Partido();
+        partido.setId(dto.getInformacion().getId());
+        partido.setFecha(LocalDateTime.parse(dto.getInformacion().getFecha(),
+                DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+        partido.setEstado(dto.getInformacion().getEstado().getCodigo());
+        partido.setRonda(dto.getLiga().getRonda());
+        partido.setSeleccionLocal(dto.getEquipos().getLocal().getNombre());
+        partido.setSeleccionVisitante(dto.getEquipos().getVisitante().getNombre());
+        partido.setEstadio(dto.getInformacion().getEstadio().getNombre());
+        partido.setGolesLocal(dto.getGoles().getLocal());
+        partido.setGolesVisitante(dto.getGoles().getVisitante());
+        return partido;
+    }).toList();
+
+    partidoRepository.saveAll(partidos);
+
+    auditoriaService.registrar(
+            "PARTIDOS_SINCRONIZADOS",
+            "Sincronizacion manual desde API | partidos procesados: " + partidos.size(),
+            null,
+            UUID.randomUUID().toString(),
+            ENTIDAD_PARTIDO);
+
+    return partidos.size();
+}
 }

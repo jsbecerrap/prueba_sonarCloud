@@ -4,6 +4,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.context.annotation.Lazy;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -11,27 +13,31 @@ import co.edu.unbosque.mundial_2026.dto.EventoAuditoriaDTO;
 import co.edu.unbosque.mundial_2026.entity.EventoAuditoria;
 import co.edu.unbosque.mundial_2026.entity.Usuario;
 import co.edu.unbosque.mundial_2026.repository.EventoAuditoriaRepository;
-import org.springframework.context.annotation.Lazy;
+
 @Service
 public class EventoAuditoriaServiceImpl implements EventoAuditoriaService {
 
     private final EventoAuditoriaRepository repository;
     private final UsuarioService usuarioService;
-   
 
-    public EventoAuditoriaServiceImpl(EventoAuditoriaRepository repository, @Lazy UsuarioService usuarioService) {
-    this.repository = repository;
-    this.usuarioService = usuarioService;
-}
+    public EventoAuditoriaServiceImpl(EventoAuditoriaRepository repository,
+            @Lazy UsuarioService usuarioService) {
+        this.repository = repository;
+        this.usuarioService = usuarioService;
+    }
 
     @Override
+    @Async
     @Transactional
-    public void registrar(String tipo, String descripcion, Long usuarioId, String idCorrelacion, String entidadCorrelacion) {
-      Usuario usuario = null;
-if (usuarioId != null) {
-    usuario = usuarioService.obtenerEntidadPorId(usuarioId);
-}
-        EventoAuditoria evento = new EventoAuditoria(tipo, descripcion, LocalDateTime.now(), idCorrelacion, entidadCorrelacion, usuario);
+    public void registrar(String tipo, String descripcion, Long usuarioId,
+            String idCorrelacion, String entidadCorrelacion) {
+        Usuario usuario = null;
+        if (usuarioId != null) {
+            usuario = usuarioService.obtenerEntidadPorId(usuarioId);
+        }
+        EventoAuditoria evento = new EventoAuditoria(
+                tipo, descripcion, LocalDateTime.now(),
+                idCorrelacion, entidadCorrelacion, usuario);
         repository.save(evento);
     }
 
@@ -81,7 +87,8 @@ if (usuarioId != null) {
 
     @Override
     @Transactional(readOnly = true)
-    public List<EventoAuditoriaDTO> buscarPorFecha(LocalDateTime fechaInicio, LocalDateTime fechaFin) {
+    public List<EventoAuditoriaDTO> buscarPorFecha(LocalDateTime fechaInicio,
+            LocalDateTime fechaFin) {
         List<EventoAuditoria> lista = repository.findByFechaBetween(fechaInicio, fechaFin);
         List<EventoAuditoriaDTO> dtos = new ArrayList<>();
         for (int i = 0; i < lista.size(); i++) {
@@ -92,7 +99,9 @@ if (usuarioId != null) {
 
     private EventoAuditoriaDTO toDTO(EventoAuditoria evento) {
         Long usuarioId = evento.getUsuario() != null ? evento.getUsuario().getId() : null;
-        return new EventoAuditoriaDTO(evento.getId(), evento.getTipo(), evento.getDescripcion(),
-                evento.getFecha(), evento.getIdCorrelacion(), evento.getEntidadCorrelacion(), usuarioId);
+        return new EventoAuditoriaDTO(
+                evento.getId(), evento.getTipo(), evento.getDescripcion(),
+                evento.getFecha(), evento.getIdCorrelacion(),
+                evento.getEntidadCorrelacion(), usuarioId);
     }
 }

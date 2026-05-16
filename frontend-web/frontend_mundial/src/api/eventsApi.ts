@@ -1,47 +1,48 @@
-import { USE_MOCK } from "./config";
+// src/api/eventsApi.ts
 import { http } from "./http";
-import { mockDb } from "./mockDb";
 import type { SystemEvent } from "../types/systemEvent";
 
-const sleep = (ms = 150) => new Promise((r) => setTimeout(r, ms));
-
-const eid = () => `ev_${Date.now()}_${Math.random().toString(16).slice(2)}`;
-
-export async function createSystemEvent(
-  payload: Omit<SystemEvent, "id" | "createdAt">
-): Promise<SystemEvent> {
-  if (!USE_MOCK) {
-    try {
-      return await http.post<SystemEvent>("/events", payload);
-    } catch {
-      const ev: SystemEvent = { id: eid(), createdAt: new Date().toISOString(), ...payload };
-      return ev;
-    }
+export async function getSystemEvents(): Promise<SystemEvent[]> {
+  try {
+    return await http.get<SystemEvent[]>("/api/auditoria/todos");
+  } catch {
+    return [];
   }
-
-  await sleep();
-
-  const ev: SystemEvent = {
-    id: eid(),
-    createdAt: new Date().toISOString(),
-    ...payload,
-  };
-
-  mockDb.systemEvents.unshift(ev);
-
-  return ev;
 }
 
-export async function getSystemEvents(): Promise<SystemEvent[]> {
-  if (!USE_MOCK) {
-    try {
-      return await http.get<SystemEvent[]>("/events");
-    } catch {
-      return [];
-    }
+export async function getEventosPorUsuario(usuarioId: number): Promise<SystemEvent[]> {
+  try {
+    return await http.get<SystemEvent[]>(`/api/auditoria/usuario/${usuarioId}`);
+  } catch {
+    return [];
   }
+}
 
-  await sleep();
+export async function getEventosPorTipo(tipo: string): Promise<SystemEvent[]> {
+  try {
+    return await http.get<SystemEvent[]>(`/api/auditoria/tipo/${tipo}`);
+  } catch {
+    return [];
+  }
+}
 
-  return [...mockDb.systemEvents];
+export async function getEventosPorEntidad(entidad: string): Promise<SystemEvent[]> {
+  try {
+    return await http.get<SystemEvent[]>(`/api/auditoria/entidad/${entidad}`);
+  } catch {
+    return [];
+  }
+}
+
+export async function getEventosPorFecha(
+  fechaInicio: string,
+  fechaFin: string
+): Promise<SystemEvent[]> {
+  try {
+    return await http.get<SystemEvent[]>(
+      `/api/auditoria/fecha?fechaInicio=${fechaInicio}&fechaFin=${fechaFin}`
+    );
+  } catch {
+    return [];
+  }
 }
