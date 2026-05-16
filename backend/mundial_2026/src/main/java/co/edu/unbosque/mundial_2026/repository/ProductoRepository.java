@@ -29,4 +29,8 @@ long countByActivoTrue();
        "GROUP BY p.id, p.nombre, p.descripcion, p.precio, p.imagenUrl, " +
        "p.categoria.nombre, p.equipo, p.bandera, p.destacado")
 List<ProductoListadoDTO> findAllLiviano();
+long countByCategoriaId(Long categoriaId);
+long countByCategoriaIdAndActivoTrue(Long categoriaId);
+@Query("SELECT DISTINCT p FROM Producto p LEFT JOIN FETCH p.variantes")
+List<Producto> findAllWithVariantes();
 }

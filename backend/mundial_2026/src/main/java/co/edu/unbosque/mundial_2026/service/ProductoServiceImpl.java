@@ -108,9 +108,9 @@ public class ProductoServiceImpl implements ProductoService {
     @Override
     @Transactional(readOnly = true)
     public List<ProductoResponseDTO> listarTodos(boolean soloActivos) {
-        List<Producto> productos = soloActivos
-                ? productoRepository.findByActivoTrue()
-                : productoRepository.findAll();
+    List<Producto> productos = soloActivos
+            ? productoRepository.findByActivoTrueWithVariantes()
+            : productoRepository.findAllWithVariantes();
         List<ProductoResponseDTO> responseDTOs = new ArrayList<>();
         for (int i = 0; i < productos.size(); i++) {
             responseDTOs.add(toDTO(productos.get(i)));

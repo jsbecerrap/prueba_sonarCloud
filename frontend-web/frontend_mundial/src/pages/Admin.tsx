@@ -121,7 +121,9 @@ export default function Admin() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [pools, setPools] = useState<Pool[]>([]);
   const [events, setEvents] = useState<SystemEvent[]>([]);
-
+const [prodFiltroNombre, setProdFiltroNombre] = useState("");
+const [prodFiltroCategoria, setProdFiltroCategoria] = useState("");
+const [prodFiltroEstado, setProdFiltroEstado] = useState("");
   const [homeName, setHomeName] = useState("");
   const [awayName, setAwayName] = useState("");
   const [city, setCity] = useState("");
@@ -137,6 +139,8 @@ export default function Admin() {
 const [partidos, setPartidos] = useState<Match[]>([]);
 const [capacidades, setCapacidades] = useState<PartidoCapacidad[]>([]);
 const [fechaFiltro, setFechaFiltro] = useState("");
+const [filtroEquipo, setFiltroEquipo] = useState("");
+const [filtroEstadoPartido, setFiltroEstadoPartido] = useState("");
 const [sincLiga, setSincLiga] = useState("1");
 const [sincTemporada, setSincTemporada] = useState("2026");
 const [sincFecha, setSincFecha] = useState("");
@@ -177,10 +181,37 @@ const [editProdPrecio, setEditProdPrecio] = useState("");
 const [editProdVariantes, setEditProdVariantes] = useState<{ id?: number; especificacion: string; stock: string }[]>([]);
 const [editProdDesc, setEditProdDesc] = useState("");
 const [editProdImagenUrl, setEditProdImagenUrl] = useState("");
+const refreshProductos = async () => {
+  const prods = await adminGetProductos().catch(() => [] as Producto[]);
+  setProductos(prods);
+};
 
+const refreshCategorias = async () => {
+  const cats = await adminGetCategorias().catch(() => [] as Categoria[]);
+  setCategorias(cats);
+};
+
+const refreshUsuarios = async () => {
+  const us = await adminGetUsuarios().catch(() => [] as UsuarioSistema[]);
+  setUsuarios(us);
+};
+
+const refreshApuestas = async () => {
+  const ap = await adminGetApuestas().catch(() => [] as Apuesta[]);
+  setApuestas(ap);
+};
+
+const refreshPartidos = async () => {
+  const [parts, caps] = await Promise.all([
+    adminGetPartidos().catch(() => [] as Match[]),
+    adminGetCapacidadPartidos().catch(() => [] as PartidoCapacidad[]),
+  ]);
+  setPartidos(parts);
+  setCapacidades(caps);
+};
  const refresh = async () => {
   try {
-    const [ms, evs, us, cats, prods, parts, caps, apuestas] = await Promise.all([
+    const [ms, evs, us, cats, prods, parts, caps, ap, ps] = await Promise.all([
   adminGetMatches().catch(() => [] as Match[]),
   getSystemEvents().catch(() => [] as SystemEvent[]),
   adminGetUsuarios().catch(() => [] as UsuarioSistema[]),
@@ -189,17 +220,17 @@ const [editProdImagenUrl, setEditProdImagenUrl] = useState("");
   adminGetPartidos().catch(() => [] as Match[]),
   adminGetCapacidadPartidos().catch(() => [] as PartidoCapacidad[]),
   adminGetApuestas().catch(() => [] as Apuesta[]),
+  getPools(0).catch(() => [] as Pool[]),
 ]);
+setMatches(ms.slice().sort((a, b) => a.startTimeISO.localeCompare(b.startTimeISO)));
+setEvents(evs);
+setUsuarios(us);
 setCategorias(cats);
 setProductos(prods);
 setPartidos(parts);
 setCapacidades(caps);
-setApuestas(apuestas);
-   const ps = await getPools(0).catch(() => [] as Pool[]);
-    setMatches(ms.slice().sort((a, b) => a.startTimeISO.localeCompare(b.startTimeISO)));
-    setPools(ps);
-    setEvents(evs);
-    setUsuarios(us);
+setApuestas(ap);
+setPools(ps);
   } catch {
     setMsg({ text: "No se pudo cargar la información del panel.", severity: "error" });
   }
@@ -223,14 +254,28 @@ setApuestas(apuestas);
     ];
   }, [matches, pools]);
 
-  
+  const partidosFiltrados = useMemo(() => {
+  return partidos.filter((p) => {
+    if (filtroEquipo && !p.home.name.toLowerCase().includes(filtroEquipo.toLowerCase()) && !p.away.name.toLowerCase().includes(filtroEquipo.toLowerCase())) return false;
+    if (filtroEstadoPartido && p.status !== filtroEstadoPartido) return false;
+    return true;
+  });
+}, [partidos, filtroEquipo, filtroEstadoPartido]);
   const eventsFiltered = useMemo(() => {
     if (eventFilter === "ALL") return events;
     return events.filter((e) => e.type === eventFilter);
   }, [events, eventFilter]);
 
   const eventTypes = useMemo(() => Array.from(new Set(events.map((e) => e.type))).sort((a, b) => a.localeCompare(b)), [events]);
-
+const productosFiltrados = useMemo(() => {
+  return productos.filter((p) => {
+    if (prodFiltroNombre && !p.nombre.toLowerCase().includes(prodFiltroNombre.toLowerCase())) return false;
+    if (prodFiltroCategoria && p.categoriaNombre !== prodFiltroCategoria) return false;
+    if (prodFiltroEstado === "activo" && !p.activo) return false;
+    if (prodFiltroEstado === "inactivo" && p.activo) return false;
+    return true;
+  });
+}, [productos, prodFiltroNombre, prodFiltroCategoria, prodFiltroEstado]);
   const validateMatchForm = () => {
     const nextErrors: FieldErrors<MatchField> = {
       homeName: validateRequired(homeName, "El equipo local", 2),
@@ -272,7 +317,7 @@ setApuestas(apuestas);
       setHomeName(""); setAwayName(""); setCity(""); setStadium("");
       setStartLocal(toLocalDatetimeInputValue(new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()));
       setMsg({ text: "Partido creado y disponible para las pollas.", severity: "success" });
-      await refresh();
+      await refreshPartidos();
     } catch (e) {
       setMsg({ text: (e as Error).message, severity: "error" });
     } finally {
@@ -289,7 +334,7 @@ setApuestas(apuestas);
       setScoreErrors((prev) => ({ ...prev, [match.id]: "" }));
       await adminPublishResult(match.id, current.h, current.a);
       setMsg({ text: "Resultado publicado y rankings recalculados.", severity: "success" });
-      await refresh();
+     await refreshPartidos();
     } catch (e) {
       setMsg({ text: (e as Error).message, severity: "error" });
     } finally {
@@ -302,7 +347,7 @@ setApuestas(apuestas);
       setLoading(true); setMsg(null);
       await adminSetMatchStatus(matchId, status);
       setMsg({ text: `Estado cambiado a ${statusLabels[status]}.`, severity: "success" });
-      await refresh();
+      await refreshPartidos();
     } catch (e) {
       setMsg({ text: (e as Error).message, severity: "error" });
     } finally {
@@ -327,7 +372,7 @@ setApuestas(apuestas);
       setNuevoCorreo(""); setNuevoNombre(""); setNuevoApellido("");
       setNuevaContrasena(""); setNuevoRol("ROLE_ADMIN");
       setMsg({ text: "Usuario registrado correctamente.", severity: "success" });
-      await refresh();
+      await refreshUsuarios();
     } catch (e) {
       setMsg({ text: (e as Error).message, severity: "error" });
     } finally {
@@ -340,7 +385,7 @@ setApuestas(apuestas);
       setLoading(true); setMsg(null);
       await adminEliminarUsuario(u.id);
       setMsg({ text: `Usuario ${u.nombre} desactivado.`, severity: "success" });
-      await refresh();
+      await refreshUsuarios();
     } catch (e) {
       setMsg({ text: (e as Error).message, severity: "error" });
     } finally {
@@ -354,7 +399,7 @@ const onCrearCategoria = async () => {
     await adminCrearCategoria({ nombre: nuevaCategoriaNombre, descripcion: nuevaCategoriaDesc });
     setNuevaCategoriaNombre(""); setNuevaCategoriaDesc("");
     setMsg({ text: "Categoría creada.", severity: "success" });
-    await refresh();
+    await refreshCategorias();
   } catch (e) { setMsg({ text: (e as Error).message, severity: "error" }); }
   finally { setLoading(false); }
 };
@@ -366,7 +411,7 @@ const onActualizarCategoria = async () => {
     await adminActualizarCategoria(editCategoria.id, { nombre: editCategoriaNombre, descripcion: editCategoriaDesc });
     setEditCategoria(null); setEditCategoriaNombre(""); setEditCategoriaDesc("");
     setMsg({ text: "Categoría actualizada.", severity: "success" });
-    await refresh();
+  await refreshCategorias();
   } catch (e) { setMsg({ text: (e as Error).message, severity: "error" }); }
   finally { setLoading(false); }
 };
@@ -376,7 +421,7 @@ const onEliminarCategoria = async (c: Categoria) => {
     setLoading(true); setMsg(null);
     await adminEliminarCategoria(c.id);
     setMsg({ text: `Categoría ${c.nombre} eliminada y productos desactivados.`, severity: "success" });
-    await refresh();
+    await Promise.all([refreshCategorias(), refreshProductos()]);
   } catch (e) { setMsg({ text: (e as Error).message, severity: "error" }); }
   finally { setLoading(false); }
 };
@@ -400,7 +445,7 @@ const onCrearProducto = async () => {
 });
    setProdNombre(""); setProdDesc(""); setProdPrecio(""); setProdVariantes([{ especificacion: "", stock: "" }]); setProdImagenUrl(""); setProdCategoriaId("");
     setMsg({ text: "Producto creado.", severity: "success" });
-    await refresh();
+    await refreshProductos();
   } catch (e) { setMsg({ text: (e as Error).message, severity: "error" }); }
   finally { setLoading(false); }
 };
@@ -416,7 +461,7 @@ const onActualizarProducto = async () => {
 });
     setEditProducto(null); setEditProdPrecio(""); setEditProdVariantes([]); setEditProdDesc(""); setEditProdImagenUrl("");
     setMsg({ text: "Producto actualizado.", severity: "success" });
-    await refresh();
+    await refreshProductos();
   } catch (e) { setMsg({ text: (e as Error).message, severity: "error" }); }
   finally { setLoading(false); }
 };
@@ -426,7 +471,7 @@ const onEliminarProducto = async (p: Producto) => {
     setLoading(true); setMsg(null);
     await adminEliminarProducto(p.id);
     setMsg({ text: `Producto ${p.nombre} desactivado.`, severity: "success" });
-    await refresh();
+  await refreshProductos();
   } catch (e) { setMsg({ text: (e as Error).message, severity: "error" }); }
   finally { setLoading(false); }
 };
@@ -436,7 +481,7 @@ const onReactivarProducto = async (p: Producto) => {
     setLoading(true); setMsg(null);
     await adminReactivarProducto(p.id);
     setMsg({ text: `Producto ${p.nombre} reactivado.`, severity: "success" });
-    await refresh();
+   await refreshProductos();
   } catch (e) { setMsg({ text: (e as Error).message, severity: "error" }); }
   finally { setLoading(false); }
 };
@@ -446,7 +491,7 @@ const onSincronizar = async () => {
     setLoading(true); setMsg(null);
     const total = await adminSincronizarPartidos(Number(sincLiga), Number(sincTemporada), sincFecha);
     setMsg({ text: `Sincronización completada. ${total} partidos actualizados.`, severity: "success" });
-    await refresh();
+    await refreshPartidos();
   } catch (e) { setMsg({ text: (e as Error).message, severity: "error" }); }
   finally { setLoading(false); }
 };
@@ -465,7 +510,7 @@ const onCerrarApuesta = async (a: Apuesta) => {
     setLoading(true); setMsg(null);
     await adminCerrarApuesta(a.id);
     setMsg({ text: `Polla "${a.nombre}" cerrada.`, severity: "success" });
-    await refresh();
+  await refreshApuestas();
   } catch (e) { setMsg({ text: (e as Error).message, severity: "error" }); }
   finally { setLoading(false); }
 };
@@ -475,7 +520,7 @@ const onEliminarApuesta = async (a: Apuesta) => {
     setLoading(true); setMsg(null);
     await adminEliminarApuesta(a.id);
     setMsg({ text: `Polla "${a.nombre}" eliminada.`, severity: "success" });
-    await refresh();
+  await refreshApuestas();
   } catch (e) { setMsg({ text: (e as Error).message, severity: "error" }); }
   finally { setLoading(false); }
 };
@@ -485,7 +530,7 @@ const onForzarPuntos = async (a: Apuesta) => {
     setLoading(true); setMsg(null);
     await adminForzarPuntos(a.id);
     setMsg({ text: `Puntos calculados para "${a.nombre}".`, severity: "success" });
-    await refresh();
+  await refreshApuestas();
   } catch (e) { setMsg({ text: (e as Error).message, severity: "error" }); }
   finally { setLoading(false); }
 };
@@ -586,17 +631,40 @@ const onEnviarNotificacion = async () => {
     <Paper sx={{ p: 2.5 }}>
       <Stack direction={{ xs: "column", md: "row" }} spacing={2} justifyContent="space-between" alignItems={{ md: "center" }}>
         <Typography variant="h6">Partidos</Typography>
-        <Stack direction="row" spacing={1}>
+        <Stack direction="row" spacing={1} flexWrap="wrap">
           <TextField label="Filtrar por fecha" type="date" size="small" value={fechaFiltro} onChange={(e) => setFechaFiltro(e.target.value)} disabled={loading} slotProps={{ inputLabel: { shrink: true } }} />
           <Button variant="outlined" size="small" disabled={loading} onClick={onFiltrarFecha}>Filtrar</Button>
-          <Button variant="outlined" size="small" disabled={loading} onClick={async () => { const all = await adminGetPartidos(); setPartidos(all); setFechaFiltro(""); }}>Ver todos</Button>
+          <Button variant="outlined" size="small" disabled={loading} onClick={async () => { const all = await adminGetPartidos(); setPartidos(all); setFechaFiltro(""); setFiltroEquipo(""); setFiltroEstadoPartido(""); }}>Ver todos</Button>
         </Stack>
       </Stack>
-      {partidos.length === 0 ? (
+      <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ mt: 1.5, mb: 1 }}>
+        <TextField
+          label="Buscar selección"
+          size="small"
+          value={filtroEquipo}
+          onChange={(e) => setFiltroEquipo(e.target.value)}
+          sx={{ minWidth: 200 }}
+        />
+        <TextField
+          select
+          label="Estado"
+          size="small"
+          value={filtroEstadoPartido}
+          onChange={(e) => setFiltroEstadoPartido(e.target.value)}
+          sx={{ minWidth: 160 }}
+        >
+          <MenuItem value="">Todos</MenuItem>
+          <MenuItem value="SCHEDULED">Programado</MenuItem>
+          <MenuItem value="LIVE">En vivo</MenuItem>
+          <MenuItem value="PENDING_DATA">Pendiente de datos</MenuItem>
+          <MenuItem value="FINISHED">Finalizado</MenuItem>
+        </TextField>
+      </Stack>
+      {partidosFiltrados.length === 0 ? (
         <Typography color="text.secondary" sx={{ mt: 1 }}>No hay partidos.</Typography>
       ) : (
         <Stack spacing={1} sx={{ mt: 2 }}>
-          {partidos.map((p) => {
+          {partidosFiltrados.map((p) => {
             const cap = capacidades.find((c) => c.partidoId === Number(p.id));
             return (
               <Paper key={p.id} variant="outlined" sx={{ p: 2 }}>
@@ -869,12 +937,46 @@ const onEnviarNotificacion = async () => {
     </Paper>
 
     <Paper sx={{ p: 2.5 }}>
-      <Typography variant="h6">Productos</Typography>
-      {productos.length === 0 ? (
+     <Typography variant="h6">Productos</Typography>
+
+      <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ mt: 2, mb: 1 }}>
+        <TextField
+          label="Buscar por nombre"
+          size="small"
+          value={prodFiltroNombre}
+          onChange={(e) => setProdFiltroNombre(e.target.value)}
+          sx={{ minWidth: 200 }}
+        />
+        <TextField
+          select
+          label="Categoría"
+          size="small"
+          value={prodFiltroCategoria}
+          onChange={(e) => setProdFiltroCategoria(e.target.value)}
+          sx={{ minWidth: 160 }}
+        >
+          <MenuItem value="">Todas</MenuItem>
+         {categorias.map((c) => <MenuItem key={c.id} value={c.nombre}>{c.nombre}</MenuItem>)}
+        </TextField>
+        <TextField
+          select
+          label="Estado"
+          size="small"
+          value={prodFiltroEstado}
+          onChange={(e) => setProdFiltroEstado(e.target.value)}
+          sx={{ minWidth: 130 }}
+        >
+          <MenuItem value="">Todos</MenuItem>
+          <MenuItem value="activo">Activo</MenuItem>
+          <MenuItem value="inactivo">Inactivo</MenuItem>
+        </TextField>
+      </Stack>
+
+      {productosFiltrados.length === 0 ? (
         <Typography color="text.secondary" sx={{ mt: 1 }}>No hay productos.</Typography>
       ) : (
         <Stack spacing={1} sx={{ mt: 2 }}>
-          {productos.map((p) => (
+          {productosFiltrados.map((p) => (
             <Paper key={p.id} variant="outlined" sx={{ p: 2 }}>
               {editProducto?.id === p.id ? (
                 <Stack spacing={1.5}>

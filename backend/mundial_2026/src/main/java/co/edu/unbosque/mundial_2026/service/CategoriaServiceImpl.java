@@ -9,6 +9,7 @@ import co.edu.unbosque.mundial_2026.dto.request.CategoriaRequestDTO;
 import co.edu.unbosque.mundial_2026.dto.response.CategoriaResponseDTO;
 import co.edu.unbosque.mundial_2026.entity.Categoria;
 import co.edu.unbosque.mundial_2026.entity.Producto;
+import co.edu.unbosque.mundial_2026.exception.CategoriaConProductosException;
 import co.edu.unbosque.mundial_2026.exception.CategoriaNotFoundException;
 import co.edu.unbosque.mundial_2026.exception.CategoriaYaExisteException;
 import co.edu.unbosque.mundial_2026.repository.CategoriaRepository;
@@ -74,10 +75,10 @@ public class CategoriaServiceImpl implements CategoriaService {
 public void eliminar(Long id) {
     Categoria categoria = categoriaRepository.findById(id)
             .orElseThrow(() -> new CategoriaNotFoundException(CATEGORIA_NO_ENCONTRADA + id));
-    List<Producto> productos = productoRepository.findByCategoriaIdAndActivoTrue(id);
-    for (int i = 0; i < productos.size(); i++) {
-        productos.get(i).setActivo(false);
-        productoRepository.save(productos.get(i));
+ long totalProductos = productoRepository.countByCategoriaIdAndActivoTrue(id);
+    if (totalProductos > 0) {
+        throw new CategoriaConProductosException(
+            "No se puede eliminar la categoría porque tiene " + totalProductos + " producto(s) asociado(s).");
     }
     categoriaRepository.delete(categoria);
 }

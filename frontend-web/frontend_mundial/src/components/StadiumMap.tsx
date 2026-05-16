@@ -28,15 +28,15 @@ const StadiumMap: FC<Props> = ({ categoria, sector, onSelect }) => {
         />
       ))}
       <text x="37" y="35"
-        fill={esq("Noroccidental") ? "#64b5f6" : "#1a3a5a"}
+        fill={esq("Noroccidental") ? "#64b5f6" : "#4a8aaa"}
         fontSize="6" textAnchor="middle" fontWeight="800"
         style={{ pointerEvents: "none" }}>NOR</text>
       <text x="37" y="44"
-        fill={esq("Noroccidental") ? "#64b5f6" : "#1a3a5a"}
+        fill={esq("Noroccidental") ? "#64b5f6" : "#4a8aaa"}
         fontSize="6" textAnchor="middle" fontWeight="800"
         style={{ pointerEvents: "none" }}>OCC</text>
 
-      {/* ESQUINA SUROCCIDENTAL - abajo izquierda */}
+      {/* ESQUINA NORORIENTAL - abajo izquierda */}
       <rect x="4" y="240" width="66" height="56" rx="10"
         fill={esq("Suroccidental") ? "rgba(33,150,243,0.35)" : "rgba(33,150,243,0.08)"}
         stroke={esq("Suroccidental") ? "#2196f3" : "#0d2a4a"}
@@ -51,15 +51,15 @@ const StadiumMap: FC<Props> = ({ categoria, sector, onSelect }) => {
         />
       ))}
       <text x="37" y="271"
-        fill={esq("Suroccidental") ? "#64b5f6" : "#1a3a5a"}
+        fill={esq("Suroccidental") ? "#64b5f6" : "#4a8aaa"}
         fontSize="6" textAnchor="middle" fontWeight="800"
-        style={{ pointerEvents: "none" }}>SUR</text>
+        style={{ pointerEvents: "none" }}>NOR</text>
       <text x="37" y="280"
-        fill={esq("Suroccidental") ? "#64b5f6" : "#1a3a5a"}
+        fill={esq("Suroccidental") ? "#64b5f6" : "#4a8aaa"}
         fontSize="6" textAnchor="middle" fontWeight="800"
-        style={{ pointerEvents: "none" }}>OCC</text>
+        style={{ pointerEvents: "none" }}>ORI</text>
 
-      {/* ESQUINA NORORIENTAL - arriba derecha */}
+      {/* ESQUINA SUROCCIDENTAL - arriba derecha */}
       <rect x="410" y="4" width="66" height="56" rx="10"
         fill={esq("Nororiental") ? "rgba(33,150,243,0.35)" : "rgba(33,150,243,0.08)"}
         stroke={esq("Nororiental") ? "#2196f3" : "#0d2a4a"}
@@ -74,13 +74,13 @@ const StadiumMap: FC<Props> = ({ categoria, sector, onSelect }) => {
         />
       ))}
       <text x="443" y="35"
-        fill={esq("Nororiental") ? "#64b5f6" : "#1a3a5a"}
+        fill={esq("Nororiental") ? "#64b5f6" : "#4a8aaa"}
         fontSize="6" textAnchor="middle" fontWeight="800"
-        style={{ pointerEvents: "none" }}>NOR</text>
+        style={{ pointerEvents: "none" }}>SUR</text>
       <text x="443" y="44"
-        fill={esq("Nororiental") ? "#64b5f6" : "#1a3a5a"}
+        fill={esq("Nororiental") ? "#64b5f6" : "#4a8aaa"}
         fontSize="6" textAnchor="middle" fontWeight="800"
-        style={{ pointerEvents: "none" }}>ORI</text>
+        style={{ pointerEvents: "none" }}>OCC</text>
 
       {/* ESQUINA SURORIENTAL - abajo derecha */}
       <rect x="410" y="240" width="66" height="56" rx="10"
@@ -97,11 +97,11 @@ const StadiumMap: FC<Props> = ({ categoria, sector, onSelect }) => {
         />
       ))}
       <text x="443" y="271"
-        fill={esq("Suroriental") ? "#64b5f6" : "#1a3a5a"}
+        fill={esq("Suroriental") ? "#64b5f6" : "#4a8aaa"}
         fontSize="6" textAnchor="middle" fontWeight="800"
         style={{ pointerEvents: "none" }}>SUR</text>
       <text x="443" y="280"
-        fill={esq("Suroriental") ? "#64b5f6" : "#1a3a5a"}
+        fill={esq("Suroriental") ? "#64b5f6" : "#4a8aaa"}
         fontSize="6" textAnchor="middle" fontWeight="800"
         style={{ pointerEvents: "none" }}>ORI</text>
 
@@ -147,44 +147,44 @@ const StadiumMap: FC<Props> = ({ categoria, sector, onSelect }) => {
         BARRA SUR
       </text>
 
-      {/* PALCO VIP - arriba izquierda */}
-      <rect x="74" y="4" width="158" height="56" rx="8"
+      {/* PALCO VIP - franja superior de la tribuna occidental */}
+      <rect x="74" y="4" width="330" height="30" rx="8"
         fill={categoria === "PALCO" ? "rgba(180,100,255,0.22)" : "rgba(150,80,220,0.07)"}
         stroke={categoria === "PALCO" ? "#9c27b0" : "#3a1a4a"}
         strokeWidth={categoria === "PALCO" ? "2" : "1"}
         style={{ cursor: "pointer" }}
         onClick={() => onSelect("PALCO", "Occidental VIP")}
       />
-      {[10, 18, 26, 34, 42].map((dy) => (
-        <rect key={dy} x="82" y={4 + dy} width="142" height="6" rx="3"
+      {[9, 17, 25].map((dy) => (
+        <rect key={dy} x="82" y={4 + dy} width="314" height="5" rx="2"
           fill={categoria === "PALCO" ? "rgba(156,39,176,0.35)" : "rgba(156,39,176,0.1)"}
           style={{ pointerEvents: "none" }}
         />
       ))}
-      <text x="153" y="36"
+      <text x="239" y="23"
         fill={categoria === "PALCO" ? "#ce93d8" : "#5a2a6a"}
-        fontSize="9" textAnchor="middle" fontWeight="800" letterSpacing="2"
+        fontSize="8" textAnchor="middle" fontWeight="800" letterSpacing="2"
         style={{ pointerEvents: "none" }}>
         PALCO VIP
       </text>
 
-      {/* GENERAL OCC - arriba derecha */}
-      <rect x="238" y="4" width="166" height="56" rx="8"
+      {/* GENERAL OCC - franja inferior de la tribuna occidental */}
+      <rect x="74" y="34" width="330" height="30" rx="8"
         fill={categoria === "GENERAL" && sector === "Occidental" ? "rgba(255,180,0,0.22)" : "rgba(220,150,0,0.07)"}
         stroke={categoria === "GENERAL" && sector === "Occidental" ? "#ffa000" : "#3a2a00"}
         strokeWidth={categoria === "GENERAL" && sector === "Occidental" ? "2" : "1"}
         style={{ cursor: "pointer" }}
         onClick={() => onSelect("GENERAL", "Occidental")}
       />
-      {[10, 18, 26, 34, 42].map((dy) => (
-        <rect key={dy} x="246" y={4 + dy} width="150" height="6" rx="3"
+      {[8, 16, 24].map((dy) => (
+        <rect key={dy} x="82" y={34 + dy} width="314" height="5" rx="2"
           fill={categoria === "GENERAL" && sector === "Occidental" ? "rgba(255,160,0,0.35)" : "rgba(255,160,0,0.1)"}
           style={{ pointerEvents: "none" }}
         />
       ))}
-      <text x="321" y="36"
+      <text x="239" y="53"
         fill={categoria === "GENERAL" && sector === "Occidental" ? "#ffcc02" : "#6a5000"}
-        fontSize="9" textAnchor="middle" fontWeight="800" letterSpacing="2"
+        fontSize="8" textAnchor="middle" fontWeight="800" letterSpacing="2"
         style={{ pointerEvents: "none" }}>
         GENERAL OCC
       </text>
