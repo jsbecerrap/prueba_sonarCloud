@@ -360,20 +360,9 @@ public int sincronizarDesdeAPI() {
         return 0;
     }
 
-    final List<Partido> partidos = response.getPartidos().stream().map(dto -> {
-        final Partido partido = new Partido();
-        partido.setId(dto.getInformacion().getId());
-        partido.setFecha(LocalDateTime.parse(dto.getInformacion().getFecha(),
-                DateTimeFormatter.ISO_OFFSET_DATE_TIME));
-        partido.setEstado(dto.getInformacion().getEstado().getCodigo());
-        partido.setRonda(dto.getLiga().getRonda());
-        partido.setSeleccionLocal(dto.getEquipos().getLocal().getNombre());
-        partido.setSeleccionVisitante(dto.getEquipos().getVisitante().getNombre());
-        partido.setEstadio(dto.getInformacion().getEstadio().getNombre());
-        partido.setGolesLocal(dto.getGoles().getLocal());
-        partido.setGolesVisitante(dto.getGoles().getVisitante());
-        return partido;
-    }).toList();
+    final List<Partido> partidos = response.getPartidos().stream()
+            .map(this::procesarPartido)
+            .toList();
 
     partidoRepository.saveAll(partidos);
 

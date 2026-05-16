@@ -174,4 +174,8 @@ public ResponseEntity<Map<String, Object>> handleCategoriaYaExiste(CategoriaYaEx
 public ResponseEntity<Map<String, Object>> handleCategoriaConProductos(CategoriaConProductosException ex) {
     return buildResponse(HttpStatus.CONFLICT, ex.getMessage());
 }
+@ExceptionHandler(PartidoYaIniciadoException.class)
+public ResponseEntity<Map<String, Object>> handlePartidoYaIniciado(PartidoYaIniciadoException e) {
+    return buildResponse(HttpStatus.BAD_REQUEST, e.getMessage());
+}
 }

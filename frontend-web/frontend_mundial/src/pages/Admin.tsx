@@ -81,16 +81,20 @@ const eventLabels: Record<SystemEventType, string> = {
   USUARIO_ACTUALIZADO: "Usuario actualizado",
   APUESTA_CREADA: "Polla creada",
   APUESTA_UNIRSE: "Unirse a polla",
+  APUESTA_FINALIZADA: "Polla finalizada",
   PRONOSTICO_REGISTRADO: "Pronóstico registrado",
   PRONOSTICO_EDITADO: "Pronóstico editado",
   PRONOSTICO_ELIMINADO: "Pronóstico eliminado",
-  ORDEN_CREADA: "Orden creada",
-  ORDEN_CONFIRMADA: "Orden confirmada",
+  ORDEN_PAGADA: "Orden pagada",
   ORDEN_CANCELADA: "Orden cancelada",
-  ENTRADA_COMPRADA: "Entrada comprada",
-  ENTRADA_TRANSFERIDA: "Entrada transferida",
+  ENTRADA_RESERVADA: "Entrada reservada",
+  ENTRADA_PAGADA: "Entrada pagada",
+  ENTRADA_CANCELADA: "Entrada cancelada",
+  ENTRADA_PAGO_FALLIDO: "Pago de entrada fallido",
   ENTRADA_REEMBOLSADA: "Entrada reembolsada",
-  ENTRADA_LOTE_ACTIVADO: "Lote de entradas activado",
+  ENTRADA_REEMBOLSO_FALLIDO: "Reembolso fallido",
+  ENTRADA_EXPIRADA: "Reserva expirada",
+  ENTRADA_TRANSFERIDA: "Entrada transferida",
   PRODUCTO_CREADO: "Producto creado",
   PRODUCTO_ACTUALIZADO: "Producto actualizado",
   PRODUCTO_DESACTIVADO: "Producto desactivado",
@@ -103,7 +107,6 @@ const eventLabels: Record<SystemEventType, string> = {
   PARTIDO_RESULTADO_ACTUALIZADO: "Resultado de partido actualizado",
   PARTIDOS_SINCRONIZADOS: "Partidos sincronizados",
 };
-
 function toLocalDatetimeInputValue(iso: string) {
   const d = new Date(iso);
   const pad = (n: number) => String(n).padStart(2, "0");
@@ -815,7 +818,7 @@ const onEnviarNotificacion = async () => {
             </Box>
             <TextField select label="Filtrar evento" value={eventFilter} onChange={(e) => setEventFilter(e.target.value as SystemEventType | "ALL")} sx={{ minWidth: 240 }}>
               <MenuItem value="ALL">Todos</MenuItem>
-              {eventTypes.map((type) => (<MenuItem key={type} value={type}>{eventLabels[type]}</MenuItem>))}
+              {eventTypes.map((type) => (<MenuItem key={type} value={type}>{eventLabels[type as SystemEventType] ?? type}</MenuItem>))}
             </TextField>
           </Stack>
           {eventsFiltered.length === 0 ? (

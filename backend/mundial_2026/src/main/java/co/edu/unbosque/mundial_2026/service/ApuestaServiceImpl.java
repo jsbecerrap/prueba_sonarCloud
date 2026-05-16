@@ -23,6 +23,7 @@ import co.edu.unbosque.mundial_2026.exception.ApuestaNotFoundException;
 import co.edu.unbosque.mundial_2026.exception.CodigoInvalidoException;
 import co.edu.unbosque.mundial_2026.exception.EstadoInvalidoException;
 import co.edu.unbosque.mundial_2026.exception.ParticipacionNotFoundException;
+import co.edu.unbosque.mundial_2026.exception.PartidoYaIniciadoException;
 import co.edu.unbosque.mundial_2026.exception.PronosticoNotFoundException;
 import co.edu.unbosque.mundial_2026.exception.UsuarioYaEnApuestaException;
 import co.edu.unbosque.mundial_2026.repository.ApuestaRepository;
@@ -108,7 +109,10 @@ public class ApuestaServiceImpl implements ApuestaService {
         participacionRepository.findByUsuarioIdAndApuestaId(usuario.getId(), apuesta.getId())
                 .orElseThrow(() -> new ParticipacionNotFoundException("Usuario no pertenece a la polla"));
 
-        final Partido partido = partidoService.obtenerPartidoEntidadPorId(dto.getPartidoId());
+    final Partido partido = partidoService.obtenerPartidoEntidadPorId(dto.getPartidoId());
+        if (partido.getFecha().isBefore(LocalDateTime.now().plusMinutes(5))) {
+            throw new PartidoYaIniciadoException("No puedes registrar un pronostico a 5 minutos o menos del inicio del partido");
+        }
         final Pronostico pronostico = new Pronostico();
         pronostico.setResultadoPronosticado(dto.getResultadoPronosticado());
         pronostico.setGolesLocalPronosticados(dto.getGolesLocalPronosticados());
@@ -304,16 +308,31 @@ public class ApuestaServiceImpl implements ApuestaService {
             participacionRepository.save(p);
         }
 
-        List<Participacion> participacionesFinales = participacionRepository
+        final List<Participacion> participacionesFinales = participacionRepository
                 .findByApuestaIdOrderByPuntosDesc(apuestaId);
+
+        final StringBuilder rankingLog = new StringBuilder();
         for (int i = 0; i < participacionesFinales.size(); i++) {
-            Participacion p = participacionesFinales.get(i);
+            final Participacion p = participacionesFinales.get(i);
             notificacionService.notificarPuntosCalculados(
                     p.getUsuario(),
                     apuesta.getNombre(),
                     p.getPosicionRanking(),
                     p.getPuntos());
+            rankingLog.append(p.getPosicionRanking())
+                    .append(". ").append(p.getUsuario().getCorreoUsuario())
+                    .append(" ").append(p.getPuntos()).append("pts | ");
         }
+
+        apuesta.setPuntosCalculados(true);
+        apuestaRepository.save(apuesta);
+
+        auditoriaService.registrar(
+                "APUESTA_FINALIZADA",
+                "Polla '" + apuesta.getNombre() + "' finalizada | ranking: " + rankingLog,
+                null,
+                apuesta.getCodigoInvitacion(),
+                ENTIDAD_APUESTA);
 
         return resultado;
     }
@@ -353,13 +372,7 @@ public class ApuestaServiceImpl implements ApuestaService {
         apuesta.setEstado(ESTADO_CERRADA);
         apuestaRepository.save(apuesta);
 
-        List<Usuario> participantes = participacionRepository.findByApuestaId(apuestaId)
-                .stream()
-                .map(Participacion::getUsuario)
-                .toList();
-        notificacionService.notificarApuestaCerrada(participantes, apuesta.getNombre());
-
-        return new ApuestaDTO(apuesta.getId(), apuesta.getNombre(), apuesta.getEstado(),
+     return new ApuestaDTO(apuesta.getId(), apuesta.getNombre(), apuesta.getEstado(),
                 apuesta.getCodigoInvitacion(), apuesta.getFechaCierre(), apuesta.getCreadaPor().getId());
     }
 
@@ -408,13 +421,12 @@ public class ApuestaServiceImpl implements ApuestaService {
                 pronostico.getApuesta().getId(), pronostico.getPartido().getId());
     }
 
-    @Transactional
+   @Transactional
     @Override
     public void calcularPuntosAutomatico() {
-        apuestaRepository.findByEstado(ESTADO_CERRADA)
+        apuestaRepository.findByEstadoAndPuntosCalculadosFalse(ESTADO_CERRADA)
                 .forEach(apuesta -> calcularPuntos(apuesta.getId()));
     }
-
     @Transactional
     @Override
     public void cerrarApuestasVencidas() {
@@ -438,18 +450,11 @@ public class ApuestaServiceImpl implements ApuestaService {
                 .toList();
     }
 
-    @Transactional
+  @Transactional
     @Override
     public List<PronosticoDTO> calcularPuntosParciales(Long apuestaId) {
         apuestaRepository.findById(apuestaId)
                 .orElseThrow(() -> new ApuestaNotFoundException(APUESTA_NO_ENCONTRADA));
-
-        // resetear puntos
-        final List<Participacion> participaciones = participacionRepository.findByApuestaId(apuestaId);
-        for (final Participacion p : participaciones) {
-            p.setPuntos(0);
-            participacionRepository.save(p);
-        }
 
         final List<Pronostico> pronosticos = pronosticoRepository.findByApuestaId(apuestaId);
         final List<PronosticoDTO> resultado = new ArrayList<>();
@@ -457,8 +462,11 @@ public class ApuestaServiceImpl implements ApuestaService {
         for (final Pronostico pronostico : pronosticos) {
             final Partido partido = pronostico.getPartido();
 
-            // solo partidos ya terminados con resultado real
             if (partido.getGolesLocal() == null || partido.getGolesVisitante() == null) {
+                continue;
+            }
+
+            if (pronostico.getPuntosObtenidos() != null && pronostico.getPuntosObtenidos() > 0) {
                 continue;
             }
 
@@ -471,7 +479,7 @@ public class ApuestaServiceImpl implements ApuestaService {
             final Participacion participacion = participacionRepository
                     .findByUsuarioIdAndApuestaId(pronostico.getUsuario().getId(), apuestaId)
                     .orElseThrow(() -> new ParticipacionNotFoundException("Participacion no encontrada"));
-            participacion.setPuntos(puntos + participacion.getPuntos());
+            participacion.setPuntos(participacion.getPuntos() + puntos);
             participacionRepository.save(participacion);
 
             resultado.add(new PronosticoDTO(
@@ -485,7 +493,6 @@ public class ApuestaServiceImpl implements ApuestaService {
                     pronostico.getPartido().getId()));
         }
 
-        // actualizar ranking parcial
         int posicion = 1;
         for (final Participacion p : participacionRepository.findByApuestaIdOrderByPuntosDesc(apuestaId)) {
             p.setPosicionRanking(posicion++);

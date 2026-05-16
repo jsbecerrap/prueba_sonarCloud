@@ -87,6 +87,10 @@ useEffect(() => {
       correoNuevo: correoNuevo || undefined,
       contrasenaActual: contrasenaActual || undefined,
       contrasenaNueva: contrasenaNueva || undefined,
+    }, {
+      name: nombre,
+      lastName: apellido,
+      email: correoNuevo || user.email,
     });
 
     setProfile(updated);

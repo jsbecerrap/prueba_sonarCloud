@@ -11,6 +11,7 @@ import co.edu.unbosque.mundial_2026.entity.Apuesta;
 
 @Repository
 public interface ApuestaRepository extends JpaRepository<Apuesta, Long> {
+
     Optional<Apuesta> findByCodigoInvitacion(String codigoInvitacion);
 
     List<Apuesta> findByCreadaPorId(Long usuarioId);
@@ -18,4 +19,6 @@ public interface ApuestaRepository extends JpaRepository<Apuesta, Long> {
     List<Apuesta> findByEstado(String estado);
 
     List<Apuesta> findByEstadoAndFechaCierreBefore(String estado, LocalDateTime fecha);
+
+    List<Apuesta> findByEstadoAndPuntosCalculadosFalse(String estado);
 }

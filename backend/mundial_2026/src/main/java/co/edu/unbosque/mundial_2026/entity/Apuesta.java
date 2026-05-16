@@ -33,6 +33,9 @@ public class Apuesta {
     @Column(name = "fecha_cierre")
     private LocalDateTime fechaCierre;
 
+    @Column(name = "puntos_calculados", nullable = false, columnDefinition = "boolean default false")
+    private boolean puntosCalculados = false;
+
     @ManyToOne
     @JoinColumn(name = "usuario_id", nullable = false)
     private Usuario creadaPor;
@@ -44,7 +47,6 @@ public class Apuesta {
     private List<Pronostico> pronosticos;
 
     public Apuesta() {
-        //Constructor vacio
     }
 
     public Long getId() {
@@ -85,6 +87,14 @@ public class Apuesta {
 
     public void setFechaCierre(LocalDateTime fechaCierre) {
         this.fechaCierre = fechaCierre;
+    }
+
+    public boolean isPuntosCalculados() {
+        return puntosCalculados;
+    }
+
+    public void setPuntosCalculados(boolean puntosCalculados) {
+        this.puntosCalculados = puntosCalculados;
     }
 
     public Usuario getCreadaPor() {
