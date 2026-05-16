@@ -4,6 +4,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.hibernate.annotations.BatchSize;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -47,7 +49,8 @@ public class Orden {
     private MetodoPago metodoPago;
 
     @OneToMany(mappedBy = "orden", fetch = FetchType.LAZY)
-    private List<ItemOrden> items = new ArrayList<>();
+@BatchSize(size = 30)   
+private List<ItemOrden> items = new ArrayList<>();
 
     public Orden() {
         //Constructor vacio

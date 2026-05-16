@@ -30,12 +30,12 @@ const [txs, setTxs] = useState<PaymentTx[]>([]);
 const [loading, setLoading] = useState(true);
 
 useEffect(() => {
-  if (!user?.id) return;
+  if (authLoading || !user?.id) return;
   setLoading(true);
   getMyPaymentTxs(user.id)
     .then((data) => setTxs(data ?? []))
     .finally(() => setLoading(false));
-}, []);
+}, [user?.id, authLoading]);
 
 
   if (!user) return <Alert severity="warning">Debes iniciar sesión.</Alert>;

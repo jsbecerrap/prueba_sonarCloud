@@ -17,13 +17,25 @@ public interface OrdenRepository extends JpaRepository<Orden, Long> {
            "LEFT JOIN FETCH o.items i " +
            "LEFT JOIN FETCH i.producto p " +
            "LEFT JOIN FETCH p.categoria " +
+           "LEFT JOIN FETCH o.metodoPago " +
            "WHERE o.usuario.id = :usuarioId AND o.estado <> :estado")
     List<Orden> findByUsuarioIdAndEstadoNot(@Param("usuarioId") Long usuarioId,
                                             @Param("estado") String estado);
-                                            @Query("SELECT DISTINCT o FROM Orden o " +
-       "LEFT JOIN FETCH o.items i " +
-       "LEFT JOIN FETCH i.producto p " +
-       "LEFT JOIN FETCH p.categoria " +
+
+    
+
+
+
+
+
+
+
+
+
+
+
+        @Query("SELECT o FROM Orden o " +
+       "LEFT JOIN FETCH o.metodoPago " +
        "WHERE o.usuario.id = :usuarioId AND o.estado IN :estados " +
        "ORDER BY o.fechaCreacion DESC")
 List<Orden> findHistorialByUsuarioIdAndEstadoIn(
