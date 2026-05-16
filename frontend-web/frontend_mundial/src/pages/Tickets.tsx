@@ -16,7 +16,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-
+import StadiumMap from "../components/StadiumMap";
 import { getMatches } from "../api/matchesApi";
 import { cancelTicket, getMyTickets, reserveTicket, transferTicket, getPartidosConCapacidad, markTicketAsRefunded } from "../api/ticketsApi";
 import type { PartidoCapacidad } from "../api/ticketsApi";
@@ -145,17 +145,18 @@ const PRECIO_POR_RONDA: Record<string, number> = {
     void refresh();
   }, [refresh]);
 
-  const summary = useMemo(
-    () => ({
-      total: items.length,
-      reserved: items.filter((t) => t.status === "RESERVADA").length,
-      paid: items.filter((t) => t.status === "PAGADA").length,
-      refunded: items.filter((t) => t.status === "REEMBOLSADA").length,
-      cancelled: items.filter((t) => t.status === "CANCELADA").length,
-      expired: items.filter((t) => t.status === "EXPIRADA").length,
-    }),
-    [items]
-  );
+const summary = useMemo(
+  () => ({
+    total: items.length,
+    reserved: items.filter((t) => t.status === "RESERVADA").length,
+    paid: items.filter((t) => t.status === "PAGADA").length,
+    refunded: items.filter((t) => t.status === "REEMBOLSADA").length,
+    cancelled: items.filter((t) => t.status === "CANCELADA").length,
+    expired: items.filter((t) => t.status === "EXPIRADA").length,
+    transferred: items.filter((t) => t.status === "TRANSFERIDA").length,
+  }),
+  [items]
+);
 
   if (!user) {
     return (
@@ -332,82 +333,17 @@ await reserveTicket(user.id, selectedMatchId, quantity, categoria, sector, fila)
             Selecciona una zona
           </Typography>
 
-          {/* Mini mapa SVG del estadio - rectangular coherente */}
-<Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
-         <svg viewBox="0 0 380 260" width="100%" style={{ maxWidth: 480 }}>
-              {/* Fondo */}
-              <rect x="0" y="0" width="380" height="260" rx="12" fill="#151f15" />
+         {/* Mini mapa SVG del estadio - óvalo continuo */}
+ <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
+  <StadiumMap
+    categoria={categoria}
+    sector={sector}
+    onSelect={(cat, sec) => { setCategoria(cat); setSector(sec); }}
+  />
+</Box>
 
-             {/* PALCO - franja superior izquierda (30% del ancho) */}
-              <rect x="62" y="4" width="90" height="26" rx="5"
-                fill={categoria === "PALCO" ? "rgba(180,100,255,0.5)" : "rgba(180,100,255,0.15)"}
-                stroke={categoria === "PALCO" ? "#b464ff" : "#b464ff44"}
-                strokeWidth="1.5" style={{ cursor: "pointer" }}
-                onClick={() => { setCategoria("PALCO"); setSector("Occidental VIP"); }}
-              />
-              <text x="107" y="21" fill={categoria === "PALCO" ? "#b464ff" : "#b464ff99"} fontSize="7" textAnchor="middle" fontWeight="700" style={{ pointerEvents: "none" }}>
-                PALCO {partidoSeleccionado ? `· ${Math.floor(partidoSeleccionado.capacidadDisponible * 0.1).toLocaleString()}` : ""}
-              </text>
-
-              {/* GENERAL OCCIDENTAL - franja superior derecha (70% del ancho) */}
-              <rect x="158" y="4" width="160" height="26" rx="5"
-                fill={categoria === "GENERAL" && sector === "Occidental" ? "rgba(255,180,0,0.5)" : "rgba(255,180,0,0.15)"}
-                stroke={categoria === "GENERAL" ? "#ffb400" : "#ffb40044"}
-                strokeWidth="1.5" style={{ cursor: "pointer" }}
-                onClick={() => { setCategoria("GENERAL"); setSector("Occidental"); }}
-              />
-              <text x="238" y="21" fill={categoria === "GENERAL" ? "#ffb400" : "#ffb40099"} fontSize="7" textAnchor="middle" fontWeight="700" style={{ pointerEvents: "none" }}>
-                GENERAL OCC {partidoSeleccionado ? `· ${Math.floor(partidoSeleccionado.capacidadDisponible * 0.2).toLocaleString()}` : ""}
-              </text>
-
-              {/* BARRA NORTE - lateral izquierdo */}
-              <rect x="4" y="34" width="52" height="192" rx="6"
-                fill={categoria === "BARRA" && sector === "Norte" ? "rgba(100,180,100,0.5)" : "rgba(100,180,100,0.15)"}
-                stroke={categoria === "BARRA" ? "#64b464" : "#64b46444"}
-                strokeWidth="1.5" style={{ cursor: "pointer" }}
-                onClick={() => { setCategoria("BARRA"); setSector("Norte"); }}
-              />
-              <text x="30" y="130" fill={categoria === "BARRA" ? "#64b464" : "#64b46499"} fontSize="8" textAnchor="middle" fontWeight="700" transform="rotate(-90,30,130)" style={{ pointerEvents: "none" }}>
-                BARRA NORTE {partidoSeleccionado ? `· ${Math.floor(partidoSeleccionado.capacidadDisponible * 0.2).toLocaleString()}` : ""}
-              </text>
-
-              {/* BARRA SUR - lateral derecho */}
-              <rect x="324" y="34" width="52" height="192" rx="6"
-                fill={categoria === "BARRA" && sector === "Sur" ? "rgba(100,180,100,0.5)" : "rgba(100,180,100,0.15)"}
-                stroke={categoria === "BARRA" ? "#64b464" : "#64b46444"}
-                strokeWidth="1.5" style={{ cursor: "pointer" }}
-                onClick={() => { setCategoria("BARRA"); setSector("Sur"); }}
-              />
-              <text x="350" y="130" fill={categoria === "BARRA" ? "#64b464" : "#64b46499"} fontSize="8" textAnchor="middle" fontWeight="700" transform="rotate(90,350,130)" style={{ pointerEvents: "none" }}>
-                BARRA SUR {partidoSeleccionado ? `· ${Math.floor(partidoSeleccionado.capacidadDisponible * 0.2).toLocaleString()}` : ""}
-              </text>
-
-              {/* GENERAL ORIENTAL - abajo */}
-              <rect x="62" y="230" width="256" height="26" rx="5"
-                fill={categoria === "GENERAL" && sector === "Oriental" ? "rgba(255,180,0,0.5)" : "rgba(255,180,0,0.15)"}
-                stroke={categoria === "GENERAL" ? "#ffb400" : "#ffb40044"}
-                strokeWidth="1.5" style={{ cursor: "pointer" }}
-                onClick={() => { setCategoria("GENERAL"); setSector("Oriental"); }}
-              />
-              <text x="190" y="247" fill={categoria === "GENERAL" ? "#ffb400" : "#ffb40099"} fontSize="8" textAnchor="middle" fontWeight="700" style={{ pointerEvents: "none" }}>
-                GENERAL ORIENTAL {partidoSeleccionado ? `· ${Math.floor(partidoSeleccionado.capacidadDisponible * 0.3).toLocaleString()}` : ""}
-              </text>
-
-              {/* Gradas ovaladas */}
-              <ellipse cx="190" cy="132" rx="118" ry="88" fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="8" style={{ pointerEvents: "none" }} />
-              <ellipse cx="190" cy="132" rx="106" ry="76" fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="5" style={{ pointerEvents: "none" }} />
-
-              {/* Cancha */}
-              <rect x="82" y="54" width="236" height="156" rx="4" fill="#2d6e2d" stroke="#4a9e4a" strokeWidth="1.5" style={{ pointerEvents: "none" }} />
-              <line x1="200" y1="54" x2="200" y2="210" stroke="#4a9e4a" strokeWidth="1" style={{ pointerEvents: "none" }} />
-              <circle cx="200" cy="132" r="22" fill="none" stroke="#4a9e4a" strokeWidth="1" style={{ pointerEvents: "none" }} />
-              <rect x="82" y="97" width="20" height="70" fill="none" stroke="#4a9e4a" strokeWidth="1" style={{ pointerEvents: "none" }} />
-              <rect x="298" y="97" width="20" height="70" fill="none" stroke="#4a9e4a" strokeWidth="1" style={{ pointerEvents: "none" }} />
-            </svg>
-          </Box>
-
-          {/* Tarjetas de zona */}
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
+{/* Tarjetas de zona */}
+<Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
             {(["BARRA", "GENERAL", "PALCO"] as const).map((cat) => {
               const precio = calcularPrecio(partidoSeleccionado?.ronda, cat);
               const colores: Record<string, { border: string; bg: string; text: string; sectores: string[] }> = {
@@ -490,7 +426,7 @@ await reserveTicket(user.id, selectedMatchId, quantity, categoria, sector, fila)
       <Paper sx={{ p: 2.5 }}>
         <Typography variant="h6">Resumen</Typography>
         <Typography color="text.secondary">
-          Total: {summary.total} · Reservadas: {summary.reserved} · Pagadas: {summary.paid} · Reembolsadas: {summary.refunded} · Canceladas: {summary.cancelled} · Expiradas: {summary.expired}
+         Total: {summary.total} · Reservadas: {summary.reserved} · Pagadas: {summary.paid} · Reembolsadas: {summary.refunded} · Canceladas: {summary.cancelled} · Expiradas: {summary.expired} · Transferidas: {summary.transferred}
         </Typography>
       </Paper>
 

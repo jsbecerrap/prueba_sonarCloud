@@ -1,19 +1,25 @@
 import { http } from "./http";
 
+export interface VarianteResponse {
+  id: number;
+  especificacion: string | null;
+  stock: number;
+}
+
 export interface ProductoResponse {
   id: number;
   nombre: string;
   descripcion: string;
   precio: number;
-  stock: number;
+  stockTotal: number;
   imagenUrl: string;
   activo: boolean;
   categoriaNombre: string;
   codigoProducto: string | null;
-  talla: string | null;
   equipo: string | null;
   bandera: string | null;
   destacado: boolean;
+  variantes: VarianteResponse[];
 }
 
 export interface CategoriaResponse {
@@ -24,6 +30,7 @@ export interface CategoriaResponse {
 
 export interface AgregarItemRequest {
   productoId: number;
+  varianteId: number;
   cantidad: number;
 }
 
@@ -34,13 +41,14 @@ export interface ConfirmarOrdenRequest {
 export interface ItemOrdenResponse {
   id: number;
   productoId: number;
+  varianteId: number;
   productoNombre: string;
   productoImagenUrl: string;
+  especificacion: string | null;
   cantidad: number;
   precioUnitario: number;
   categoriaNombre?: string;
 }
-
 export interface OrdenResponse {
   id: number;
   estado: string;

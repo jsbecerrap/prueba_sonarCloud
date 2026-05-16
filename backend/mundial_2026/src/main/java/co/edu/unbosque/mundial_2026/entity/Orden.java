@@ -1,14 +1,18 @@
 package co.edu.unbosque.mundial_2026.entity;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 @Entity
@@ -41,6 +45,9 @@ public class Orden {
     @ManyToOne
     @JoinColumn(name = "metodo_pago_id")
     private MetodoPago metodoPago;
+
+    @OneToMany(mappedBy = "orden", fetch = FetchType.LAZY)
+    private List<ItemOrden> items = new ArrayList<>();
 
     public Orden() {
         //Constructor vacio
@@ -108,5 +115,13 @@ public class Orden {
 
     public void setMetodoPago(MetodoPago metodoPago) {
         this.metodoPago = metodoPago;
+    }
+
+    public List<ItemOrden> getItems() {
+        return items;
+    }
+
+    public void setItems(List<ItemOrden> items) {
+        this.items = items;
     }
 }

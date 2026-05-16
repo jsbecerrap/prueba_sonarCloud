@@ -25,6 +25,10 @@ public class ItemOrden {
     @JoinColumn(name = "producto_id", nullable = false)
     private Producto producto;
 
+    @ManyToOne
+    @JoinColumn(name = "variante_id", nullable = false)
+    private VarianteProducto variante;
+
     @Column(nullable = false)
     private Integer cantidad;
 
@@ -32,7 +36,6 @@ public class ItemOrden {
     private Double precioUnitario;
 
     public ItemOrden() {
-        //Constructor vacio
     }
 
     public Long getId() {
@@ -57,6 +60,14 @@ public class ItemOrden {
 
     public void setProducto(Producto producto) {
         this.producto = producto;
+    }
+
+    public VarianteProducto getVariante() {
+        return variante;
+    }
+
+    public void setVariante(VarianteProducto variante) {
+        this.variante = variante;
     }
 
     public Integer getCantidad() {

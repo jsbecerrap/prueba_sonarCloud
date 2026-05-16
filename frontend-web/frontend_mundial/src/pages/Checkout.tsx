@@ -201,8 +201,9 @@ export default function Checkout() {
                   <Stack spacing={0.25} flex={1}>
                     <Typography sx={{ fontWeight: 800 }}>{item.productoNombre}</Typography>
                     <Typography variant="body2" color="text.secondary">
-                      {item.cantidad} x {formatPrecio(item.precioUnitario)}
-                    </Typography>
+  {item.especificacion ? `${item.especificacion} · ` : ""}
+  {item.cantidad} x {formatPrecio(item.precioUnitario)}
+</Typography>
                     {item.categoriaNombre && (
                       <Chip label={item.categoriaNombre} size="small" sx={{ alignSelf: "flex-start" }} />
                     )}

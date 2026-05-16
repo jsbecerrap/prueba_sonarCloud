@@ -226,8 +226,9 @@ export default function Cart() {
                     />
                     <Typography sx={{ fontWeight: 900 }}>{item.productoNombre}</Typography>
                     <Typography color="text.secondary">
-                      Cantidad: {item.cantidad} · Precio unitario: {formatPrecio(item.precioUnitario)}
-                    </Typography>
+  {item.especificacion ? `${item.especificacion} · ` : ""}
+  Cantidad: {item.cantidad} · Precio unitario: {formatPrecio(item.precioUnitario)}
+</Typography>
                     <Typography color="text.secondary">
                       Total: {formatPrecio(item.precioUnitario * item.cantidad)}
                     </Typography>

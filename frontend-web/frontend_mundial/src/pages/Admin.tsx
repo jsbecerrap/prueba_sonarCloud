@@ -167,12 +167,14 @@ const [productos, setProductos] = useState<Producto[]>([]);
 const [prodNombre, setProdNombre] = useState("");
 const [prodDesc, setProdDesc] = useState("");
 const [prodPrecio, setProdPrecio] = useState("");
-const [prodStock, setProdStock] = useState("");
+const [prodVariantes, setProdVariantes] = useState<{ especificacion: string; stock: string }[]>([
+  { especificacion: "", stock: "" },
+]);
 const [prodImagenUrl, setProdImagenUrl] = useState("");
 const [prodCategoriaId, setProdCategoriaId] = useState("");
 const [editProducto, setEditProducto] = useState<Producto | null>(null);
 const [editProdPrecio, setEditProdPrecio] = useState("");
-const [editProdStock, setEditProdStock] = useState("");
+const [editProdVariantes, setEditProdVariantes] = useState<{ id?: number; especificacion: string; stock: string }[]>([]);
 const [editProdDesc, setEditProdDesc] = useState("");
 const [editProdImagenUrl, setEditProdImagenUrl] = useState("");
 
@@ -380,13 +382,23 @@ const onEliminarCategoria = async (c: Categoria) => {
 };
 
 const onCrearProducto = async () => {
-  if (!prodNombre || !prodPrecio || !prodStock || !prodCategoriaId) {
-    setMsg({ text: "Nombre, precio, stock y categoría son obligatorios.", severity: "error" }); return;
+ if (!prodNombre || !prodPrecio || !prodCategoriaId || prodVariantes.length === 0) {
+  setMsg({ text: "Nombre, precio, categoría y al menos una variante son obligatorios.", severity: "error" }); return;
   }
   try {
     setLoading(true); setMsg(null);
-    await adminCrearProducto({ nombre: prodNombre, descripcion: prodDesc, precio: Number(prodPrecio), stock: Number(prodStock), imagenUrl: prodImagenUrl, categoriaId: Number(prodCategoriaId) });
-    setProdNombre(""); setProdDesc(""); setProdPrecio(""); setProdStock(""); setProdImagenUrl(""); setProdCategoriaId("");
+  await adminCrearProducto({
+  nombre: prodNombre,
+  descripcion: prodDesc,
+  precio: Number(prodPrecio),
+  imagenUrl: prodImagenUrl,
+  categoriaId: Number(prodCategoriaId),
+  variantes: prodVariantes.map((v) => ({
+    especificacion: v.especificacion || null,
+    stock: Number(v.stock),
+  })),
+});
+   setProdNombre(""); setProdDesc(""); setProdPrecio(""); setProdVariantes([{ especificacion: "", stock: "" }]); setProdImagenUrl(""); setProdCategoriaId("");
     setMsg({ text: "Producto creado.", severity: "success" });
     await refresh();
   } catch (e) { setMsg({ text: (e as Error).message, severity: "error" }); }
@@ -397,8 +409,12 @@ const onActualizarProducto = async () => {
   if (!editProducto) return;
   try {
     setLoading(true); setMsg(null);
-    await adminActualizarProducto(editProducto.id, { precio: editProdPrecio ? Number(editProdPrecio) : undefined, stock: editProdStock ? Number(editProdStock) : undefined, descripcion: editProdDesc || undefined, imagenUrl: editProdImagenUrl || undefined });
-    setEditProducto(null); setEditProdPrecio(""); setEditProdStock(""); setEditProdDesc(""); setEditProdImagenUrl("");
+  await adminActualizarProducto(editProducto.id, {
+  precio: editProdPrecio ? Number(editProdPrecio) : undefined,
+  descripcion: editProdDesc || undefined,
+  imagenUrl: editProdImagenUrl || undefined,
+});
+    setEditProducto(null); setEditProdPrecio(""); setEditProdVariantes([]); setEditProdDesc(""); setEditProdImagenUrl("");
     setMsg({ text: "Producto actualizado.", severity: "success" });
     await refresh();
   } catch (e) { setMsg({ text: (e as Error).message, severity: "error" }); }
@@ -818,7 +834,32 @@ const onEnviarNotificacion = async () => {
         <TextField label="Nombre" value={prodNombre} onChange={(e) => setProdNombre(e.target.value)} disabled={loading} />
         <TextField label="Descripción" value={prodDesc} onChange={(e) => setProdDesc(e.target.value)} disabled={loading} />
         <TextField label="Precio" type="number" value={prodPrecio} onChange={(e) => setProdPrecio(e.target.value)} disabled={loading} />
-        <TextField label="Stock" type="number" value={prodStock} onChange={(e) => setProdStock(e.target.value)} disabled={loading} />
+<Stack spacing={1}>
+  <Typography variant="body2" sx={{ fontWeight: 700 }}>Variantes</Typography>
+  {prodVariantes.map((v, i) => (
+    <Stack key={i} direction="row" spacing={1} alignItems="center">
+      <TextField
+        label="Especificación"
+        placeholder="S, M, 38, 25cm..."
+        size="small"
+        value={v.especificacion}
+        onChange={(e) => setProdVariantes((prev) => prev.map((x, j) => j === i ? { ...x, especificacion: e.target.value } : x))}
+        disabled={loading}
+      />
+      <TextField
+        label="Stock"
+        type="number"
+        size="small"
+        value={v.stock}
+        onChange={(e) => setProdVariantes((prev) => prev.map((x, j) => j === i ? { ...x, stock: e.target.value } : x))}
+        disabled={loading}
+        sx={{ width: 100 }}
+      />
+      <Button size="small" color="error" onClick={() => setProdVariantes((prev) => prev.filter((_, j) => j !== i))} disabled={prodVariantes.length === 1}>✕</Button>
+    </Stack>
+  ))}
+  <Button size="small" onClick={() => setProdVariantes((prev) => [...prev, { especificacion: "", stock: "" }])}>+ Añadir variante</Button>
+</Stack>
         <TextField label="URL imagen" value={prodImagenUrl} onChange={(e) => setProdImagenUrl(e.target.value)} disabled={loading} />
         <TextField select label="Categoría" value={prodCategoriaId} onChange={(e) => setProdCategoriaId(e.target.value)} disabled={loading}>
           {categorias.map((c) => <MenuItem key={c.id} value={c.id}>{c.nombre}</MenuItem>)}
@@ -839,7 +880,30 @@ const onEnviarNotificacion = async () => {
                 <Stack spacing={1.5}>
                   <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(2, 1fr)" }, gap: 1.5 }}>
                     <TextField label="Precio" type="number" value={editProdPrecio} onChange={(e) => setEditProdPrecio(e.target.value)} disabled={loading} size="small" />
-                    <TextField label="Stock" type="number" value={editProdStock} onChange={(e) => setEditProdStock(e.target.value)} disabled={loading} size="small" />
+                  <Stack spacing={1}>
+  <Typography variant="caption" sx={{ fontWeight: 700 }}>Variantes</Typography>
+  {editProdVariantes.map((v, i) => (
+    <Stack key={i} direction="row" spacing={1} alignItems="center">
+      <TextField
+        label="Especificación"
+        placeholder="S, M, 38..."
+        size="small"
+        value={v.especificacion}
+        onChange={(e) => setEditProdVariantes((prev) => prev.map((x, j) => j === i ? { ...x, especificacion: e.target.value } : x))}
+        disabled={loading}
+      />
+      <TextField
+        label="Stock"
+        type="number"
+        size="small"
+        value={v.stock}
+        onChange={(e) => setEditProdVariantes((prev) => prev.map((x, j) => j === i ? { ...x, stock: e.target.value } : x))}
+        disabled={loading}
+        sx={{ width: 100 }}
+      />
+    </Stack>
+  ))}
+</Stack>
                     <TextField label="Descripción" value={editProdDesc} onChange={(e) => setEditProdDesc(e.target.value)} disabled={loading} size="small" />
                     <TextField label="URL imagen" value={editProdImagenUrl} onChange={(e) => setEditProdImagenUrl(e.target.value)} disabled={loading} size="small" />
                   </Box>
@@ -857,12 +921,12 @@ const onEnviarNotificacion = async () => {
                       <Chip size="small" label={p.categoriaNombre} variant="outlined" />
                     </Stack>
                     <Typography color="text.secondary">{p.descripcion}</Typography>
-                    <Typography variant="caption">${p.precio} · Stock: {p.stock}</Typography>
+                  <Typography variant="caption">${p.precio} · Stock total: {p.stockTotal}</Typography>
                   </Box>
                   <Stack direction="row" spacing={1}>
                     {p.activo ? (
                       <>
-                        <Button size="small" variant="outlined" disabled={loading} onClick={() => { setEditProducto(p); setEditProdPrecio(String(p.precio)); setEditProdStock(String(p.stock)); setEditProdDesc(p.descripcion); setEditProdImagenUrl(p.imagenUrl); }}>Editar</Button>
+                      <Button size="small" variant="outlined" disabled={loading} onClick={() => { setEditProducto(p); setEditProdPrecio(String(p.precio)); setEditProdDesc(p.descripcion); setEditProdImagenUrl(p.imagenUrl); setEditProdVariantes(p.variantes.map((v) => ({ id: v.id, especificacion: v.especificacion ?? "", stock: String(v.stock) }))); }}>Editar</Button>
                         <Button size="small" color="error" variant="outlined" disabled={loading} onClick={() => onEliminarProducto(p)}>Desactivar</Button>
                       </>
                     ) : (

@@ -7,6 +7,7 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
@@ -22,6 +23,7 @@ import co.edu.unbosque.mundial_2026.entity.MetodoPago;
 import co.edu.unbosque.mundial_2026.entity.Orden;
 import co.edu.unbosque.mundial_2026.entity.Producto;
 import co.edu.unbosque.mundial_2026.entity.Usuario;
+import co.edu.unbosque.mundial_2026.entity.VarianteProducto;
 import co.edu.unbosque.mundial_2026.exception.CarritoVacioException;
 import co.edu.unbosque.mundial_2026.exception.ItemNotFoundException;
 import co.edu.unbosque.mundial_2026.exception.MetodoPagoInvalidoException;
@@ -30,19 +32,20 @@ import co.edu.unbosque.mundial_2026.exception.PagoStripeException;
 import co.edu.unbosque.mundial_2026.exception.ProductoNotFoundException;
 import co.edu.unbosque.mundial_2026.exception.StockInsuficienteException;
 import co.edu.unbosque.mundial_2026.repository.ItemOrdenRepository;
-
 import co.edu.unbosque.mundial_2026.repository.OrdenRepository;
-
+import co.edu.unbosque.mundial_2026.repository.VarianteProductoRepository;
 
 @Service
 public class OrdenServiceImpl implements OrdenService {
 
     private final OrdenRepository ordenRepository;
     private final ItemOrdenRepository itemOrdenRepository;
+    private final VarianteProductoRepository varianteRepository;
     private final UsuarioService usuarioService;
     private final ProductoService productoService;
     private final MetodoPagoService metodoPagoService;
     private final EventoAuditoriaService auditoriaService;
+
     private static final String ESTADO_PENDIENTE = "PENDIENTE";
     private static final String ESTADO_PAGADA = "PAGADA";
     private static final String ESTADO_CANCELADA = "CANCELADA";
@@ -51,15 +54,17 @@ public class OrdenServiceImpl implements OrdenService {
     private static final String CARRITO_NO_ACTIVO = "No tienes un carrito activo";
     private static final String PREFIJO_USUARIO = "Usuario ";
 
-   
     public OrdenServiceImpl(OrdenRepository ordenRepository,
             ItemOrdenRepository itemOrdenRepository,
+            VarianteProductoRepository varianteRepository,
             UsuarioService usuarioService,
             ProductoService productoService,
             MetodoPagoService metodoPagoService,
-            EventoAuditoriaService auditoriaService,@Value("${stripe.api.key}") String stripeApiKey) {
+            EventoAuditoriaService auditoriaService,
+            @Value("${stripe.api.key}") String stripeApiKey) {
         this.ordenRepository = ordenRepository;
         this.itemOrdenRepository = itemOrdenRepository;
+        this.varianteRepository = varianteRepository;
         this.usuarioService = usuarioService;
         this.productoService = productoService;
         this.metodoPagoService = metodoPagoService;
@@ -68,16 +73,28 @@ public class OrdenServiceImpl implements OrdenService {
     }
 
     @Override
+    @Transactional
     public OrdenResponseDTO agregarItem(String correo, AgregarItemDTO dto) {
-        Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo); 
+        Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
         Long usuarioId = usuario.getId();
+
         Producto producto = productoService.obtenerEntidadPorId(dto.getProductoId());
-        if (producto.getStock() < dto.getCantidad()) {
-            throw new StockInsuficienteException("Error no hay stock");
+
+        VarianteProducto variante = varianteRepository.findById(dto.getVarianteId())
+                .orElseThrow(() -> new ProductoNotFoundException("Variante no encontrada"));
+
+        if (!variante.getProducto().getId().equals(producto.getId())) {
+            throw new ProductoNotFoundException("La variante no pertenece al producto");
         }
-       if (Boolean.FALSE.equals(producto.getActivo())) {
-    throw new ProductoNotFoundException("Este producto no está disponible");
-}
+
+        if (variante.getStock() < dto.getCantidad()) {
+            throw new StockInsuficienteException("Stock insuficiente para esta variante");
+        }
+
+        if (Boolean.FALSE.equals(producto.getActivo())) {
+            throw new ProductoNotFoundException("Este producto no está disponible");
+        }
+
         Optional<Orden> orden = ordenRepository.findByUsuarioIdAndEstado(usuarioId, ESTADO_PENDIENTE);
         Orden ordenActual;
         if (orden.isPresent()) {
@@ -90,40 +107,48 @@ public class OrdenServiceImpl implements OrdenService {
             ordenNueva.setTotal(0.0);
             ordenActual = ordenRepository.save(ordenNueva);
         }
-        Optional<ItemOrden> item = itemOrdenRepository.findByOrdenIdAndProductoId(ordenActual.getId(), producto.getId());
+
+        Optional<ItemOrden> item = itemOrdenRepository
+                .findByOrdenIdAndProductoIdAndVarianteId(ordenActual.getId(), producto.getId(), variante.getId());
+
         ItemOrden itemOrdenActual;
         if (item.isPresent()) {
             itemOrdenActual = item.get();
             itemOrdenActual.setCantidad(itemOrdenActual.getCantidad() + dto.getCantidad());
-            itemOrdenActual.setPrecioUnitario(itemOrdenActual.getPrecioUnitario());
         } else {
             itemOrdenActual = new ItemOrden();
             itemOrdenActual.setOrden(ordenActual);
             itemOrdenActual.setProducto(producto);
+            itemOrdenActual.setVariante(variante);
             itemOrdenActual.setCantidad(dto.getCantidad());
             itemOrdenActual.setPrecioUnitario(producto.getPrecio());
         }
         itemOrdenRepository.save(itemOrdenActual);
+
         List<ItemOrden> items = itemOrdenRepository.findByOrdenId(ordenActual.getId());
         double total = 0.0;
         for (int i = 0; i < items.size(); i++) {
-            ItemOrden itemactual = items.get(i);
-            total += itemactual.getCantidad() * itemactual.getPrecioUnitario();
+            ItemOrden itemActual = items.get(i);
+            total += itemActual.getCantidad() * itemActual.getPrecioUnitario();
         }
         ordenActual.setTotal(total);
         ordenRepository.save(ordenActual);
+
         auditoriaService.registrar(
                 "ITEM_AGREGADO_CARRITO",
-                PREFIJO_USUARIO + usuarioId + " agregó " + dto.getCantidad() + " x " + producto.getNombre(),
+                PREFIJO_USUARIO + usuarioId + " agregó " + dto.getCantidad() + " x " + producto.getNombre()
+                        + (variante.getEspecificacion() != null ? " (" + variante.getEspecificacion() + ")" : ""),
                 usuarioId,
                 PREFIJO_ORDEN + ordenActual.getId(),
                 TIPO_ORDEN);
+
         return toOrdenDTO(ordenActual, items);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public OrdenResponseDTO obtenerCarrito(String correo) {
-        Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo); 
+        Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
         Orden orden = ordenRepository.findByUsuarioIdAndEstado(usuario.getId(), ESTADO_PENDIENTE)
                 .orElseThrow(() -> new OrdenNotFoundException(CARRITO_NO_ACTIVO));
         List<ItemOrden> items = itemOrdenRepository.findByOrdenId(orden.getId());
@@ -131,14 +156,15 @@ public class OrdenServiceImpl implements OrdenService {
     }
 
     @Override
+    @Transactional
     public OrdenResponseDTO eliminarItem(String correo, Long itemId) {
-        Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo); 
+        Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
         Orden ordenActual = ordenRepository.findByUsuarioIdAndEstado(usuario.getId(), ESTADO_PENDIENTE)
                 .orElseThrow(() -> new OrdenNotFoundException("Usuario no tiene orden activa"));
-        ItemOrden itemaEliminar = itemOrdenRepository.findById(itemId)
+        ItemOrden itemAEliminar = itemOrdenRepository.findById(itemId)
                 .orElseThrow(() -> new ItemNotFoundException("No existe ese item"));
-        itemOrdenRepository.delete(itemaEliminar);
-        ordenActual.setTotal(ordenActual.getTotal() - (itemaEliminar.getCantidad() * itemaEliminar.getPrecioUnitario()));
+        itemOrdenRepository.delete(itemAEliminar);
+        ordenActual.setTotal(ordenActual.getTotal() - (itemAEliminar.getCantidad() * itemAEliminar.getPrecioUnitario()));
         List<ItemOrden> itemsRestantes = itemOrdenRepository.findByOrdenId(ordenActual.getId());
         if (itemsRestantes.isEmpty()) {
             ordenRepository.delete(ordenActual);
@@ -149,8 +175,9 @@ public class OrdenServiceImpl implements OrdenService {
     }
 
     @Override
+    @Transactional
     public OrdenResponseDTO confirmarOrden(String correo, ConfirmarOrdenDTO dto) {
-        Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo); 
+        Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
         Long usuarioId = usuario.getId();
         Orden ordenAPagar = ordenRepository.findByUsuarioIdAndEstado(usuarioId, ESTADO_PENDIENTE)
                 .orElseThrow(() -> new OrdenNotFoundException(CARRITO_NO_ACTIVO));
@@ -164,12 +191,14 @@ public class OrdenServiceImpl implements OrdenService {
         }
         for (int i = 0; i < items.size(); i++) {
             ItemOrden item = items.get(i);
-            if (item.getProducto().getStock() < item.getCantidad()) {
-                throw new StockInsuficienteException("Stock insuficiente para " + item.getProducto().getNombre());
+            if (item.getVariante().getStock() < item.getCantidad()) {
+                throw new StockInsuficienteException("Stock insuficiente para " + item.getProducto().getNombre()
+                        + (item.getVariante().getEspecificacion() != null
+                                ? " (" + item.getVariante().getEspecificacion() + ")"
+                                : ""));
             }
         }
         try {
-           
             long totalCentavos = (long) (ordenAPagar.getTotal() * 100);
             PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
                     .setAmount(totalCentavos)
@@ -188,41 +217,42 @@ public class OrdenServiceImpl implements OrdenService {
             ordenAPagar.setFechaPago(LocalDateTime.now());
             ordenAPagar.setPaymentRef(paymentIntent.getId());
             ordenAPagar.setMetodoPago(metodoPago);
+
             for (int i = 0; i < items.size(); i++) {
                 ItemOrden item = items.get(i);
-                Producto producto = item.getProducto();
-                producto.setStock(producto.getStock() - item.getCantidad());
-                productoService.actualizarStock(item.getProducto().getId(), item.getCantidad());
+                productoService.actualizarStock(item.getVariante().getId(), item.getCantidad());
             }
             ordenRepository.save(ordenAPagar);
             auditoriaService.registrar(
                     "ORDEN_PAGADA",
-                    PREFIJO_USUARIO + usuarioId + " pagó la orden " + ordenAPagar.getId() + " por $" + ordenAPagar.getTotal(),
+                    PREFIJO_USUARIO + usuarioId + " pagó la orden " + ordenAPagar.getId() + " por $"
+                            + ordenAPagar.getTotal(),
                     usuarioId,
                     PREFIJO_ORDEN + ordenAPagar.getId(),
                     TIPO_ORDEN);
         } catch (StripeException e) {
-          throw new PagoStripeException("Error al procesar el pago. Revisa los datos de tu tarjeta e intenta de nuevo.");
+            throw new PagoStripeException("Error al procesar el pago. Revisa los datos de tu tarjeta e intenta de nuevo.");
         }
         return toOrdenDTO(ordenAPagar, items);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<OrdenResponseDTO> historial(String correo) {
-        Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo); 
+        Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
         List<Orden> ordenes = ordenRepository.findByUsuarioIdAndEstadoNot(usuario.getId(), ESTADO_PENDIENTE);
         List<OrdenResponseDTO> responseDTOs = new ArrayList<>();
         for (int i = 0; i < ordenes.size(); i++) {
             Orden orden = ordenes.get(i);
-            List<ItemOrden> items = itemOrdenRepository.findByOrdenId(orden.getId());
-            responseDTOs.add(toOrdenDTO(orden, items));
+            responseDTOs.add(toOrdenDTO(orden, orden.getItems()));
         }
         return responseDTOs;
     }
 
     @Override
+    @Transactional
     public OrdenResponseDTO cancelarOrden(String correo) {
-        Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo); 
+        Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
         Orden orden = ordenRepository.findByUsuarioIdAndEstado(usuario.getId(), ESTADO_PENDIENTE)
                 .orElseThrow(() -> new OrdenNotFoundException(CARRITO_NO_ACTIVO));
         List<ItemOrden> items = itemOrdenRepository.findByOrdenId(orden.getId());
@@ -241,8 +271,10 @@ public class OrdenServiceImpl implements OrdenService {
         ItemOrdenResponseDTO response = new ItemOrdenResponseDTO();
         response.setId(item.getId());
         response.setProductoId(item.getProducto().getId());
+        response.setVarianteId(item.getVariante().getId());
         response.setProductoNombre(item.getProducto().getNombre());
         response.setProductoImagenUrl(item.getProducto().getImagenUrl());
+        response.setEspecificacion(item.getVariante().getEspecificacion());
         response.setCantidad(item.getCantidad());
         response.setPrecioUnitario(item.getPrecioUnitario());
         response.setSubtotal(item.getCantidad() * item.getPrecioUnitario());

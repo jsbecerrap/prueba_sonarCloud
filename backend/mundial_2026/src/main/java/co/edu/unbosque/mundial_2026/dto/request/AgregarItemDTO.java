@@ -12,6 +12,9 @@ public class AgregarItemDTO {
     @Min(value = 1, message = "La cantidad minima es 1")
     private Integer cantidad;
 
+    @NotNull(message = "La variante es obligatoria")
+    private Long varianteId;
+
     public Long getProductoId() {
         return productoId;
     }
@@ -26,5 +29,13 @@ public class AgregarItemDTO {
 
     public void setCantidad(Integer cantidad) {
         this.cantidad = cantidad;
+    }
+
+    public Long getVarianteId() {
+        return varianteId;
+    }
+
+    public void setVarianteId(Long varianteId) {
+        this.varianteId = varianteId;
     }
 }

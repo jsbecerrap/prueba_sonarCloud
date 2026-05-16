@@ -1,12 +1,17 @@
 package co.edu.unbosque.mundial_2026.entity;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 @Entity
@@ -26,9 +31,6 @@ public class Producto {
     @Column(nullable = false)
     private Double precio;
 
-    @Column(nullable = false)
-    private Integer stock;
-
     @Column(name = "imagen_url")
     private String imagenUrl;
 
@@ -37,9 +39,6 @@ public class Producto {
 
     @Column(name = "codigo_producto", unique = true)
     private String codigoProducto;
-
-    @Column(name = "talla")
-    private String talla;
 
     @Column(name = "equipo")
     private String equipo;
@@ -53,6 +52,9 @@ public class Producto {
     @ManyToOne
     @JoinColumn(name = "categoria_id", nullable = false)
     private Categoria categoria;
+
+    @OneToMany(mappedBy = "producto", fetch = FetchType.LAZY)
+    private List<VarianteProducto> variantes = new ArrayList<>();
 
     public Producto() {
     }
@@ -89,14 +91,6 @@ public class Producto {
         this.precio = precio;
     }
 
-    public Integer getStock() {
-        return stock;
-    }
-
-    public void setStock(Integer stock) {
-        this.stock = stock;
-    }
-
     public String getImagenUrl() {
         return imagenUrl;
     }
@@ -119,14 +113,6 @@ public class Producto {
 
     public void setCodigoProducto(String codigoProducto) {
         this.codigoProducto = codigoProducto;
-    }
-
-    public String getTalla() {
-        return talla;
-    }
-
-    public void setTalla(String talla) {
-        this.talla = talla;
     }
 
     public String getEquipo() {
@@ -159,5 +145,18 @@ public class Producto {
 
     public void setCategoria(Categoria categoria) {
         this.categoria = categoria;
+    }
+
+    public List<VarianteProducto> getVariantes() {
+        return variantes;
+    }
+
+    public void setVariantes(List<VarianteProducto> variantes) {
+        this.variantes = variantes;
+    }
+
+  
+    public Integer getStock() {
+        return variantes.stream().mapToInt(VarianteProducto::getStock).sum();
     }
 }

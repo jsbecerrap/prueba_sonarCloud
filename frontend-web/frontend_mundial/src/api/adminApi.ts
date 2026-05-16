@@ -276,28 +276,28 @@ export type Producto = {
   nombre: string;
   descripcion: string;
   precio: number;
-  stock: number;
   imagenUrl: string;
   activo: boolean;
   categoriaNombre: string;
+  stockTotal: number;
+  variantes: { id: number; especificacion: string | null; stock: number }[];
 };
-
 export type ProductoPayload = {
   nombre: string;
   descripcion?: string;
   precio: number;
-  stock: number;
   imagenUrl?: string;
   categoriaId: number;
+  codigoProducto?: string;
+  variantes: { especificacion: string | null; stock: number }[];
 };
 
 export type ProductoActualizarPayload = {
   precio?: number;
-  stock?: number;
   imagenUrl?: string;
   descripcion?: string;
+  codigoProducto?: string;
 };
-
 export async function adminGetCategorias(): Promise<Categoria[]> {
   if (!USE_MOCK) {
     return http.get<Categoria[]>("/api/categorias");
@@ -343,7 +343,7 @@ export async function adminCrearProducto(payload: ProductoPayload): Promise<Prod
     return http.post<Producto>("/api/productos", payload);
   }
   await sleep(200);
-  return { id: Date.now(), nombre: payload.nombre, descripcion: payload.descripcion ?? "", precio: payload.precio, stock: payload.stock, imagenUrl: payload.imagenUrl ?? "", activo: true, categoriaNombre: "" };
+  return { id: Date.now(), nombre: payload.nombre, descripcion: payload.descripcion ?? "", precio: payload.precio, imagenUrl: payload.imagenUrl ?? "", activo: true, categoriaNombre: "", stockTotal: 0, variantes: payload.variantes.map((v, i) => ({ id: i, especificacion: v.especificacion, stock: v.stock })) };
 }
 
 export async function adminActualizarProducto(id: number, payload: ProductoActualizarPayload): Promise<Producto> {
@@ -351,7 +351,7 @@ export async function adminActualizarProducto(id: number, payload: ProductoActua
     return http.put<Producto>(`/api/productos/${id}`, payload);
   }
   await sleep(200);
-  return { id, nombre: "", descripcion: payload.descripcion ?? "", precio: payload.precio ?? 0, stock: payload.stock ?? 0, imagenUrl: payload.imagenUrl ?? "", activo: true, categoriaNombre: "" };
+ return { id, nombre: "", descripcion: payload.descripcion ?? "", precio: payload.precio ?? 0, imagenUrl: payload.imagenUrl ?? "", activo: true, categoriaNombre: "", stockTotal: 0, variantes: [] };
 }
 
 export async function adminEliminarProducto(id: number): Promise<void> {
