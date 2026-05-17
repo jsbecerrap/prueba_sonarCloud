@@ -20,6 +20,7 @@ import { http } from "../api/http";
 import type { Match, MatchStatus } from "../types/match";
 import type { Pool } from "../types/pool";
 import type { SystemEvent, SystemEventType } from "../types/systemEvent";
+import { EVENT_GROUPS, getEventLabel } from "../types/systemEvent";
 import { getPools } from "../api/poolsApi";
 import { getSystemEvents } from "../api/eventsApi";
 import { useApp } from "../context/AppContext";
@@ -75,38 +76,7 @@ const statusColors: Record<MatchStatus, "default" | "success" | "warning" | "inf
   FINISHED: "default",
 };
 
-const eventLabels: Record<SystemEventType, string> = {
-  USUARIO_REGISTRADO: "Usuario registrado",
-  USUARIO_ELIMINADO: "Usuario eliminado",
-  USUARIO_ACTUALIZADO: "Usuario actualizado",
-  APUESTA_CREADA: "Polla creada",
-  APUESTA_UNIRSE: "Unirse a polla",
-  APUESTA_FINALIZADA: "Polla finalizada",
-  PRONOSTICO_REGISTRADO: "Pronóstico registrado",
-  PRONOSTICO_EDITADO: "Pronóstico editado",
-  PRONOSTICO_ELIMINADO: "Pronóstico eliminado",
-  ORDEN_PAGADA: "Orden pagada",
-  ORDEN_CANCELADA: "Orden cancelada",
-  ENTRADA_RESERVADA: "Entrada reservada",
-  ENTRADA_PAGADA: "Entrada pagada",
-  ENTRADA_CANCELADA: "Entrada cancelada",
-  ENTRADA_PAGO_FALLIDO: "Pago de entrada fallido",
-  ENTRADA_REEMBOLSADA: "Entrada reembolsada",
-  ENTRADA_REEMBOLSO_FALLIDO: "Reembolso fallido",
-  ENTRADA_EXPIRADA: "Reserva expirada",
-  ENTRADA_TRANSFERIDA: "Entrada transferida",
-  PRODUCTO_CREADO: "Producto creado",
-  PRODUCTO_ACTUALIZADO: "Producto actualizado",
-  PRODUCTO_DESACTIVADO: "Producto desactivado",
-  CATEGORIA_CREADA: "Categoría creada",
-  CATEGORIA_ACTUALIZADA: "Categoría actualizada",
-  CATEGORIA_DESACTIVADA: "Categoría desactivada",
-  CATEGORIA_REACTIVADA: "Categoría reactivada",
-  METODO_PAGO_AGREGADO: "Método de pago agregado",
-  METODO_PAGO_ELIMINADO: "Método de pago eliminado",
-  PARTIDO_RESULTADO_ACTUALIZADO: "Resultado de partido actualizado",
-  PARTIDOS_SINCRONIZADOS: "Partidos sincronizados",
-};
+
 function toLocalDatetimeInputValue(iso: string) {
   const d = new Date(iso);
   const pad = (n: number) => String(n).padStart(2, "0");
@@ -151,6 +121,10 @@ const [prodFiltroEstado, setProdFiltroEstado] = useState("");
   const [assignToAllPools, setAssignToAllPools] = useState(true);
   const [errors, setErrors] = useState<FieldErrors<MatchField>>({});
   const [eventFilter, setEventFilter] = useState<SystemEventType | "ALL">("ALL");
+  const [auditGroup, setAuditGroup] = useState("ALL");
+  const [auditSearch, setAuditSearch] = useState("");
+  const [auditDateFrom, setAuditDateFrom] = useState("");
+  const [auditDateTo, setAuditDateTo] = useState("");
   const [draft, setDraft] = useState<Record<string, { h: number; a: number }>>({});
   const [scoreErrors, setScoreErrors] = useState<Record<string, string>>({});
 const [partidos, setPartidos] = useState<Match[]>([]);
@@ -283,12 +257,22 @@ setPools(ps);
     return true;
   });
 }, [partidos, filtroEquipo, filtroEstadoPartido]);
-  const eventsFiltered = useMemo(() => {
-    if (eventFilter === "ALL") return events;
-    return events.filter((e) => e.tipo === eventFilter);
-  }, [events, eventFilter]);
-
-  const eventTypes = useMemo(() => Array.from(new Set(events.map((e) => e.tipo))).sort((a, b) => a.localeCompare(b)), [events]);
+   const eventsFiltered = useMemo(() => {
+    return events.filter((e) => {
+      if (auditGroup !== "ALL" && !(EVENT_GROUPS[auditGroup] as string[]).includes(e.tipo)) return false;
+      if (eventFilter !== "ALL" && e.tipo !== eventFilter) return false;
+      if (auditSearch) {
+        const q = auditSearch.toLowerCase();
+        if (!e.descripcion.toLowerCase().includes(q) &&
+            !e.tipo.toLowerCase().includes(q) &&
+            !(e.usuarioId && String(e.usuarioId).includes(q)) &&
+            !e.idCorrelacion?.toLowerCase().includes(q)) return false;
+      }
+      if (auditDateFrom && e.fecha < auditDateFrom) return false;
+      if (auditDateTo && e.fecha > auditDateTo + "T23:59:59") return false;
+      return true;
+    });
+  }, [events, eventFilter, auditGroup, auditSearch, auditDateFrom, auditDateTo]);
 const productosFiltrados = useMemo(() => {
   return productos.filter((p) => {
     if (prodFiltroNombre && !p.nombre.toLowerCase().includes(prodFiltroNombre.toLowerCase())) return false;
@@ -810,29 +794,54 @@ const onEnviarNotificacion = async () => {
 )}
 
       {tab === 2 && (
-        <Paper sx={{ p: 2.5 }}>
-          <Stack direction={{ xs: "column", md: "row" }} spacing={2} justifyContent="space-between">
-            <Box>
-              <Typography variant="h6">Auditoría del sistema</Typography>
-              <Typography color="text.secondary">Movimientos recientes de autenticación, partidos, pagos y soporte.</Typography>
-            </Box>
-            <TextField select label="Filtrar evento" value={eventFilter} onChange={(e) => setEventFilter(e.target.value as SystemEventType | "ALL")} sx={{ minWidth: 240 }}>
-              <MenuItem value="ALL">Todos</MenuItem>
-              {eventTypes.map((type) => (<MenuItem key={type} value={type}>{eventLabels[type as SystemEventType] ?? type}</MenuItem>))}
+          <Paper sx={{ p: 2.5 }}>
+          <Typography variant="h6">Auditoría del sistema</Typography>
+          <Typography color="text.secondary" sx={{ mb: 2 }}>Movimientos recientes de autenticación, partidos, pagos y soporte.</Typography>
+
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ mb: 1.5 }}>
+            <TextField label="Buscar" placeholder="descripción, tipo, ref, usuario ID..." size="small"
+              value={auditSearch} onChange={(e) => setAuditSearch(e.target.value)} sx={{ flex: 1 }} />
+            <TextField select label="Categoría" size="small" value={auditGroup}
+              onChange={(e) => { setAuditGroup(e.target.value); setEventFilter("ALL"); }} sx={{ minWidth: 180 }}>
+              <MenuItem value="ALL">Todas las categorías</MenuItem>
+              {Object.keys(EVENT_GROUPS).map((g) => <MenuItem key={g} value={g}>{g}</MenuItem>)}
+            </TextField>
+            <TextField select label="Tipo" size="small" value={eventFilter}
+              onChange={(e) => setEventFilter(e.target.value as SystemEventType | "ALL")} sx={{ minWidth: 220 }}>
+              <MenuItem value="ALL">Todos los tipos</MenuItem>
+              {(auditGroup !== "ALL" ? EVENT_GROUPS[auditGroup] as string[] : Object.values(EVENT_GROUPS).flat())
+                .map((type) => <MenuItem key={type} value={type}>{getEventLabel(type)}</MenuItem>)}
             </TextField>
           </Stack>
+
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ mb: 2 }} alignItems="center">
+            <TextField label="Desde" type="date" size="small" value={auditDateFrom}
+              onChange={(e) => setAuditDateFrom(e.target.value)} slotProps={{ inputLabel: { shrink: true } }} sx={{ minWidth: 170 }} />
+            <TextField label="Hasta" type="date" size="small" value={auditDateTo}
+              onChange={(e) => setAuditDateTo(e.target.value)} slotProps={{ inputLabel: { shrink: true } }} sx={{ minWidth: 170 }} />
+            <Button size="small" variant="outlined"
+              onClick={() => { setAuditSearch(""); setAuditDateFrom(""); setAuditDateTo(""); setAuditGroup("ALL"); setEventFilter("ALL"); }}>
+              Limpiar
+            </Button>
+            <Typography variant="caption" color="text.secondary">
+              {eventsFiltered.length} resultado{eventsFiltered.length !== 1 ? "s" : ""}
+            </Typography>
+          </Stack>
+
           {eventsFiltered.length === 0 ? (
-            <Typography color="text.secondary" sx={{ mt: 2 }}>No hay eventos para este filtro.</Typography>
+            <Typography color="text.secondary">No hay eventos para este filtro.</Typography>
           ) : (
-            <Stack spacing={1} sx={{ mt: 2 }}>
+            <Stack spacing={1}>
               {eventsFiltered.map((event) => (
                 <Paper key={event.id} variant="outlined" sx={{ p: 2 }}>
                   <Stack direction={{ xs: "column", sm: "row" }} spacing={1} justifyContent="space-between">
                     <Box>
-                      <Typography sx={{ fontWeight: 900 }}>{eventLabels[event.tipo] ?? event.tipo}</Typography>
+                      <Typography sx={{ fontWeight: 900 }}>{getEventLabel(event.tipo)}</Typography>
                       <Typography color="text.secondary">{event.descripcion}</Typography>
                     </Box>
-                    <Typography variant="caption" color="text.secondary">{new Date(event.fecha).toLocaleString()}</Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: "nowrap" }}>
+                      {new Date(event.fecha).toLocaleString()}
+                    </Typography>
                   </Stack>
                   <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mt: 1 }}>
                     {event.usuarioId && <Chip size="small" label={`Usuario ID: ${event.usuarioId}`} />}
