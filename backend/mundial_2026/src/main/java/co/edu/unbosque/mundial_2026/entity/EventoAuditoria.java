@@ -14,10 +14,11 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "eventos_auditoria", indexes = {
-    @Index(name = "idx_auditoria_usuario",  columnList = "usuario_id"),
-    @Index(name = "idx_auditoria_tipo",     columnList = "tipo"),
-    @Index(name = "idx_auditoria_fecha",    columnList = "fecha"),
-    @Index(name = "idx_auditoria_entidad",  columnList = "entidad_correlacion")
+    @Index(name = "idx_auditoria_usuario",    columnList = "usuario_id"),
+    @Index(name = "idx_auditoria_tipo",       columnList = "tipo"),
+    @Index(name = "idx_auditoria_fecha",      columnList = "fecha"),
+    @Index(name = "idx_auditoria_entidad",    columnList = "entidad_correlacion"),
+    @Index(name = "idx_auditoria_fecha_tipo", columnList = "fecha, tipo")
 })
 public class EventoAuditoria {
 

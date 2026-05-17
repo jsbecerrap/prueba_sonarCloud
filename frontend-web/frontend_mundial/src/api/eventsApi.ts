@@ -1,4 +1,3 @@
-// src/api/eventsApi.ts
 import { USE_MOCK } from "./config";
 import { http } from "./http";
 import { mockDb } from "./mockDb";
@@ -14,11 +13,6 @@ export type CreateSystemEventPayload = {
   data?: Record<string, unknown>;
 };
 
-/**
- * En modo real el backend ya registra la auditoría internamente en cada operación.
- * Esta función solo persiste eventos en el mockDb para que el panel de auditoría
- * funcione en modo desarrollo (USE_MOCK=true).
- */
 export async function createSystemEvent(payload: CreateSystemEventPayload): Promise<void> {
   if (!USE_MOCK) return;
   const evento: SystemEvent = {
@@ -33,34 +27,46 @@ export async function createSystemEvent(payload: CreateSystemEventPayload): Prom
   mockDb.systemEvents.unshift(evento);
 }
 
-export async function getSystemEvents(): Promise<SystemEvent[]> {
+export async function getSystemEvents(page = 0, size = 50): Promise<SystemEvent[]> {
   if (USE_MOCK) return [...mockDb.systemEvents];
   try {
-    return await http.get<SystemEvent[]>("/api/auditoria/todos");
+    const res = await http.get<{ content: SystemEvent[] }>(
+      `/api/auditoria/todos?page=${page}&size=${size}`
+    );
+    return res.content ?? [];
   } catch {
     return [];
   }
 }
 
-export async function getEventosPorUsuario(usuarioId: number): Promise<SystemEvent[]> {
+export async function getEventosPorUsuario(usuarioId: number, page = 0, size = 50): Promise<SystemEvent[]> {
   try {
-    return await http.get<SystemEvent[]>(`/api/auditoria/usuario/${usuarioId}`);
+    const res = await http.get<{ content: SystemEvent[] }>(
+      `/api/auditoria/usuario/${usuarioId}?page=${page}&size=${size}`
+    );
+    return res.content ?? [];
   } catch {
     return [];
   }
 }
 
-export async function getEventosPorTipo(tipo: string): Promise<SystemEvent[]> {
+export async function getEventosPorTipo(tipo: string, page = 0, size = 50): Promise<SystemEvent[]> {
   try {
-    return await http.get<SystemEvent[]>(`/api/auditoria/tipo/${tipo}`);
+    const res = await http.get<{ content: SystemEvent[] }>(
+      `/api/auditoria/tipo/${tipo}?page=${page}&size=${size}`
+    );
+    return res.content ?? [];
   } catch {
     return [];
   }
 }
 
-export async function getEventosPorEntidad(entidad: string): Promise<SystemEvent[]> {
+export async function getEventosPorEntidad(entidad: string, page = 0, size = 50): Promise<SystemEvent[]> {
   try {
-    return await http.get<SystemEvent[]>(`/api/auditoria/entidad/${entidad}`);
+    const res = await http.get<{ content: SystemEvent[] }>(
+      `/api/auditoria/entidad/${entidad}?page=${page}&size=${size}`
+    );
+    return res.content ?? [];
   } catch {
     return [];
   }
@@ -68,12 +74,15 @@ export async function getEventosPorEntidad(entidad: string): Promise<SystemEvent
 
 export async function getEventosPorFecha(
   fechaInicio: string,
-  fechaFin: string
+  fechaFin: string,
+  page = 0,
+  size = 50
 ): Promise<SystemEvent[]> {
   try {
-    return await http.get<SystemEvent[]>(
-      `/api/auditoria/fecha?fechaInicio=${fechaInicio}&fechaFin=${fechaFin}`
+    const res = await http.get<{ content: SystemEvent[] }>(
+      `/api/auditoria/fecha?fechaInicio=${fechaInicio}&fechaFin=${fechaFin}&page=${page}&size=${size}`
     );
+    return res.content ?? [];
   } catch {
     return [];
   }

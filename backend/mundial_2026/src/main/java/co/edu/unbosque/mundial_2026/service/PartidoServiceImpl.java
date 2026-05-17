@@ -332,13 +332,9 @@ public int actualizarResultado(Long partidoId, int golesLocal,
 
     auditoriaService.registrar(
             "PARTIDO_RESULTADO_ACTUALIZADO",
-            "Resultado actualizado para partido " + partidoId
-                    + " | " + partido.getSeleccionLocal()
-                    + " vs " + partido.getSeleccionVisitante()
+            partido.getSeleccionLocal() + " vs " + partido.getSeleccionVisitante()
                     + " | antes: " + golesLocalAnterior + "-" + golesVisitanteAnterior
-                    + " estado: " + estadoAnterior
-                    + " | despues: " + golesLocal + "-" + golesVisitante
-                    + " estado: " + estadoPartido,
+                    + " | después: " + golesLocal + "-" + golesVisitante,
             null,
             UUID.randomUUID().toString(),
             ENTIDAD_PARTIDO);

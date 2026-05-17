@@ -141,7 +141,9 @@ public Map<String, Object> actualizarPerfil(final String correoUsuario,
     notificacionService.notificarActualizacionPerfil(usuarioGuardado);
  
     final StringBuilder descripcion = new StringBuilder();
-    descripcion.append("Perfil actualizado para: ").append(usuarioGuardado.getCorreoUsuario());
+descripcion.append("Perfil actualizado: ")
+    .append(usuarioGuardado.getNombre()).append(" ").append(usuarioGuardado.getApellido())
+    .append(" (").append(usuarioGuardado.getCorreoUsuario()).append(")");
     if (dto.getNombre() != null && !dto.getNombre().isBlank())
         descripcion.append(" | nombre cambiado");
     if (dto.getApellido() != null && !dto.getApellido().isBlank())

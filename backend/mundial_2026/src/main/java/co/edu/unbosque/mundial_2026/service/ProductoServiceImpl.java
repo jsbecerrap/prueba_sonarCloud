@@ -122,7 +122,7 @@ public ProductoResponseDTO actualizar(Long id, ProductoActualizarRequestDTO dto)
  
     auditoriaService.registrar(
             "PRODUCTO_ACTUALIZADO",
-            "Producto actualizado: '" + producto.getNombre() + "' (id: " + id + ")" + cambios,
+            "Producto actualizado: '" + producto.getNombre() + "'" + cambios,
             null,
             UUID.randomUUID().toString(),
             ENTIDAD_PRODUCTO);
@@ -263,7 +263,7 @@ public void eliminar(Long id) {
  
     auditoriaService.registrar(
             "PRODUCTO_DESACTIVADO",
-            "Producto desactivado: '" + producto.getNombre() + "' (id: " + id + ")",
+            "Producto desactivado: '" + producto.getNombre() + "'",
             null,
             UUID.randomUUID().toString(),
             ENTIDAD_PRODUCTO);

@@ -187,13 +187,17 @@ public EntradaResponseDTO reservarEntrada(String correo, EntradaRequestDTO dto) 
     entradaRepository.save(entrada);
     partidoService.actualizarCapacidad(partido.getId(), -dto.getCantidad());
 
-    auditoriaService.registrar(
-        "ENTRADA_RESERVADA",
-        PREFIJO_USUARIO + usuarioId + " reservó " + dto.getCantidad() + " entrada(s) para el partido " + partido.getId(),
-        usuarioId,
-        String.valueOf(entrada.getId()),
-        TIPO_ENTRADA
-    );
+   auditoriaService.registrar(
+    "ENTRADA_RESERVADA",
+    u.getNombre() + " " + u.getApellido() + " reservó " + dto.getCantidad()
+        + " entrada(s) para " + partido.getSeleccionLocal() + " vs " + partido.getSeleccionVisitante(),
+    usuarioId,
+    String.valueOf(entrada.getId()),
+    TIPO_ENTRADA
+);
+
+    String nombrePartido = partido.getSeleccionLocal() + " vs " + partido.getSeleccionVisitante();
+    notificacionService.notificarReservaCreada(u, nombrePartido);
 
     return toDTO(entrada);
 }
@@ -232,14 +236,15 @@ public EntradaResponseDTO confirmarPago(Long entradaId, String paymentRef) {
         entrada.setTtlReserva(null);
         entradaRepository.save(entrada);
 
-        auditoriaService.registrar(
-            "ENTRADA_PAGADA",
-            "Pago confirmado para entrada " + entradaId + " con ref " + intent.getId(),
-            entrada.getUsuario().getId(),
-            String.valueOf(entradaId),
-            TIPO_ENTRADA
-        );
-
+       auditoriaService.registrar(
+    "ENTRADA_PAGADA",
+    entrada.getUsuario().getNombre() + " " + entrada.getUsuario().getApellido()
+        + " pagó entrada para " + entrada.getPartido().getSeleccionLocal()
+        + " vs " + entrada.getPartido().getSeleccionVisitante(),
+    entrada.getUsuario().getId(),
+    String.valueOf(entradaId),
+    TIPO_ENTRADA
+);
         String nombrePartido = entrada.getPartido().getSeleccionLocal() + " vs " + entrada.getPartido().getSeleccionVisitante();
         notificacionService.notificarEntradaPagada(
             entrada.getUsuario(),
@@ -251,12 +256,14 @@ public EntradaResponseDTO confirmarPago(Long entradaId, String paymentRef) {
 
     } catch (StripeException e) {
         auditoriaService.registrar(
-            "ENTRADA_PAGO_FALLIDO",
-            "Fallo en pago de entrada " + entradaId + ": " + e.getMessage(),
-            entrada.getUsuario().getId(),
-            String.valueOf(entradaId),
-            TIPO_ENTRADA
-        );
+    "ENTRADA_PAGO_FALLIDO",
+    "Pago fallido de " + entrada.getUsuario().getNombre() + " " + entrada.getUsuario().getApellido()
+        + " para " + entrada.getPartido().getSeleccionLocal() + " vs " + entrada.getPartido().getSeleccionVisitante()
+        + " | " + e.getMessage(),
+    entrada.getUsuario().getId(),
+    String.valueOf(entradaId),
+    TIPO_ENTRADA
+);
         notificacionService.notificarEntradaPagoFallido(entrada.getUsuario());
         throw new PagoStripeException("Error al procesar el pago. Revisa los datos de tu tarjeta e intenta de nuevo.");
     }
@@ -286,12 +293,13 @@ public EntradaResponseDTO cancelarReserva(String correo, Long entradaId) {
     partidoService.actualizarCapacidad(entrada.getPartido().getId(), entrada.getCantidad());
 
     auditoriaService.registrar(
-        "ENTRADA_CANCELADA",
-        PREFIJO_USUARIO + usuarioId + " canceló la entrada " + entradaId,
-        usuarioId,
-        String.valueOf(entradaId),
-        TIPO_ENTRADA
-    );
+    "ENTRADA_CANCELADA",
+    u.getNombre() + " " + u.getApellido() + " canceló su entrada para "
+        + entrada.getPartido().getSeleccionLocal() + " vs " + entrada.getPartido().getSeleccionVisitante(),
+    usuarioId,
+    String.valueOf(entradaId),
+    TIPO_ENTRADA
+);
 
     return toDTO(entrada);
 }
@@ -345,12 +353,14 @@ public EntradaResponseDTO transferirEntrada(Long entradaId, TransferenciaRequest
     entradaRepository.save(nuevaEntrada);
 
     auditoriaService.registrar(
-        "ENTRADA_TRANSFERIDA",
-        PREFIJO_USUARIO + usuarioId + " transfirió entrada " + entradaId + " a " + dto.getCorreoDestino(),
-        usuarioId,
-        String.valueOf(entradaId),
-        TIPO_ENTRADA
-    );
+    "ENTRADA_TRANSFERIDA",
+    u.getNombre() + " " + u.getApellido() + " transfirió su entrada para "
+        + entrada.getPartido().getSeleccionLocal() + " vs " + entrada.getPartido().getSeleccionVisitante()
+        + " a " + dto.getCorreoDestino(),
+    usuarioId,
+    String.valueOf(entradaId),
+    TIPO_ENTRADA
+);
 
     String nombrePartido = entrada.getPartido().getSeleccionLocal() + " vs " + entrada.getPartido().getSeleccionVisitante();
     notificacionService.notificarEntradaTransferida(u, dto.getCorreoDestino(), nombrePartido);
@@ -387,24 +397,27 @@ public EntradaResponseDTO reembolsarEntrada(String correo, Long entradaId) {
 
         partidoService.actualizarCapacidad(entrada.getPartido().getId(), entrada.getCantidad());
 
-        auditoriaService.registrar(
-            "ENTRADA_REEMBOLSADA",
-            PREFIJO_USUARIO + usuarioId + " reembolsó la entrada " + entradaId,
-            usuarioId,
-            String.valueOf(entradaId),
-            TIPO_ENTRADA
-        );
+       auditoriaService.registrar(
+    "ENTRADA_REEMBOLSADA",
+    u.getNombre() + " " + u.getApellido() + " reembolsó su entrada para "
+        + entrada.getPartido().getSeleccionLocal() + " vs " + entrada.getPartido().getSeleccionVisitante(),
+    usuarioId,
+    String.valueOf(entradaId),
+    TIPO_ENTRADA
+);
 
         notificacionService.notificarEntradaReembolsada(u, entradaId);
 
     } catch (StripeException e) {
-        auditoriaService.registrar(
-            "ENTRADA_REEMBOLSO_FALLIDO",
-            "Fallo en reembolso de entrada " + entradaId + ": " + e.getMessage(),
-            usuarioId,
-            String.valueOf(entradaId),
-            TIPO_ENTRADA
-        );
+      auditoriaService.registrar(
+    "ENTRADA_REEMBOLSO_FALLIDO",
+    "Reembolso fallido de " + u.getNombre() + " " + u.getApellido()
+        + " para " + entrada.getPartido().getSeleccionLocal() + " vs " + entrada.getPartido().getSeleccionVisitante()
+        + " | " + e.getMessage(),
+    usuarioId,
+    String.valueOf(entradaId),
+    TIPO_ENTRADA
+);
         notificacionService.notificarEntradaReembolsoFallido(u, entradaId);
         throw new PagoStripeException("Error al procesar el reembolso. Intenta de nuevo más tarde.");
     }
@@ -439,12 +452,13 @@ public void expirarReservasVencidas() {
         partidoService.actualizarCapacidad(entrada.getPartido().getId(), entrada.getCantidad());
 
         auditoriaService.registrar(
-            "ENTRADA_EXPIRADA",
-            "Entrada " + entrada.getId() + " expiró por TTL",
-            entrada.getUsuario().getId(),
-            String.valueOf(entrada.getId()),
-            TIPO_ENTRADA
-        );
+    "ENTRADA_EXPIRADA",
+    "Reserva expirada de " + entrada.getUsuario().getNombre() + " " + entrada.getUsuario().getApellido()
+        + " para " + entrada.getPartido().getSeleccionLocal() + " vs " + entrada.getPartido().getSeleccionVisitante(),
+    entrada.getUsuario().getId(),
+    String.valueOf(entrada.getId()),
+    TIPO_ENTRADA
+);
 
         String nombrePartido = entrada.getPartido().getSeleccionLocal() + " vs " + entrada.getPartido().getSeleccionVisitante();
         notificacionService.notificarReservaExpirada(entrada.getUsuario(), nombrePartido);

@@ -124,7 +124,11 @@ const [prodFiltroEstado, setProdFiltroEstado] = useState("");
   const [auditGroup, setAuditGroup] = useState("ALL");
   const [auditSearch, setAuditSearch] = useState("");
   const [auditDateFrom, setAuditDateFrom] = useState("");
-  const [auditDateTo, setAuditDateTo] = useState("");
+const [auditDateTo, setAuditDateTo] = useState("");
+const [auditPage, setAuditPage] = useState(0);
+const [auditTotal, setAuditTotal] = useState(0);
+const [auditUsuarioId, setAuditUsuarioId] = useState("");
+const AUDIT_PAGE_SIZE = 50;
   const [draft, setDraft] = useState<Record<string, { h: number; a: number }>>({});
   const [scoreErrors, setScoreErrors] = useState<Record<string, string>>({});
 const [partidos, setPartidos] = useState<Match[]>([]);
@@ -204,11 +208,55 @@ const refreshPartidos = async () => {
   setPartidos(parts);
   setCapacidades(caps);
 };
+const fetchAudit = async (
+  page: number,
+  _group: string,
+  tipo: string,
+  _search: string,
+  dateFrom: string,
+  dateTo: string,
+  usuarioId: string
+) => {
+  try {
+    const params = new URLSearchParams();
+    params.set("page", String(page));
+    params.set("size", String(AUDIT_PAGE_SIZE));
+    if (usuarioId) params.set("usuarioId", usuarioId);
+   if (tipo !== "ALL") {
+  params.set("tipos", tipo);
+} else if (_group !== "ALL") {
+  const tiposGrupo = (EVENT_GROUPS[_group] as string[]).join(",");
+  params.set("tipos", tiposGrupo);
+}
+    if (dateFrom) params.set("fechaInicio", `${dateFrom}T00:00:00`);
+    if (dateTo) params.set("fechaFin", `${dateTo}T23:59:59`);
+
+    const { http } = await import("../api/http");
+    const res = await http.get<{ content: SystemEvent[]; totalElements: number }>(
+      `/api/auditoria/buscar?${params.toString()}`
+    );
+    setEvents(res.content ?? []);
+    setAuditTotal(res.totalElements ?? 0);
+  } catch {
+    setEvents([]);
+    setAuditTotal(0);
+  }
+};
  const refresh = async () => {
   try {
    const [evs, us, cats, prods, parts, caps, ap, ps] = await Promise.all([
 
-  getSystemEvents().catch(() => [] as SystemEvent[]),
+  (async () => {
+  try {
+    const { http } = await import("../api/http");
+    const res = await http.get<{ content: SystemEvent[]; totalElements: number }>(
+      `/api/auditoria/todos?page=0&size=${AUDIT_PAGE_SIZE}`
+    );
+    return { content: res.content ?? [], total: res.totalElements ?? 0 };
+  } catch {
+    return { content: [] as SystemEvent[], total: 0 };
+  }
+})(),
   adminGetUsuarios().catch(() => [] as UsuarioSistema[]),
   adminGetCategorias().catch(() => [] as Categoria[]),
   adminGetProductos().catch(() => [] as Producto[]),
@@ -218,7 +266,8 @@ const refreshPartidos = async () => {
   getPools(0).catch(() => [] as Pool[]),
 ]);
 setMatches(parts.slice().sort((a, b) => a.startTimeISO.localeCompare(b.startTimeISO)))
-setEvents(evs);
+setEvents(evs.content ?? []);
+setAuditTotal(evs.total ?? 0);
 setUsuarios(us);
 setCategorias(cats.filter((c) => c.activo));
 setCategoriasInactivas(cats.filter((c) => !c.activo));
@@ -258,21 +307,15 @@ setPools(ps);
   });
 }, [partidos, filtroEquipo, filtroEstadoPartido]);
    const eventsFiltered = useMemo(() => {
-    return events.filter((e) => {
-      if (auditGroup !== "ALL" && !(EVENT_GROUPS[auditGroup] as string[]).includes(e.tipo)) return false;
-      if (eventFilter !== "ALL" && e.tipo !== eventFilter) return false;
-      if (auditSearch) {
-        const q = auditSearch.toLowerCase();
-        if (!e.descripcion.toLowerCase().includes(q) &&
-            !e.tipo.toLowerCase().includes(q) &&
-            !(e.usuarioId && String(e.usuarioId).includes(q)) &&
-            !e.idCorrelacion?.toLowerCase().includes(q)) return false;
-      }
-      if (auditDateFrom && e.fecha < auditDateFrom) return false;
-      if (auditDateTo && e.fecha > auditDateTo + "T23:59:59") return false;
-      return true;
-    });
-  }, [events, eventFilter, auditGroup, auditSearch, auditDateFrom, auditDateTo]);
+  if (!auditSearch) return events;
+  const q = auditSearch.toLowerCase();
+  return events.filter((e) =>
+    e.descripcion.toLowerCase().includes(q) ||
+    e.tipo.toLowerCase().includes(q) ||
+    (e.usuarioId && String(e.usuarioId).includes(q)) ||
+    e.idCorrelacion?.toLowerCase().includes(q)
+  );
+}, [events, auditSearch]);
 const productosFiltrados = useMemo(() => {
   return productos.filter((p) => {
     if (prodFiltroNombre && !p.nombre.toLowerCase().includes(prodFiltroNombre.toLowerCase())) return false;
@@ -792,68 +835,139 @@ const onEnviarNotificacion = async () => {
     )}
   </Paper>
 )}
+{tab === 2 && (
+  <Paper sx={{ p: 2.5 }}>
+    <Typography variant="h6">Auditoría del sistema</Typography>
+    <Typography color="text.secondary" sx={{ mb: 2 }}>
+      Movimientos recientes de partidos, entradas, pagos y operaciones del sistema.
+    </Typography>
 
-      {tab === 2 && (
-          <Paper sx={{ p: 2.5 }}>
-          <Typography variant="h6">Auditoría del sistema</Typography>
-          <Typography color="text.secondary" sx={{ mb: 2 }}>Movimientos recientes de autenticación, partidos, pagos y soporte.</Typography>
+    <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ mb: 1.5 }}>
+    
+      <TextField
+        label="Usuario ID"
+        placeholder="ej: 1"
+        size="small"
+        value={auditUsuarioId}
+        onChange={(e) => setAuditUsuarioId(e.target.value)}
+        sx={{ minWidth: 120 }}
+      />
+      <TextField
+        select label="Categoría" size="small" value={auditGroup}
+        onChange={(e) => {
+          setAuditGroup(e.target.value);
+          setEventFilter("ALL");
+        }}
+        sx={{ minWidth: 180 }}
+      >
+        <MenuItem value="ALL">Todas las categorías</MenuItem>
+        {Object.keys(EVENT_GROUPS).map((g) => <MenuItem key={g} value={g}>{g}</MenuItem>)}
+      </TextField>
+      <TextField
+        select label="Tipo" size="small" value={eventFilter}
+        onChange={(e) => {
+          setEventFilter(e.target.value as SystemEventType | "ALL");
+        }}
+        sx={{ minWidth: 220 }}
+      >
+        <MenuItem value="ALL">Todos los tipos</MenuItem>
+        {(auditGroup !== "ALL" ? EVENT_GROUPS[auditGroup] as string[] : Object.values(EVENT_GROUPS).flat())
+          .map((type) => <MenuItem key={type} value={type}>{getEventLabel(type)}</MenuItem>)}
+      </TextField>
+    </Stack>
 
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ mb: 1.5 }}>
-            <TextField label="Buscar" placeholder="descripción, tipo, ref, usuario ID..." size="small"
-              value={auditSearch} onChange={(e) => setAuditSearch(e.target.value)} sx={{ flex: 1 }} />
-            <TextField select label="Categoría" size="small" value={auditGroup}
-              onChange={(e) => { setAuditGroup(e.target.value); setEventFilter("ALL"); }} sx={{ minWidth: 180 }}>
-              <MenuItem value="ALL">Todas las categorías</MenuItem>
-              {Object.keys(EVENT_GROUPS).map((g) => <MenuItem key={g} value={g}>{g}</MenuItem>)}
-            </TextField>
-            <TextField select label="Tipo" size="small" value={eventFilter}
-              onChange={(e) => setEventFilter(e.target.value as SystemEventType | "ALL")} sx={{ minWidth: 220 }}>
-              <MenuItem value="ALL">Todos los tipos</MenuItem>
-              {(auditGroup !== "ALL" ? EVENT_GROUPS[auditGroup] as string[] : Object.values(EVENT_GROUPS).flat())
-                .map((type) => <MenuItem key={type} value={type}>{getEventLabel(type)}</MenuItem>)}
-            </TextField>
-          </Stack>
+    <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ mb: 2 }} alignItems="center">
+      <TextField
+        label="Desde" type="date" size="small" value={auditDateFrom}
+        onChange={(e) => setAuditDateFrom(e.target.value)}
+        slotProps={{ inputLabel: { shrink: true } }} sx={{ minWidth: 170 }}
+      />
+      <TextField
+        label="Hasta" type="date" size="small" value={auditDateTo}
+        onChange={(e) => setAuditDateTo(e.target.value)}
+        slotProps={{ inputLabel: { shrink: true } }} sx={{ minWidth: 170 }}
+      />
+      <Button
+        size="small" variant="contained"
+        onClick={() => {
+          setAuditPage(0);
+          void fetchAudit(0, auditGroup, eventFilter, auditSearch, auditDateFrom, auditDateTo, auditUsuarioId);
+        }}
+      >
+        Buscar
+      </Button>
+      <Button
+        size="small" variant="outlined"
+        onClick={() => {
+          setAuditSearch(""); setAuditDateFrom(""); setAuditDateTo("");
+          setAuditGroup("ALL"); setEventFilter("ALL"); setAuditUsuarioId("");
+          setAuditPage(0);
+          void fetchAudit(0, "ALL", "ALL", "", "", "", "");
+        }}
+      >
+        Limpiar
+      </Button>
+      <Typography variant="caption" color="text.secondary">
+        {eventsFiltered.length} de {auditTotal} resultado{auditTotal !== 1 ? "s" : ""}
+      </Typography>
+    </Stack>
 
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ mb: 2 }} alignItems="center">
-            <TextField label="Desde" type="date" size="small" value={auditDateFrom}
-              onChange={(e) => setAuditDateFrom(e.target.value)} slotProps={{ inputLabel: { shrink: true } }} sx={{ minWidth: 170 }} />
-            <TextField label="Hasta" type="date" size="small" value={auditDateTo}
-              onChange={(e) => setAuditDateTo(e.target.value)} slotProps={{ inputLabel: { shrink: true } }} sx={{ minWidth: 170 }} />
-            <Button size="small" variant="outlined"
-              onClick={() => { setAuditSearch(""); setAuditDateFrom(""); setAuditDateTo(""); setAuditGroup("ALL"); setEventFilter("ALL"); }}>
-              Limpiar
-            </Button>
-            <Typography variant="caption" color="text.secondary">
-              {eventsFiltered.length} resultado{eventsFiltered.length !== 1 ? "s" : ""}
-            </Typography>
-          </Stack>
-
-          {eventsFiltered.length === 0 ? (
-            <Typography color="text.secondary">No hay eventos para este filtro.</Typography>
-          ) : (
-            <Stack spacing={1}>
-              {eventsFiltered.map((event) => (
-                <Paper key={event.id} variant="outlined" sx={{ p: 2 }}>
-                  <Stack direction={{ xs: "column", sm: "row" }} spacing={1} justifyContent="space-between">
-                    <Box>
-                      <Typography sx={{ fontWeight: 900 }}>{getEventLabel(event.tipo)}</Typography>
-                      <Typography color="text.secondary">{event.descripcion}</Typography>
-                    </Box>
-                    <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: "nowrap" }}>
-                      {new Date(event.fecha).toLocaleString()}
-                    </Typography>
-                  </Stack>
-                  <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mt: 1 }}>
-                    {event.usuarioId && <Chip size="small" label={`Usuario ID: ${event.usuarioId}`} />}
-                    {event.entidadCorrelacion && <Chip size="small" label={`Entidad: ${event.entidadCorrelacion}`} variant="outlined" />}
-                    {event.idCorrelacion && <Chip size="small" label={`Ref: ${event.idCorrelacion}`} variant="outlined" />}
-                  </Stack>
-                </Paper>
-              ))}
+    {eventsFiltered.length === 0 ? (
+      <Typography color="text.secondary">No hay eventos para este filtro.</Typography>
+    ) : (
+      <Stack spacing={1}>
+        {eventsFiltered.map((event) => (
+          <Paper key={event.id} variant="outlined" sx={{ p: 2 }}>
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1} justifyContent="space-between">
+              <Box>
+                <Typography sx={{ fontWeight: 900 }}>{getEventLabel(event.tipo)}</Typography>
+                <Typography color="text.secondary">{event.descripcion}</Typography>
+              </Box>
+              <Typography variant="caption" color="text.secondary" sx={{ whiteSpace: "nowrap" }}>
+                {new Date(event.fecha).toLocaleString()}
+              </Typography>
             </Stack>
-          )}
-        </Paper>
-      )}
+            <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mt: 1 }}>
+              {event.usuarioId && <Chip size="small" label={`Usuario ID: ${event.usuarioId}`} />}
+              {event.entidadCorrelacion && <Chip size="small" label={`Entidad: ${event.entidadCorrelacion}`} variant="outlined" />}
+              {event.idCorrelacion && <Chip size="small" label={`Ref: ${event.idCorrelacion}`} variant="outlined" />}
+            </Stack>
+          </Paper>
+        ))}
+      </Stack>
+    )}
+
+    {auditTotal > AUDIT_PAGE_SIZE && (
+      <Stack direction="row" spacing={2} alignItems="center" justifyContent="center" sx={{ mt: 2 }}>
+        <Button
+          size="small" variant="outlined"
+          disabled={auditPage === 0}
+          onClick={() => {
+            const p = auditPage - 1;
+            setAuditPage(p);
+            void fetchAudit(p, auditGroup, eventFilter, auditSearch, auditDateFrom, auditDateTo, auditUsuarioId);
+          }}
+        >
+          ← Anterior
+        </Button>
+        <Typography variant="caption">
+          Página {auditPage + 1} de {Math.ceil(auditTotal / AUDIT_PAGE_SIZE)}
+        </Typography>
+        <Button
+          size="small" variant="outlined"
+          disabled={(auditPage + 1) * AUDIT_PAGE_SIZE >= auditTotal}
+          onClick={() => {
+            const p = auditPage + 1;
+            setAuditPage(p);
+            void fetchAudit(p, auditGroup, eventFilter, auditSearch, auditDateFrom, auditDateTo, auditUsuarioId);
+          }}
+        >
+          Siguiente →
+        </Button>
+      </Stack>
+    )}
+  </Paper>
+)}
 
       {tab === 3 && (
         <Stack spacing={2}>

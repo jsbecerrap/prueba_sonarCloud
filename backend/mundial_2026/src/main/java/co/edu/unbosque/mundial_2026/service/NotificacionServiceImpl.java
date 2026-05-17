@@ -3,6 +3,7 @@ package co.edu.unbosque.mundial_2026.service;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,17 +31,20 @@ public class NotificacionServiceImpl implements NotificacionService {
     private static final String CANAL_SISTEMA = "SISTEMA";
     private static final String USUARIO_NO_ENCONTRADO = "Usuario no encontrado";
 
-    private final NotificacionRepository notificacionRepository;
-    private final UsuarioRepository usuarioRepository;
-    private final PartidoRepository partidoRepository;
+   private final NotificacionRepository notificacionRepository;
+private final UsuarioRepository usuarioRepository;
+private final PartidoRepository partidoRepository;
+private final EventoAuditoriaService auditoriaService;
 
-    public NotificacionServiceImpl(NotificacionRepository notificacionRepository,
-            UsuarioRepository usuarioRepository,
-            PartidoRepository partidoRepository) {
-        this.notificacionRepository = notificacionRepository;
-        this.usuarioRepository = usuarioRepository;
-        this.partidoRepository = partidoRepository;
-    }
+public NotificacionServiceImpl(NotificacionRepository notificacionRepository,
+        UsuarioRepository usuarioRepository,
+        PartidoRepository partidoRepository,
+        @Lazy EventoAuditoriaService auditoriaService) {
+    this.notificacionRepository = notificacionRepository;
+    this.usuarioRepository = usuarioRepository;
+    this.partidoRepository = partidoRepository;
+    this.auditoriaService = auditoriaService;
+}
 
     @Override
     @Transactional
@@ -54,33 +58,42 @@ public class NotificacionServiceImpl implements NotificacionService {
         enviarPush(usuario, dto.getTitulo(), dto.getMensaje());
     }
 
-    @Override
-    @Transactional
-    public void enviarMasiva(NotificacionMasivaRequestDTO dto) {
-        List<Usuario> destinatarios;
+   @Override
+@Transactional
+public void enviarMasiva(NotificacionMasivaRequestDTO dto) {
+    List<Usuario> destinatarios;
 
-        if (dto.getUsuarioIds() == null || dto.getUsuarioIds().isEmpty()) {
-            destinatarios = usuarioRepository.findAll()
-                    .stream()
-                    .filter(Usuario::isActivo)
-                    .toList();
-        } else {
-            destinatarios = usuarioRepository.findAllById(dto.getUsuarioIds())
-                    .stream()
-                    .filter(Usuario::isActivo)
-                    .toList();
-        }
-
-        List<Notificacion> notificaciones = new ArrayList<>();
-        for (Usuario usuario : destinatarios) {
-            notificaciones.add(new Notificacion(
-                    dto.getTipo(), dto.getTitulo(), dto.getMensaje(),
-                    dto.getCanal(), ESTADO_ENVIADA, usuario));
-            enviarPush(usuario, dto.getTitulo(), dto.getMensaje());
-        }
-
-        notificacionRepository.saveAll(notificaciones);
+    if (dto.getUsuarioIds() == null || dto.getUsuarioIds().isEmpty()) {
+        destinatarios = usuarioRepository.findAll()
+                .stream()
+                .filter(Usuario::isActivo)
+                .toList();
+    } else {
+        destinatarios = usuarioRepository.findAllById(dto.getUsuarioIds())
+                .stream()
+                .filter(Usuario::isActivo)
+                .toList();
     }
+
+    List<Notificacion> notificaciones = new ArrayList<>();
+    for (Usuario usuario : destinatarios) {
+        notificaciones.add(new Notificacion(
+                dto.getTipo(), dto.getTitulo(), dto.getMensaje(),
+                dto.getCanal(), ESTADO_ENVIADA, usuario));
+        enviarPush(usuario, dto.getTitulo(), dto.getMensaje());
+    }
+
+    notificacionRepository.saveAll(notificaciones);
+
+    auditoriaService.registrar(
+            "NOTIFICACION_MASIVA",
+            "Notificacion masiva enviada | tipo: " + dto.getTipo()
+                    + " | titulo: " + dto.getTitulo()
+                    + " | destinatarios: " + destinatarios.size(),
+            null,
+            null,
+            "NOTIFICACION");
+}
 
     @Override
     @Transactional(readOnly = true)
@@ -116,35 +129,44 @@ public class NotificacionServiceImpl implements NotificacionService {
         notificacionRepository.saveAll(lista);
     }
 
-    @Override
-    @Transactional
-    public void notificarPorPartido(Long partidoId, String tipo, String titulo, String mensaje) {
-        Partido partido = partidoRepository.findById(partidoId)
-                .orElseThrow(() -> new PartidoNotFoundException("Partido no encontrado"));
+  @Override
+@Transactional
+public void notificarPorPartido(Long partidoId, String tipo, String titulo, String mensaje) {
+    Partido partido = partidoRepository.findById(partidoId)
+            .orElseThrow(() -> new PartidoNotFoundException("Partido no encontrado"));
 
-        List<String> selecciones = new ArrayList<>();
-        selecciones.add(partido.getSeleccionLocal());
-        selecciones.add(partido.getSeleccionVisitante());
+    List<String> selecciones = new ArrayList<>();
+    selecciones.add(partido.getSeleccionLocal());
+    selecciones.add(partido.getSeleccionVisitante());
 
-        List<Usuario> todosActivos = usuarioRepository.findAll()
-                .stream()
-                .filter(Usuario::isActivo)
-                .toList();
+    List<Usuario> todosActivos = usuarioRepository.findAll()
+            .stream()
+            .filter(Usuario::isActivo)
+            .toList();
 
-        List<Usuario> destinatarios = todosActivos.stream()
-                .filter(u -> u.getSeleccionesU() != null &&
-                        u.getSeleccionesU().stream()
-                                .anyMatch(s -> selecciones.contains(s.getNombre())))
-                .toList();
+    List<Usuario> destinatarios = todosActivos.stream()
+            .filter(u -> u.getSeleccionesU() != null &&
+                    u.getSeleccionesU().stream()
+                            .anyMatch(s -> selecciones.contains(s.getNombre())))
+            .toList();
 
-        List<Notificacion> notificaciones = new ArrayList<>();
-        for (Usuario usuario : destinatarios) {
-            notificaciones.add(new Notificacion(tipo, titulo, mensaje, CANAL_SISTEMA, ESTADO_ENVIADA, usuario));
-            enviarPush(usuario, titulo, mensaje);
-        }
-
-        notificacionRepository.saveAll(notificaciones);
+    List<Notificacion> notificaciones = new ArrayList<>();
+    for (Usuario usuario : destinatarios) {
+        notificaciones.add(new Notificacion(tipo, titulo, mensaje, CANAL_SISTEMA, ESTADO_ENVIADA, usuario));
+        enviarPush(usuario, titulo, mensaje);
     }
+
+    notificacionRepository.saveAll(notificaciones);
+
+    auditoriaService.registrar(
+            "NOTIFICACION_POR_PARTIDO",
+            "Notificacion enviada para " + partido.getSeleccionLocal() + " vs " + partido.getSeleccionVisitante()
+                    + " | titulo: " + titulo
+                    + " | destinatarios: " + destinatarios.size(),
+            null,
+            String.valueOf(partidoId),
+            "PARTIDO");
+}
 
     @Override
     @Transactional
@@ -343,4 +365,13 @@ public class NotificacionServiceImpl implements NotificacionService {
                 n.getCanal(), n.getEstado(), n.isLeida(), n.getFecha(),
                 n.getUsuario().getId());
     }
+    @Override
+@Transactional
+public void notificarReservaCreada(Usuario usuario, String partido) {
+    String titulo = "Reserva confirmada";
+    String mensaje = "Tienes 15 minutos para pagar tu entrada para " + partido + ". ¡No pierdas el cupo!";
+    Notificacion notificacion = new Notificacion("RESERVA_CREADA", titulo, mensaje, CANAL_SISTEMA, ESTADO_ENVIADA, usuario);
+    notificacionRepository.save(notificacion);
+    enviarPush(usuario, titulo, mensaje);
+}
 }

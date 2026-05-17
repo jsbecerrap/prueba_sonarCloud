@@ -84,7 +84,8 @@ public class ApuestaServiceImpl implements ApuestaService {
 
         auditoriaService.registrar(
                 "APUESTA_CREADA",
-                "Polla creada: '" + apuesta.getNombre() + "' por " + usuario.getCorreoUsuario()
+                usuario.getNombre() + " " + usuario.getApellido()
+                        + " creó la polla '" + apuesta.getNombre() + "'"
                         + " | cierre: " + apuesta.getFechaCierre(),
                 usuario.getId(),
                 apuesta.getCodigoInvitacion(),
@@ -125,12 +126,11 @@ public class ApuestaServiceImpl implements ApuestaService {
 
         auditoriaService.registrar(
                 "PRONOSTICO_REGISTRADO",
-                "Pronostico de " + usuario.getCorreoUsuario()
-                        + " en polla '" + apuesta.getNombre() + "'"
-                        + " | partido: " + partido.getId()
-                        + " | resultado: " + dto.getResultadoPronosticado()
-                        + " | goles: " + dto.getGolesLocalPronosticados()
-                        + "-" + dto.getGolesVisitantePronosticados(),
+                usuario.getNombre() + " " + usuario.getApellido()
+                        + " registró pronóstico en polla '" + apuesta.getNombre() + "'"
+                        + " | " + partido.getSeleccionLocal() + " vs " + partido.getSeleccionVisitante()
+                        + " | " + dto.getGolesLocalPronosticados() + "-" + dto.getGolesVisitantePronosticados()
+                        + " (" + dto.getResultadoPronosticado() + ")",
                 usuario.getId(),
                 UUID.randomUUID().toString(),
                 ENTIDAD_PRONOSTICO);
@@ -161,9 +161,10 @@ public class ApuestaServiceImpl implements ApuestaService {
 
         notificacionService.notificarApuestaUnirse(usuario, apuesta.getCreadaPor(), apuesta.getNombre());
 
-        auditoriaService.registrar(
+       auditoriaService.registrar(
                 "APUESTA_UNIRSE",
-                usuario.getCorreoUsuario() + " se unio a la polla '" + apuesta.getNombre() + "'",
+                usuario.getNombre() + " " + usuario.getApellido()
+                        + " se unió a la polla '" + apuesta.getNombre() + "'",
                 usuario.getId(),
                 apuesta.getCodigoInvitacion(),
                 ENTIDAD_APUESTA);
@@ -199,11 +200,11 @@ public class ApuestaServiceImpl implements ApuestaService {
 
         auditoriaService.registrar(
                 "PRONOSTICO_EDITADO",
-                "Pronostico " + pronosticoId + " editado por " + pronostico.getUsuario().getCorreoUsuario()
-                        + " en polla '" + apuesta.getNombre() + "'"
-                        + " | antes: " + resultadoAnterior + " " + golesLocalAnterior + "-" + golesVisitanteAnterior
-                        + " | despues: " + resultadoPronosticado + " "
-                        + dto.getGolesLocalPronosticados() + "-" + dto.getGolesVisitantePronosticados(),
+                pronostico.getUsuario().getNombre() + " " + pronostico.getUsuario().getApellido()
+                        + " editó pronóstico en polla '" + apuesta.getNombre() + "'"
+                        + " | " + pronostico.getPartido().getSeleccionLocal() + " vs " + pronostico.getPartido().getSeleccionVisitante()
+                        + " | antes: " + golesLocalAnterior + "-" + golesVisitanteAnterior + " (" + resultadoAnterior + ")"
+                        + " | después: " + dto.getGolesLocalPronosticados() + "-" + dto.getGolesVisitantePronosticados() + " (" + resultadoPronosticado + ")",
                 pronostico.getUsuario().getId(),
                 UUID.randomUUID().toString(),
                 ENTIDAD_PRONOSTICO);
@@ -231,17 +232,16 @@ public class ApuestaServiceImpl implements ApuestaService {
         }
 
         final Long usuarioId = pronostico.getUsuario().getId();
-        final String correoUsuario = pronostico.getUsuario().getCorreoUsuario();
+        final String nombreUsuario = pronostico.getUsuario().getNombre() + " " + pronostico.getUsuario().getApellido();
         final String nombreApuesta = apuesta.getNombre();
-        final Long partidoId = pronostico.getPartido().getId();
+        final String nombrePartido = pronostico.getPartido().getSeleccionLocal() + " vs " + pronostico.getPartido().getSeleccionVisitante();
 
         pronosticoRepository.delete(pronostico);
 
         auditoriaService.registrar(
                 "PRONOSTICO_ELIMINADO",
-                "Pronostico " + pronosticoId + " eliminado por " + correoUsuario
-                        + " en polla '" + nombreApuesta + "'"
-                        + " | partido: " + partidoId,
+                nombreUsuario + " eliminó su pronóstico en polla '" + nombreApuesta + "'"
+                        + " | " + nombrePartido,
                 usuarioId,
                 UUID.randomUUID().toString(),
                 ENTIDAD_PRONOSTICO);

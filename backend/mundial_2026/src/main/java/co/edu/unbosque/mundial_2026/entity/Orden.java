@@ -49,11 +49,21 @@ public class Orden {
     private MetodoPago metodoPago;
 
     @OneToMany(mappedBy = "orden", fetch = FetchType.LAZY)
-@BatchSize(size = 30)   
-private List<ItemOrden> items = new ArrayList<>();
+    @BatchSize(size = 30)
+    private List<ItemOrden> items = new ArrayList<>();
+    @Column(name = "notificado_abandonado", nullable = false)
+    private boolean notificadoAbandonado = false;
+
+    public boolean isNotificadoAbandonado() {
+        return notificadoAbandonado;
+    }
+
+    public void setNotificadoAbandonado(boolean notificadoAbandonado) {
+        this.notificadoAbandonado = notificadoAbandonado;
+    }
 
     public Orden() {
-        //Constructor vacio
+        // Constructor vacio
     }
 
     public Long getId() {

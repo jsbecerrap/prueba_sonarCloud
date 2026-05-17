@@ -1,10 +1,10 @@
 package co.edu.unbosque.mundial_2026.service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.springframework.context.annotation.Lazy;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,71 +43,50 @@ public class EventoAuditoriaServiceImpl implements EventoAuditoriaService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<EventoAuditoriaDTO> buscarPorUsuario(Long usuarioId) {
-        List<EventoAuditoria> lista = repository.findByUsuarioId(usuarioId);
-        List<EventoAuditoriaDTO> dtos = new ArrayList<>();
-        for (int i = 0; i < lista.size(); i++) {
-            dtos.add(toDTO(lista.get(i)));
-        }
-        return dtos;
+    public Page<EventoAuditoriaDTO> obtenerTodos(Pageable pageable) {
+        return repository.findAll(pageable).map(this::toDTO);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<EventoAuditoriaDTO> buscarPorTipo(String tipo) {
-        List<EventoAuditoria> lista = repository.findByTipo(tipo);
-        List<EventoAuditoriaDTO> dtos = new ArrayList<>();
-        for (int i = 0; i < lista.size(); i++) {
-            dtos.add(toDTO(lista.get(i)));
-        }
-        return dtos;
+    public Page<EventoAuditoriaDTO> buscarPorUsuario(Long usuarioId, Pageable pageable) {
+        return repository.findByUsuarioId(usuarioId, pageable).map(this::toDTO);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<EventoAuditoriaDTO> buscarPorCorrelacion(String correlacion) {
-        List<EventoAuditoria> lista = repository.findByIdCorrelacion(correlacion);
-        List<EventoAuditoriaDTO> dtos = new ArrayList<>();
-        for (int i = 0; i < lista.size(); i++) {
-            dtos.add(toDTO(lista.get(i)));
-        }
-        return dtos;
+    public Page<EventoAuditoriaDTO> buscarPorTipo(String tipo, Pageable pageable) {
+        return repository.findByTipo(tipo, pageable).map(this::toDTO);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<EventoAuditoriaDTO> buscarPorEntidad(String entidadCorrelacion) {
-        List<EventoAuditoria> lista = repository.findByEntidadCorrelacion(entidadCorrelacion);
-        List<EventoAuditoriaDTO> dtos = new ArrayList<>();
-        for (int i = 0; i < lista.size(); i++) {
-            dtos.add(toDTO(lista.get(i)));
-        }
-        return dtos;
+    public Page<EventoAuditoriaDTO> buscarPorCorrelacion(String correlacion, Pageable pageable) {
+        return repository.findByIdCorrelacion(correlacion, pageable).map(this::toDTO);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<EventoAuditoriaDTO> buscarPorFecha(LocalDateTime fechaInicio,
-            LocalDateTime fechaFin) {
-        List<EventoAuditoria> lista = repository.findByFechaBetween(fechaInicio, fechaFin);
-        List<EventoAuditoriaDTO> dtos = new ArrayList<>();
-        for (int i = 0; i < lista.size(); i++) {
-            dtos.add(toDTO(lista.get(i)));
-        }
-        return dtos;
+    public Page<EventoAuditoriaDTO> buscarPorEntidad(String entidadCorrelacion, Pageable pageable) {
+        return repository.findByEntidadCorrelacion(entidadCorrelacion, pageable).map(this::toDTO);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<EventoAuditoriaDTO> obtenerTodos() {
-        List<EventoAuditoria> lista = repository.findAll();
-        List<EventoAuditoriaDTO> dtos = new ArrayList<>();
-        for (EventoAuditoria e : lista) {
-            dtos.add(toDTO(e));
-        }
-        return dtos;
+    public Page<EventoAuditoriaDTO> buscarPorFecha(LocalDateTime fechaInicio,
+            LocalDateTime fechaFin, Pageable pageable) {
+        return repository.findByFechaBetween(fechaInicio, fechaFin, pageable).map(this::toDTO);
     }
 
+   @Override
+@Transactional(readOnly = true)
+public Page<EventoAuditoriaDTO> buscarConFiltros(Long usuarioId, String tipos,
+        LocalDateTime fechaInicio, LocalDateTime fechaFin, Pageable pageable) {
+    String fi = fechaInicio != null ? fechaInicio.toString() : null;
+    String ff = fechaFin != null ? fechaFin.toString() : null;
+    return repository.buscarConFiltros(usuarioId, tipos, fi, ff, pageable)
+            .map(this::toDTO);
+}
     private EventoAuditoriaDTO toDTO(EventoAuditoria evento) {
         Long usuarioId = evento.getUsuario() != null ? evento.getUsuario().getId() : null;
         return new EventoAuditoriaDTO(

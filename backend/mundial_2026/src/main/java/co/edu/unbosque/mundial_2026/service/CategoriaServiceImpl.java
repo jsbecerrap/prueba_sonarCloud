@@ -78,7 +78,7 @@ public class CategoriaServiceImpl implements CategoriaService {
 
         auditoriaService.registrar(
                 "CATEGORIA_ACTUALIZADA",
-                "Categoria actualizada (id: " + id + ")" + cambios,
+                "Categoria actualizada: '" + categoria.getNombre() + "'" + cambios,
                 null,
                 UUID.randomUUID().toString(),
                 ENTIDAD_CATEGORIA);
@@ -103,7 +103,7 @@ public class CategoriaServiceImpl implements CategoriaService {
 
         auditoriaService.registrar(
                 "CATEGORIA_DESACTIVADA",
-                "Categoria desactivada: '" + categoria.getNombre() + "' (id: " + id + ")"
+                "Categoria desactivada: '" + categoria.getNombre() + "'"
                         + " | productos afectados: " + productos.size(),
                 null,
                 UUID.randomUUID().toString(),
@@ -134,7 +134,7 @@ public class CategoriaServiceImpl implements CategoriaService {
 
         auditoriaService.registrar(
                 "CATEGORIA_REACTIVADA",
-                "Categoria reactivada: '" + categoria.getNombre() + "' (id: " + id + ")"
+                "Categoria reactivada: '" + categoria.getNombre() + "'"
                         + " | productos visibles nuevamente: " + productos.size(),
                 null,
                 UUID.randomUUID().toString(),

@@ -50,4 +50,5 @@ void notificarCarritoAbandonado(Usuario usuario);
     void notificarActualizacionPerfil(Usuario usuario);
     void notificarRegistro(Usuario usuario);
     void notificarOrdenFallida(Usuario usuario);
+void notificarReservaCreada(Usuario usuario, String partido);
 }

@@ -43,4 +43,6 @@ List<Orden> findHistorialByUsuarioIdAndEstadoIn(
     @Param("usuarioId") Long usuarioId,
     @Param("estados") List<String> estados);
     List<Orden> findByEstadoAndFechaCreacionBefore(String estado, LocalDateTime fecha);
+List<Orden> findByEstadoAndFechaCreacionBeforeAndNotificadoAbandonadoFalse(
+    String estado, LocalDateTime fecha);
 }

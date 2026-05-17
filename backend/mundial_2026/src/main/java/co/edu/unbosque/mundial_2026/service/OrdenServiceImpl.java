@@ -141,7 +141,8 @@ public OrdenServiceImpl(OrdenRepository ordenRepository,
 
         auditoriaService.registrar(
                 "ITEM_AGREGADO_CARRITO",
-                PREFIJO_USUARIO + usuarioId + " agregó " + dto.getCantidad() + " x " + producto.getNombre()
+                usuario.getNombre() + " " + usuario.getApellido()
+                        + " agregó " + dto.getCantidad() + " x " + producto.getNombre()
                         + (variante.getEspecificacion() != null ? " (" + variante.getEspecificacion() + ")" : ""),
                 usuarioId,
                 PREFIJO_ORDEN + ordenActual.getId(),
@@ -229,8 +230,9 @@ public OrdenResponseDTO confirmarOrden(String correo, ConfirmarOrdenDTO dto) {
         ordenRepository.save(ordenAPagar);
         auditoriaService.registrar(
                 "ORDEN_PAGADA",
-                PREFIJO_USUARIO + usuarioId + " pagó la orden " + ordenAPagar.getId() + " por $"
-                        + ordenAPagar.getTotal(),
+                usuario.getNombre() + " " + usuario.getApellido()
+                        + " pagó orden por $" + ordenAPagar.getTotal()
+                        + " con " + metodoPago.getLabel(),
                 usuarioId,
                 PREFIJO_ORDEN + ordenAPagar.getId(),
                 TIPO_ORDEN);
@@ -264,9 +266,9 @@ public OrdenResponseDTO confirmarOrden(String correo, ConfirmarOrdenDTO dto) {
     List<ItemOrden> items = itemOrdenRepository.findByOrdenId(orden.getId());
     itemOrdenRepository.deleteAll(items);
     ordenRepository.delete(orden);
-    auditoriaService.registrar(
+   auditoriaService.registrar(
             "ORDEN_CANCELADA",
-            PREFIJO_USUARIO + usuario.getId() + " vació el carrito",
+            usuario.getNombre() + " " + usuario.getApellido() + " vació el carrito",
             usuario.getId(),
             PREFIJO_ORDEN + orden.getId(),
             TIPO_ORDEN);
@@ -338,15 +340,19 @@ public List<OrdenHistorialDTO> historialLiviano(String correo) {
     }
     return resultado;
 }
+
 @Transactional
 @org.springframework.scheduling.annotation.Scheduled(fixedRate = 300000)
 public void notificarCarritosAbandonados() {
     LocalDateTime haceUnaHora = LocalDateTime.now().minusHours(1);
-    List<Orden> abandonadas = ordenRepository.findByEstadoAndFechaCreacionBefore(ESTADO_PENDIENTE, haceUnaHora);
+    List<Orden> abandonadas = ordenRepository
+        .findByEstadoAndFechaCreacionBeforeAndNotificadoAbandonadoFalse(ESTADO_PENDIENTE, haceUnaHora);
     for (Orden orden : abandonadas) {
         List<ItemOrden> items = itemOrdenRepository.findByOrdenId(orden.getId());
         if (!items.isEmpty()) {
             notificacionService.notificarCarritoAbandonado(orden.getUsuario());
+            orden.setNotificadoAbandonado(true);
+            ordenRepository.save(orden);
         }
     }
 }
