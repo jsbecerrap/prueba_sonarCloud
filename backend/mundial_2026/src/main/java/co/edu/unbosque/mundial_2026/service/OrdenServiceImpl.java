@@ -144,9 +144,8 @@ public OrdenResponseDTO agregarItem(String correo, AgregarItemDTO dto) {
             PREFIJO_ORDEN + ordenActual.getId(),
             TIPO_ORDEN);
 
-    // Un solo query para construir la respuesta
-    List<ItemOrden> itemsRespuesta = itemOrdenRepository.findByOrdenId(ordenActual.getId());
-    return toOrdenDTO(ordenActual, itemsRespuesta);
+   List<ItemOrden> itemsRespuesta = itemOrdenRepository.findByOrdenIdConDetalles(ordenActual.getId());
+return toOrdenDTO(ordenActual, itemsRespuesta);
 }
 
     @Override
@@ -155,7 +154,7 @@ public OrdenResponseDTO agregarItem(String correo, AgregarItemDTO dto) {
         Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
         Orden orden = ordenRepository.findByUsuarioIdAndEstado(usuario.getId(), ESTADO_PENDIENTE)
                 .orElseThrow(() -> new OrdenNotFoundException(CARRITO_NO_ACTIVO));
-        List<ItemOrden> items = itemOrdenRepository.findByOrdenId(orden.getId());
+      List<ItemOrden> items = itemOrdenRepository.findByOrdenIdConDetalles(orden.getId());
         return toOrdenDTO(orden, items);
     }
 
@@ -169,7 +168,7 @@ public OrdenResponseDTO agregarItem(String correo, AgregarItemDTO dto) {
                 .orElseThrow(() -> new ItemNotFoundException("No existe ese item"));
         itemOrdenRepository.delete(itemAEliminar);
         ordenActual.setTotal(ordenActual.getTotal() - (itemAEliminar.getCantidad() * itemAEliminar.getPrecioUnitario()));
-        List<ItemOrden> itemsRestantes = itemOrdenRepository.findByOrdenId(ordenActual.getId());
+       List<ItemOrden> itemsRestantes = itemOrdenRepository.findByOrdenIdConDetalles(ordenActual.getId());
         if (itemsRestantes.isEmpty()) {
             ordenRepository.delete(ordenActual);
             return toOrdenDTO(ordenActual, itemsRestantes);
@@ -261,7 +260,7 @@ public OrdenResponseDTO confirmarOrden(String correo, ConfirmarOrdenDTO dto) {
     Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
     Orden orden = ordenRepository.findByUsuarioIdAndEstado(usuario.getId(), ESTADO_PENDIENTE)
             .orElseThrow(() -> new OrdenNotFoundException(CARRITO_NO_ACTIVO));
-    List<ItemOrden> items = itemOrdenRepository.findByOrdenId(orden.getId());
+  List<ItemOrden> items = itemOrdenRepository.findByOrdenIdConDetalles(orden.getId());
     itemOrdenRepository.deleteAll(items);
     ordenRepository.delete(orden);
    auditoriaService.registrar(
