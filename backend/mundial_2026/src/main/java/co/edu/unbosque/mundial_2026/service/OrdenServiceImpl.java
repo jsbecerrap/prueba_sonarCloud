@@ -77,79 +77,77 @@ public OrdenServiceImpl(OrdenRepository ordenRepository,
     Stripe.apiKey = stripeApiKey;
 }
 
-    @Override
-    @Transactional
-    public OrdenResponseDTO agregarItem(String correo, AgregarItemDTO dto) {
-        Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
-        Long usuarioId = usuario.getId();
+   @Override
+@Transactional
+public OrdenResponseDTO agregarItem(String correo, AgregarItemDTO dto) {
+    Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
+    Long usuarioId = usuario.getId();
 
-        Producto producto = productoService.obtenerEntidadPorId(dto.getProductoId());
+    Producto producto = productoService.obtenerEntidadPorId(dto.getProductoId());
 
-        VarianteProducto variante = varianteRepository.findById(dto.getVarianteId())
-                .orElseThrow(() -> new ProductoNotFoundException("Variante no encontrada"));
+    VarianteProducto variante = varianteRepository.findById(dto.getVarianteId())
+            .orElseThrow(() -> new ProductoNotFoundException("Variante no encontrada"));
 
-        if (!variante.getProducto().getId().equals(producto.getId())) {
-            throw new ProductoNotFoundException("La variante no pertenece al producto");
-        }
-
-        if (variante.getStock() < dto.getCantidad()) {
-            throw new StockInsuficienteException("Stock insuficiente para esta variante");
-        }
-
-        if (Boolean.FALSE.equals(producto.getActivo())) {
-            throw new ProductoNotFoundException("Este producto no está disponible");
-        }
-
-        Optional<Orden> orden = ordenRepository.findByUsuarioIdAndEstado(usuarioId, ESTADO_PENDIENTE);
-        Orden ordenActual;
-        if (orden.isPresent()) {
-            ordenActual = orden.get();
-        } else {
-            Orden ordenNueva = new Orden();
-            ordenNueva.setUsuario(usuario);
-            ordenNueva.setEstado(ESTADO_PENDIENTE);
-            ordenNueva.setFechaCreacion(LocalDateTime.now());
-            ordenNueva.setTotal(0.0);
-            ordenActual = ordenRepository.save(ordenNueva);
-        }
-
-        Optional<ItemOrden> item = itemOrdenRepository
-                .findByOrdenIdAndProductoIdAndVarianteId(ordenActual.getId(), producto.getId(), variante.getId());
-
-        ItemOrden itemOrdenActual;
-        if (item.isPresent()) {
-            itemOrdenActual = item.get();
-            itemOrdenActual.setCantidad(itemOrdenActual.getCantidad() + dto.getCantidad());
-        } else {
-            itemOrdenActual = new ItemOrden();
-            itemOrdenActual.setOrden(ordenActual);
-            itemOrdenActual.setProducto(producto);
-            itemOrdenActual.setVariante(variante);
-            itemOrdenActual.setCantidad(dto.getCantidad());
-            itemOrdenActual.setPrecioUnitario(producto.getPrecio());
-        }
-        itemOrdenRepository.save(itemOrdenActual);
-
-        List<ItemOrden> items = itemOrdenRepository.findByOrdenId(ordenActual.getId());
-        double total = 0.0;
-        for (int i = 0; i < items.size(); i++) {
-            ItemOrden itemActual = items.get(i);
-            total += itemActual.getCantidad() * itemActual.getPrecioUnitario();
-        }
-        ordenActual.setTotal(total);
-        ordenRepository.save(ordenActual);
-
-        auditoriaService.registrar(
-                "ITEM_AGREGADO_CARRITO",
-                usuario.getNombre() + " " + usuario.getApellido()
-                        + " agregó " + dto.getCantidad() + " x " + producto.getNombre()
-                        + (variante.getEspecificacion() != null ? " (" + variante.getEspecificacion() + ")" : ""),
-                usuarioId,
-                PREFIJO_ORDEN + ordenActual.getId(),
-                TIPO_ORDEN);
-
-        return toOrdenDTO(ordenActual, items);
+    if (!variante.getProducto().getId().equals(producto.getId())) {
+        throw new ProductoNotFoundException("La variante no pertenece al producto");
     }
+
+    if (variante.getStock() < dto.getCantidad()) {
+        throw new StockInsuficienteException("Stock insuficiente para esta variante");
+    }
+
+    if (Boolean.FALSE.equals(producto.getActivo())) {
+        throw new ProductoNotFoundException("Este producto no está disponible");
+    }
+
+    Optional<Orden> orden = ordenRepository.findByUsuarioIdAndEstado(usuarioId, ESTADO_PENDIENTE);
+    Orden ordenActual;
+    if (orden.isPresent()) {
+        ordenActual = orden.get();
+    } else {
+        Orden ordenNueva = new Orden();
+        ordenNueva.setUsuario(usuario);
+        ordenNueva.setEstado(ESTADO_PENDIENTE);
+        ordenNueva.setFechaCreacion(LocalDateTime.now());
+        ordenNueva.setTotal(0.0);
+        ordenActual = ordenRepository.save(ordenNueva);
+    }
+
+    Optional<ItemOrden> item = itemOrdenRepository
+            .findByOrdenIdAndProductoIdAndVarianteId(ordenActual.getId(), producto.getId(), variante.getId());
+
+    ItemOrden itemOrdenActual;
+    if (item.isPresent()) {
+        itemOrdenActual = item.get();
+        itemOrdenActual.setCantidad(itemOrdenActual.getCantidad() + dto.getCantidad());
+    } else {
+        itemOrdenActual = new ItemOrden();
+        itemOrdenActual.setOrden(ordenActual);
+        itemOrdenActual.setProducto(producto);
+        itemOrdenActual.setVariante(variante);
+        itemOrdenActual.setCantidad(dto.getCantidad());
+        itemOrdenActual.setPrecioUnitario(producto.getPrecio());
+    }
+    itemOrdenRepository.save(itemOrdenActual);
+
+    // Actualizar total en memoria — sin query extra al DB
+    double delta = dto.getCantidad() * itemOrdenActual.getPrecioUnitario();
+    ordenActual.setTotal(ordenActual.getTotal() + delta);
+    ordenRepository.save(ordenActual);
+
+    auditoriaService.registrar(
+            "ITEM_AGREGADO_CARRITO",
+            usuario.getNombre() + " " + usuario.getApellido()
+                    + " agregó " + dto.getCantidad() + " x " + producto.getNombre()
+                    + (variante.getEspecificacion() != null ? " (" + variante.getEspecificacion() + ")" : ""),
+            usuarioId,
+            PREFIJO_ORDEN + ordenActual.getId(),
+            TIPO_ORDEN);
+
+    // Un solo query para construir la respuesta
+    List<ItemOrden> itemsRespuesta = itemOrdenRepository.findByOrdenId(ordenActual.getId());
+    return toOrdenDTO(ordenActual, itemsRespuesta);
+}
 
     @Override
     @Transactional(readOnly = true)

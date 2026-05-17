@@ -1,9 +1,18 @@
 import { useEffect, useRef, useState } from "react";
-import { Alert, Button, Chip, Paper, Stack, Typography } from "@mui/material";
+import {
+  Alert,
+  Button,
+  Chip,
+  Paper,
+  Stack,
+  ToggleButton,
+  ToggleButtonGroup,
+  Typography,
+} from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { getMyPaymentTxs } from "../api/paymentsApi";
 import { useApp } from "../context/AppContext";
-import type { PaymentTx, PaymentTxStatus } from "../types/paymentTx";
+import type { PaymentTx, PaymentTxKind, PaymentTxStatus } from "../types/paymentTx";
 
 const statusLabels: Record<PaymentTxStatus, string> = {
   PENDING: "Pendiente",
@@ -19,24 +28,45 @@ const statusColors: Record<PaymentTxStatus, "default" | "success" | "error" | "w
   REFUNDED: "default",
 };
 
+const KIND_LABELS: Record<PaymentTxKind, string> = {
+  TICKET: "Entradas",
+  ORDEN: "Souvenirs",
+  COINS: "Monedas",
+};
+
+const ALL_KINDS: PaymentTxKind[] = ["TICKET", "ORDEN", "COINS"];
+
 function formatPrecio(value: number, currency: string) {
   return `$${value.toLocaleString("es-CO")} ${currency}`;
 }
 
 export default function Transactions() {
- const { user, authLoading } = useApp();
-const navigate = useNavigate();
-const [txs, setTxs] = useState<PaymentTx[]>([]);
-const [loading, setLoading] = useState(true);
+  const { user, authLoading } = useApp();
+  const navigate = useNavigate();
+  const [txs, setTxs] = useState<PaymentTx[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filtros, setFiltros] = useState<PaymentTxKind[]>(["TICKET", "ORDEN", "COINS"]);
+  const fetchedRef = useRef(false);
 
-useEffect(() => {
-  if (authLoading || !user?.id) return;
-  setLoading(true);
-  getMyPaymentTxs(user.id)
-    .then((data) => setTxs(data ?? []))
-    .finally(() => setLoading(false));
-}, [user?.id, authLoading]);
+  useEffect(() => {
+    if (authLoading || !user?.id) return;
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
+    setLoading(true);
+    getMyPaymentTxs(user.id)
+      .then((data) => setTxs(data ?? []))
+      .finally(() => setLoading(false));
+  }, [user?.id, authLoading]);
 
+  const handleFiltros = (_: React.MouseEvent<HTMLElement>, nuevos: PaymentTxKind[]) => {
+    if (nuevos.length === 0) return; // no permitir deseleccionar todos
+    setFiltros(nuevos);
+  };
+
+  const txsFiltradas = txs.filter((tx) => filtros.includes(tx.kind));
+
+  // Mostrar solo los tipos que realmente existen en los datos
+  const kindsDisponibles = ALL_KINDS.filter((k) => txs.some((tx) => tx.kind === k));
 
   if (!user) return <Alert severity="warning">Debes iniciar sesión.</Alert>;
 
@@ -53,15 +83,37 @@ useEffect(() => {
         Aquí puedes ver todas tus transacciones de entradas y souvenirs.
       </Alert>
 
+      {/* Filtros por tipo */}
+      {!loading && kindsDisponibles.length > 1 && (
+        <ToggleButtonGroup
+          value={filtros}
+          onChange={handleFiltros}
+          size="small"
+          color="primary"
+        >
+          {kindsDisponibles.map((kind) => (
+            <ToggleButton key={kind} value={kind}>
+              {KIND_LABELS[kind]}
+            </ToggleButton>
+          ))}
+        </ToggleButtonGroup>
+      )}
+
       {loading ? (
         <Typography color="text.secondary">Cargando...</Typography>
       ) : txs.length === 0 ? (
         <Paper sx={{ p: 3 }}>
           <Typography color="text.secondary">No hay transacciones registradas.</Typography>
         </Paper>
+      ) : txsFiltradas.length === 0 ? (
+        <Paper sx={{ p: 3 }}>
+          <Typography color="text.secondary">
+            Debes seleccionar al menos un tipo de transacción.
+          </Typography>
+        </Paper>
       ) : (
         <Stack spacing={1.5}>
-          {txs.map((tx) => (
+          {txsFiltradas.map((tx) => (
             <Paper key={tx.id} variant="outlined" sx={{ p: 2 }}>
               <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" spacing={2}>
                 <Stack spacing={0.5}>

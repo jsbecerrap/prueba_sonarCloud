@@ -126,7 +126,6 @@ public void enviarMasiva(NotificacionMasivaRequestDTO dto) {
 public void marcarTodasLeidas(Long usuarioId) {
     notificacionRepository.marcarTodasLeidasPorUsuario(usuarioId);
 }
-
   @Override
 @Transactional
 public void notificarPorPartido(Long partidoId, String tipo, String titulo, String mensaje) {
@@ -165,7 +164,7 @@ public void notificarPorPartido(Long partidoId, String tipo, String titulo, Stri
             String.valueOf(partidoId),
             "PARTIDO");
 }
-
+@Async
     @Override
     @Transactional
     public void notificarRegistro(Usuario usuario) {
@@ -177,7 +176,7 @@ public void notificarPorPartido(Long partidoId, String tipo, String titulo, Stri
         notificacionRepository.save(notificacion);
         enviarPush(usuario, "Bienvenido(a) a Mundial 2026 Hub", "Tu cuenta ha sido creada exitosamente.");
     }
-
+@Async
     @Override
     @Transactional
     public void notificarActualizacionPerfil(Usuario usuario) {
@@ -189,7 +188,7 @@ public void notificarPorPartido(Long partidoId, String tipo, String titulo, Stri
         notificacionRepository.save(notificacion);
         enviarPush(usuario, "Perfil actualizado", "Tu perfil ha sido actualizado exitosamente.");
     }
-
+@Async
     @Override
     @Transactional
     public void notificarEntradaPagada(Usuario usuario, String partido, String categoria, String sector, String fila) {
@@ -199,7 +198,7 @@ public void notificarPorPartido(Long partidoId, String tipo, String titulo, Stri
         notificacionRepository.save(notificacion);
         enviarPush(usuario, titulo, mensaje);
     }
-
+@Async
     @Override
     @Transactional
     public void notificarEntradaPagoFallido(Usuario usuario) {
@@ -209,7 +208,7 @@ public void notificarPorPartido(Long partidoId, String tipo, String titulo, Stri
         notificacionRepository.save(notificacion);
         enviarPush(usuario, titulo, mensaje);
     }
-
+@Async
     @Override
     @Transactional
     public void notificarOrdenConfirmada(Usuario usuario, double total) {
@@ -219,7 +218,7 @@ public void notificarPorPartido(Long partidoId, String tipo, String titulo, Stri
         notificacionRepository.save(notificacion);
         enviarPush(usuario, titulo, mensaje);
     }
-
+@Async
     @Override
     @Transactional
     public void notificarEntradaReembolsada(Usuario usuario, Long entradaId) {
@@ -229,7 +228,7 @@ public void notificarPorPartido(Long partidoId, String tipo, String titulo, Stri
         notificacionRepository.save(notificacion);
         enviarPush(usuario, titulo, mensaje);
     }
-
+@Async
     @Override
     @Transactional
     public void notificarEntradaReembolsoFallido(Usuario usuario, Long entradaId) {
@@ -239,7 +238,7 @@ public void notificarPorPartido(Long partidoId, String tipo, String titulo, Stri
         notificacionRepository.save(notificacion);
         enviarPush(usuario, titulo, mensaje);
     }
-
+@Async
     @Override
     @Transactional
     public void notificarEntradaTransferida(Usuario usuarioOrigen, String correoDestino, String partido) {
@@ -249,7 +248,7 @@ public void notificarPorPartido(Long partidoId, String tipo, String titulo, Stri
         notificacionRepository.save(notificacion);
         enviarPush(usuarioOrigen, titulo, mensaje);
     }
-
+@Async
     @Override
     @Transactional
     public void notificarEntradaRecibida(Usuario usuarioDestino, String correoOrigen, String partido) {
@@ -259,7 +258,7 @@ public void notificarPorPartido(Long partidoId, String tipo, String titulo, Stri
         notificacionRepository.save(notificacion);
         enviarPush(usuarioDestino, titulo, mensaje);
     }
-
+@Async
     @Override
     @Transactional
     public void notificarReservaExpirada(Usuario usuario, String partido) {
@@ -269,7 +268,7 @@ public void notificarPorPartido(Long partidoId, String tipo, String titulo, Stri
         notificacionRepository.save(notificacion);
         enviarPush(usuario, titulo, mensaje);
     }
-
+@Async
     @Override
     @Transactional
     public void notificarReservaPorExpirar(Usuario usuario, String partido) {
@@ -295,7 +294,7 @@ public void notificarPorPartido(Long partidoId, String tipo, String titulo, Stri
         notificacionRepository.save(notifCreador);
         enviarPush(creador, tituloCreador, mensajeCreador);
     }
-
+@Async
     @Override
     @Transactional
     public void notificarApuestaCerrada(List<Usuario> participantes, String nombreApuesta) {
@@ -308,7 +307,7 @@ public void notificarPorPartido(Long partidoId, String tipo, String titulo, Stri
         }
         notificacionRepository.saveAll(notificaciones);
     }
-
+@Async
     @Override
     @Transactional
     public void notificarPuntosCalculados(Usuario usuario, String nombreApuesta, int posicion, int puntos) {
@@ -318,7 +317,7 @@ public void notificarPorPartido(Long partidoId, String tipo, String titulo, Stri
         notificacionRepository.save(notificacion);
         enviarPush(usuario, titulo, mensaje);
     }
-
+@Async
     @Override
     @Transactional
     public void notificarCarritoAbandonado(Usuario usuario) {
@@ -328,7 +327,7 @@ public void notificarPorPartido(Long partidoId, String tipo, String titulo, Stri
         notificacionRepository.save(notificacion);
         enviarPush(usuario, titulo, mensaje);
     }
-
+@Async
     @Override
     @Transactional
     public void notificarOrdenFallida(Usuario usuario) {
@@ -363,6 +362,7 @@ public void notificarPorPartido(Long partidoId, String tipo, String titulo, Stri
                 n.getCanal(), n.getEstado(), n.isLeida(), n.getFecha(),
                 n.getUsuario().getId());
     }
+    @Async
     @Override
 @Transactional
 public void notificarReservaCreada(Usuario usuario, String partido) {
