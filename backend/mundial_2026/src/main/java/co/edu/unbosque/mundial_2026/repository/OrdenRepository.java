@@ -45,4 +45,12 @@ List<Orden> findHistorialByUsuarioIdAndEstadoIn(
     List<Orden> findByEstadoAndFechaCreacionBefore(String estado, LocalDateTime fecha);
 List<Orden> findByEstadoAndFechaCreacionBeforeAndNotificadoAbandonadoFalse(
     String estado, LocalDateTime fecha);
+    @Query("SELECT DISTINCT o FROM Orden o " +
+       "LEFT JOIN FETCH o.items i " +
+       "LEFT JOIN FETCH i.producto p " +
+       "LEFT JOIN FETCH p.categoria " +
+       "LEFT JOIN FETCH i.variante " +
+       "WHERE o.usuario.correoUsuario = :correo AND o.estado = :estado")
+Optional<Orden> findCarritoByCorreoAndEstado(@Param("correo") String correo,
+                                              @Param("estado") String estado);
 }

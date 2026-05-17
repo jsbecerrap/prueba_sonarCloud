@@ -29,7 +29,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { bannerImages } from "../theme/bannerImages";
-import { getProductosListado, getCategorias, agregarAlCarrito, getProductoPorId } from "../api/storeApi";
+import { getProductosListado, getCategorias, agregarAlCarrito } from "../api/storeApi";
 import type { ProductoListadoResponse, CategoriaResponse } from "../api/storeApi";
 
 function formatPrecio(value: number) {
@@ -179,21 +179,13 @@ const handleConfirmarDialog = async () => {
     setAgregando(null);
   }
 };
-const handleConfirmar = async (product: ProductoListadoResponse, qty: number) => {
-  try {
-    setCargandoDialog(true);
-    const detalle = await getProductoPorId(product.id);
-    setDialogProducto({
-      producto: product,
-      variantes: detalle.variantes,
-      varianteId: detalle.variantes[0]?.id ?? null,
-      cantidad: 1,
-    });
-  } catch (e) {
-    setError((e as Error).message);
-  } finally {
-    setCargandoDialog(false);
-  }
+const handleConfirmar = (product: ProductoListadoResponse, qty: number) => {
+  setDialogProducto({
+    producto: product,
+    variantes: product.variantes ?? [],
+    varianteId: product.variantes?.[0]?.id ?? null,
+    cantidad: 1,
+  });
 };
 
 

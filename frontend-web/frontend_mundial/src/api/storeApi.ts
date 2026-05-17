@@ -71,6 +71,7 @@ export interface ProductoListadoResponse {
   destacado: boolean;
   stockTotal: number;
   tieneVariantes: boolean;
+  variantes: { id: number; especificacion: string | null; stock: number }[];
 }
 export async function getProductos(): Promise<ProductoResponse[]> {
   return http.get<ProductoResponse[]>("/api/productos");

@@ -152,32 +152,31 @@ public OrdenResponseDTO agregarItem(String correo, AgregarItemDTO dto) {
     @Override
     @Transactional(readOnly = true)
     public OrdenResponseDTO obtenerCarrito(String correo) {
-        Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
-        Orden orden = ordenRepository.findByUsuarioIdAndEstado(usuario.getId(), ESTADO_PENDIENTE)
-                .orElseThrow(() -> new OrdenNotFoundException(CARRITO_NO_ACTIVO));
-        List<ItemOrden> items = itemOrdenRepository.findByOrdenId(orden.getId());
-        return toOrdenDTO(orden, items);
-    }
+    Orden orden = ordenRepository.findCarritoByCorreoAndEstado(correo, ESTADO_PENDIENTE)
+            .orElseThrow(() -> new OrdenNotFoundException(CARRITO_NO_ACTIVO));
+    return toOrdenDTO(orden, orden.getItems());
+}
 
-    @Override
-    @Transactional
-    public OrdenResponseDTO eliminarItem(String correo, Long itemId) {
-        Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
-        Orden ordenActual = ordenRepository.findByUsuarioIdAndEstado(usuario.getId(), ESTADO_PENDIENTE)
-                .orElseThrow(() -> new OrdenNotFoundException("Usuario no tiene orden activa"));
-        ItemOrden itemAEliminar = itemOrdenRepository.findById(itemId)
-                .orElseThrow(() -> new ItemNotFoundException("No existe ese item"));
-        itemOrdenRepository.delete(itemAEliminar);
-        ordenActual.setTotal(ordenActual.getTotal() - (itemAEliminar.getCantidad() * itemAEliminar.getPrecioUnitario()));
-        List<ItemOrden> itemsRestantes = itemOrdenRepository.findByOrdenId(ordenActual.getId());
-        if (itemsRestantes.isEmpty()) {
-            ordenRepository.delete(ordenActual);
-            return toOrdenDTO(ordenActual, itemsRestantes);
-        }
-        ordenRepository.save(ordenActual);
+   @Override
+@Transactional
+public OrdenResponseDTO eliminarItem(String correo, Long itemId) {
+    Orden ordenActual = ordenRepository.findCarritoByCorreoAndEstado(correo, ESTADO_PENDIENTE)
+            .orElseThrow(() -> new OrdenNotFoundException("Usuario no tiene orden activa"));
+    ItemOrden itemAEliminar = itemOrdenRepository.findById(itemId)
+            .orElseThrow(() -> new ItemNotFoundException("No existe ese item"));
+    itemOrdenRepository.delete(itemAEliminar);
+    itemOrdenRepository.flush();
+    ordenActual.setTotal(ordenActual.getTotal() - (itemAEliminar.getCantidad() * itemAEliminar.getPrecioUnitario()));
+    List<ItemOrden> itemsRestantes = ordenActual.getItems().stream()
+        .filter(i -> !i.getId().equals(itemId))
+        .collect(java.util.stream.Collectors.toList());
+    if (itemsRestantes.isEmpty()) {
+        ordenRepository.delete(ordenActual);
         return toOrdenDTO(ordenActual, itemsRestantes);
     }
-
+    ordenRepository.save(ordenActual);
+    return toOrdenDTO(ordenActual, itemsRestantes);
+}
    @Override
 @Transactional
 public OrdenResponseDTO confirmarOrden(String correo, ConfirmarOrdenDTO dto) {

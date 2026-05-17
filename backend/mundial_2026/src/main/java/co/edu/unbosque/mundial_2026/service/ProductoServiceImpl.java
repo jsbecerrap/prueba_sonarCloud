@@ -133,7 +133,7 @@ public ProductoResponseDTO actualizar(Long id, ProductoActualizarRequestDTO dto)
     @Override
     @Transactional(readOnly = true)
     public List<ProductoResponseDTO> listarTodos() {
-     List<Producto> productos = productoRepository.findByActivoTrueWithVariantes();
+    List<Producto> productos = productoRepository.findAllLiviano();
         List<ProductoResponseDTO> responseDTOs = new ArrayList<>();
         for (int i = 0; i < productos.size(); i++) {
             responseDTOs.add(toDTO(productos.get(i)));
@@ -169,8 +169,8 @@ public ProductoResponseDTO actualizar(Long id, ProductoActualizarRequestDTO dto)
     @Override
     @Transactional(readOnly = true)
     public ProductoResponseDTO obtenerPorId(Long id) {
-        Producto producto = productoRepository.findById(id)
-                .orElseThrow(() -> new ProductoNotFoundException(PRODUCTO_NO_ENCONTRADO));
+      Producto producto = productoRepository.findByIdWithVariantes(id)
+        .orElseThrow(() -> new ProductoNotFoundException(PRODUCTO_NO_ENCONTRADO));
         if (Boolean.FALSE.equals(producto.getActivo())) {
             throw new ProductoNotFoundException("Este producto no está disponible");
         }
@@ -239,10 +239,29 @@ public ProductoResponseDTO actualizar(Long id, ProductoActualizarRequestDTO dto)
         producto.setDestacado(Boolean.TRUE.equals(dto.getDestacado()));
         return producto;
     }
-    @Override
+  @Override
 @Transactional(readOnly = true)
 public List<ProductoListadoDTO> listarTodosLiviano() {
-    return productoRepository.findAllLiviano();
+    List<Producto> productos = productoRepository.findByActivoTrueWithVariantes();
+    List<ProductoListadoDTO> resultado = new ArrayList<>();
+    for (Producto p : productos) {
+        ProductoListadoDTO dto = new ProductoListadoDTO(
+            p.getId(), p.getNombre(), p.getDescripcion(),
+            p.getPrecio(), p.getImagenUrl(), p.getCategoria().getNombre(),
+            p.getEquipo(), p.getBandera(), p.getDestacado(),
+            (long) p.getVariantes().stream().mapToInt(VarianteProducto::getStock).sum(),
+            (long) p.getVariantes().size()
+        );
+        List<ProductoListadoDTO.VarianteDTO> varianteDTOs = new ArrayList<>();
+        for (VarianteProducto v : p.getVariantes()) {
+            varianteDTOs.add(new ProductoListadoDTO.VarianteDTO(
+                v.getId(), v.getEspecificacion(), v.getStock()
+            ));
+        }
+        dto.setVariantes(varianteDTOs);
+        resultado.add(dto);
+    }
+    return resultado;
 }
 @Override
 @Transactional
