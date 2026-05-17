@@ -10,6 +10,7 @@ import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
@@ -107,6 +108,7 @@ static {
     PORCENTAJE_ZONA.put("ESQUINA", 0.15);
 }
 
+@Transactional
 @Override
 public EntradaResponseDTO reservarEntrada(String correo, EntradaRequestDTO dto) {
     Usuario u = usuarioService.obtenerEntidadPorCorreo(correo);
@@ -201,6 +203,7 @@ public EntradaResponseDTO reservarEntrada(String correo, EntradaRequestDTO dto) 
 
     return toDTO(entrada);
 }
+@Transactional
 @Override
 public EntradaResponseDTO confirmarPago(Long entradaId, String paymentRef) {
     Entrada entrada = entradaRepository.findById(entradaId)
@@ -271,7 +274,8 @@ public EntradaResponseDTO confirmarPago(Long entradaId, String paymentRef) {
     return toDTO(entrada);
 }
 
- @Override
+@Transactional
+@Override
 public EntradaResponseDTO cancelarReserva(String correo, Long entradaId) {
     Usuario u = usuarioService.obtenerEntidadPorCorreo(correo); // ← cambio
     Long usuarioId = u.getId();
@@ -303,6 +307,7 @@ public EntradaResponseDTO cancelarReserva(String correo, Long entradaId) {
 
     return toDTO(entrada);
 }
+@Transactional
 @Override
 public EntradaResponseDTO transferirEntrada(Long entradaId, TransferenciaRequestDTO dto, String correo) {
     Usuario u = usuarioService.obtenerEntidadPorCorreo(correo);
@@ -368,6 +373,7 @@ public EntradaResponseDTO transferirEntrada(Long entradaId, TransferenciaRequest
 
     return toDTO(nuevaEntrada);
 }
+@Transactional
 @Override
 public EntradaResponseDTO reembolsarEntrada(String correo, Long entradaId) {
     Usuario u = usuarioService.obtenerEntidadPorCorreo(correo);
@@ -425,6 +431,7 @@ public EntradaResponseDTO reembolsarEntrada(String correo, Long entradaId) {
     return toDTO(entrada);
 }
 
+@Transactional(readOnly = true)
 @Override
 public List<EntradaResponseDTO> listarEntradasUsuario(String correo) {
     Usuario u = usuarioService.obtenerEntidadPorCorreo(correo); 
@@ -434,13 +441,15 @@ public List<EntradaResponseDTO> listarEntradasUsuario(String correo) {
     .map(this::toDTO)
     .toList();
 }
-    @Override
+    @Transactional(readOnly = true)
+@Override
     public EntradaResponseDTO obtenerEntrada(Long entradaId) {
         Entrada entrada = entradaRepository.findById(entradaId).orElseThrow(() -> new RuntimeException(ENTRADA_NO_ENCONTRADA));
         return toDTO(entrada);
     }
 
-    @Override
+   @Transactional
+@Override
 public void expirarReservasVencidas() {
     List<Entrada> vencidas = entradaRepository.findByEstadoAndTtlReservaLessThan(ESTADO_RESERVADA, LocalDateTime.now());
 
@@ -464,6 +473,7 @@ public void expirarReservasVencidas() {
         notificacionService.notificarReservaExpirada(entrada.getUsuario(), nombrePartido);
     }
 }
+@Transactional
 @Override
 public void avisarReservasPorExpirar() {
     LocalDateTime ahora = LocalDateTime.now();
@@ -502,6 +512,7 @@ dto.setRonda(entrada.getPartido().getRonda());
     dto.setAsientoInicio(entrada.getAsientoInicio());
     return dto;
 }
+@Transactional(readOnly = true)
 @Override
 public List<PartidoCapacidadDTO> listarPartidosConCapacidad() {
     return partidoService.listarPartidosConCapacidad();
@@ -518,6 +529,7 @@ private Double calcularPrecio(Partido partido, String categoria) {
     );
     return precioBase * multiplicador;
 }
+@Transactional(readOnly = true)
 @Override
 public List<CuposZonaDTO> obtenerCuposPorZona(Long partidoId) {
     Partido partido = partidoService.obtenerPartidoEntidadPorId(partidoId);

@@ -177,31 +177,22 @@ descripcion.append("Perfil actualizado: ")
                 .toList();//se devuelve preferenciaDTO para asi devolver el nombre y el id segun corresponda(seleccion,estadio,estado)
     }
 //Agrega las selecciones mediante el id se verifica que no esten para no sobreescribirlas y se guardan en la bd
-    @Override
-    @Transactional
-    public UsuarioResponseDTO agregarSeleccion(final String correo, final List<Long> idSelecciones) {
-        final Usuario usuario = repository.findByCorreoUsuario(correo)
-                .orElseThrow(() -> new UsuarioNotFoundException(USUARIO_NO_ENCONTRADO));
-        final List<Seleccion> nuevas = seleccionRepository.findAllById(idSelecciones);
-        final List<Seleccion> actuales = new ArrayList<>(usuario.getSeleccionesU());
-        for (int i = 0; i < nuevas.size(); i++) {
-            if (!actuales.contains(nuevas.get(i))) {
-                actuales.add(nuevas.get(i));
-            }
-        }
-        usuario.setSeleccionesU(actuales);
-        return toResponseDTO(repository.save(usuario));
+   @Override
+@Transactional
+public void agregarSeleccion(final String correo, final List<Long> idSelecciones) {
+    Long usuarioId = repository.findIdByCorreo(correo);
+    for (Long seleccionId : idSelecciones) {
+        repository.insertarSeleccion(usuarioId, seleccionId);
     }
+  
+}
 
-    @Override
-    @Transactional
-    public void eliminarSeleccion(final String correo, final Long seleccionId) {
-        final Usuario usuario = repository.findByCorreoUsuario(correo)
-                .orElseThrow(() -> new UsuarioNotFoundException(USUARIO_NO_ENCONTRADO));
-        usuario.setSeleccionesU(new ArrayList<>(usuario.getSeleccionesU()));
-        usuario.getSeleccionesU().removeIf(s -> s.getId().equals(seleccionId));
-        repository.save(usuario);
-    }
+@Override
+@Transactional
+public void eliminarSeleccion(final String correo, final Long seleccionId) {
+    Long usuarioId = repository.findIdByCorreo(correo);
+    repository.eliminarSeleccion(usuarioId, seleccionId);
+}
 
 
 
@@ -215,32 +206,39 @@ descripcion.append("Perfil actualizado: ")
                 .toList();
     }
 
-    @Override
-    @Transactional
-    public UsuarioResponseDTO agregarEstadio(final String correo, final List<Long> idEstadios) {
-        final Usuario usuario = repository.findByCorreoUsuario(correo)
-                .orElseThrow(() -> new UsuarioNotFoundException(USUARIO_NO_ENCONTRADO));
-        final List<EstadioFavorito> nuevos = estadioRepository.findAllById(idEstadios);
-        final List<EstadioFavorito> actuales = new ArrayList<>(usuario.getPreferenciasu());
-        for (int i = 0; i < nuevos.size(); i++) {
-            if (!actuales.contains(nuevos.get(i))) {
-                actuales.add(nuevos.get(i));
-            }
-        }
-        usuario.setPreferenciasu(actuales);
-        return toResponseDTO(repository.save(usuario));
+  @Override
+@Transactional
+public void agregarEstadio(final String correo, final List<Long> idEstadios) {
+    Long usuarioId = repository.findIdByCorreo(correo);
+    for (Long estadioId : idEstadios) {
+        repository.insertarEstadio(usuarioId, estadioId);
     }
+  
+}
 
-    @Override
-    @Transactional
-    public void eliminarEstadio(final String correo, final Long estadioId) {
-        final Usuario usuario = repository.findByCorreoUsuario(correo)
-                .orElseThrow(() -> new UsuarioNotFoundException(USUARIO_NO_ENCONTRADO));
-        usuario.setPreferenciasu(new ArrayList<>(usuario.getPreferenciasu()));
-        usuario.getPreferenciasu().removeIf(e -> e.getId().equals(estadioId));
-        repository.save(usuario);
+@Override
+@Transactional
+public void eliminarEstadio(final String correo, final Long estadioId) {
+    Long usuarioId = repository.findIdByCorreo(correo);
+    repository.eliminarEstadio(usuarioId, estadioId);
+}
+
+@Override
+@Transactional
+public void agregarCiudad(final String correo, final List<Long> idCiudades) {
+    Long usuarioId = repository.findIdByCorreo(correo);
+    for (Long ciudadId : idCiudades) {
+        repository.insertarCiudad(usuarioId, ciudadId);
     }
+ 
+}
 
+@Override
+@Transactional
+public void eliminarCiudad(final String correo, final Long ciudadId) {
+    Long usuarioId = repository.findIdByCorreo(correo);
+    repository.eliminarCiudad(usuarioId, ciudadId);
+}
 
     @Override
     @Transactional(readOnly = true)
@@ -252,31 +250,7 @@ descripcion.append("Perfil actualizado: ")
                 .toList();
     }
 
-    @Override
-    @Transactional
-    public UsuarioResponseDTO agregarCiudad(final String correo, final List<Long> idCiudades) {
-        final Usuario usuario = repository.findByCorreoUsuario(correo)
-                .orElseThrow(() -> new UsuarioNotFoundException(USUARIO_NO_ENCONTRADO));
-        final List<CiudadFavorita> nuevas = ciudadRepository.findAllById(idCiudades);
-        final List<CiudadFavorita> actuales = new ArrayList<>(usuario.getCiudadFavoritas());
-        for (int i = 0; i < nuevas.size(); i++) {
-            if (!actuales.contains(nuevas.get(i))) {
-                actuales.add(nuevas.get(i));
-            }
-        }
-        usuario.setCiudadFavoritas(actuales);
-        return toResponseDTO(repository.save(usuario));
-    }
-
-    @Override
-    @Transactional
-    public void eliminarCiudad(final String correo, final Long ciudadId) {
-        final Usuario usuario = repository.findByCorreoUsuario(correo)
-                .orElseThrow(() -> new UsuarioNotFoundException(USUARIO_NO_ENCONTRADO));
-        usuario.setCiudadFavoritas(new ArrayList<>(usuario.getCiudadFavoritas()));
-        usuario.getCiudadFavoritas().removeIf(c -> c.getId().equals(ciudadId));
-        repository.save(usuario);
-    }
+    
 
     @Override
     @Transactional(readOnly = true)

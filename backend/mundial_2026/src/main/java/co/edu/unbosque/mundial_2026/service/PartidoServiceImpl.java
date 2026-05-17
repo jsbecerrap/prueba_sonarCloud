@@ -77,7 +77,8 @@ public PartidoServiceImpl(RestClient footballClient,
 }
 
 
-    @Override
+    @Transactional(readOnly = true)
+@Override
     public List<PartidoDTO> obtenerPartidos() {
         final PartidoResponseDTO response = footballClient.get()
                 .uri(BASE_FIXTURES)
@@ -86,7 +87,8 @@ public PartidoServiceImpl(RestClient footballClient,
         return response.getPartidos();
     }
 
-    @Override
+   @Transactional(readOnly = true)
+@Override
     public List<PartidoDTO> obtenerPartidosPorEquipo(Long equipoId) {
         final PartidoResponseDTO response = footballClient.get()
                 .uri(BASE_FIXTURES + "&team=" + equipoId)
@@ -95,7 +97,8 @@ public PartidoServiceImpl(RestClient footballClient,
         return response.getPartidos();
     }
 
-    @Override
+   @Transactional(readOnly = true)
+@Override
     public PartidoDTO obtenerPartidoPorId(Long fixtureId) {
         final PartidoResponseDTO response = footballClient.get()
                 .uri("/fixtures?id=" + fixtureId)
@@ -107,7 +110,8 @@ public PartidoServiceImpl(RestClient footballClient,
         return response.getPartidos().get(0);
     }
 
-    @Override
+   @Transactional(readOnly = true)
+@Override
     public List<List<PosicionDTO>> obtenerStandings() {
         final StandingResponseDTO response = footballClient.get()
                 .uri("/standings?league=" + LIGA_MUNDIAL + SEASON_PARAM + TEMPORADA_MUNDIAL)
@@ -116,7 +120,8 @@ public PartidoServiceImpl(RestClient footballClient,
         return response.getRespuesta().get(0).getTablas().getTablas();
     }
 
-    @Override
+  @Transactional(readOnly = true)
+@Override
 public List<EquipoMundialDTO> obtenerSelecciones() {
     final EquipoMundialResponseDTO response = footballClient.get()
             .uri("/teams?league=" + LIGA_MUNDIAL + SEASON_PARAM + TEMPORADA_MUNDIAL)
@@ -125,7 +130,8 @@ public List<EquipoMundialDTO> obtenerSelecciones() {
     return response.getEquipos();
 }
 
-    @Override
+   @Transactional(readOnly = true)
+@Override
     public List<JugadorDTO> obtenerJugadoresPorEquipo(Long equipoId) {
         final JugadorResponseDTO response = footballClient.get()
                 .uri("/players/squads?team=" + equipoId)
@@ -134,7 +140,8 @@ public List<EquipoMundialDTO> obtenerSelecciones() {
         return response.getRespuesta().get(0).getJugadores();
     }
 
-    @Override
+    @Transactional(readOnly = true)
+@Override
     public List<PartidoDTO> obtenerPartidosPorFecha(String fecha) {
         final PartidoResponseDTO response = footballClient.get()
                 .uri(BASE_FIXTURES + "&date=" + fecha)
@@ -143,7 +150,8 @@ public List<EquipoMundialDTO> obtenerSelecciones() {
         return response.getPartidos();
     }
 
-    @Override
+  @Transactional(readOnly = true)
+@Override
     public List<PartidoDTO> obtenerPartidosEnVivo() {
         final PartidoResponseDTO response = footballClient.get()
                 .uri("/fixtures?live=all&league=" + LIGA_MUNDIAL + SEASON_PARAM + TEMPORADA_MUNDIAL)
@@ -154,7 +162,8 @@ public List<EquipoMundialDTO> obtenerSelecciones() {
 
    
 
-    @Override
+  @Transactional
+@Override
     public int sincronizarPorFechaYLiga(String fecha, int liga, int temporada) {
         final PartidoResponseDTO response = footballClient.get()
                 .uri("/fixtures?league=" + liga + SEASON_PARAM + temporada + "&date=" + fecha)
@@ -172,7 +181,8 @@ public List<EquipoMundialDTO> obtenerSelecciones() {
   
     
 
- @Override
+@Transactional(readOnly = true)
+@Override
 public List<PartidoDTO> obtenerPartidosPorSeleccionesFav(String correo) {
 final Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
     final List<PartidoDTO> listaPartidos = new ArrayList<>();
@@ -183,7 +193,8 @@ final Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
     return listaPartidos;
 }
 
-    @Override
+    @Transactional(readOnly = true)
+@Override
     public List<PartidoDTO> obtenerPartidosPorEstadiosFav(final String correo) {
         final Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
         final List<PartidoDTO> listaPartidos = new ArrayList<>();
@@ -203,7 +214,8 @@ final Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
         return listaPartidos;
     }
 
-  @Override
+  @Transactional(readOnly = true)
+@Override
 public List<PartidoDTO> obtenerPartidosPorCiudadesFav(final String correo) {
 final Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
     final List<PartidoDTO> listaPartidos = new ArrayList<>();
@@ -229,17 +241,20 @@ final Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
 }
    
 
-    @Override
+    @Transactional(readOnly = true)
+@Override
     public List<Partido> filtrarPorSeleccion(final String nombre) {
         return partidoRepository.findBySeleccion(nombre);
     }
 
-    @Override
+@Transactional(readOnly = true)
+@Override
     public List<Partido> filtrarPorEstadio(final String nombre) {
         return partidoRepository.findByEstadio(nombre);
     }
 
-    @Override
+  @Transactional(readOnly = true)
+@Override
     public List<Partido> filtrarPorCiudad(final String nombre) {
         return partidoRepository.findAll().stream()
                 .filter(p -> {
@@ -266,7 +281,8 @@ final Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
     }
         return partido;
     }
-    @Override
+    @Transactional(readOnly = true)
+@Override
 public List<PreferenciaDTO> obtenerCatalogoSelecciones() {
     return seleccionRepository.findAll().stream()
         .map(s -> new PreferenciaDTO(s.getId(), s.getNombre()))
@@ -314,6 +330,7 @@ public List<Partido> listarDesdeBD() {
 
 
 
+@Transactional
 @Override
 public int actualizarResultado(Long partidoId, int golesLocal,
         int golesVisitante, int estadoPartido) {
@@ -343,6 +360,7 @@ public int actualizarResultado(Long partidoId, int golesLocal,
 }
 
 
+@Transactional
 @Override
 public int sincronizarDesdeAPI() {
     final PartidoResponseDTO response = footballClient.get()

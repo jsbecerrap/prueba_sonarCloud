@@ -4,10 +4,12 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import co.edu.unbosque.mundial_2026.dto.ApuestaConParticipantesDTO;
 import co.edu.unbosque.mundial_2026.dto.ApuestaDTO;
 import co.edu.unbosque.mundial_2026.dto.ParticipacionDTO;
 import co.edu.unbosque.mundial_2026.dto.PronosticoDTO;
@@ -393,7 +395,7 @@ public class ApuestaServiceImpl implements ApuestaService {
                         p.getApuesta().getId(), p.getPuntos(), p.getPosicionRanking()))
                 .toList();
     }
-
+@Transactional(readOnly = true)  
     @Override
     public List<ApuestaDTO> listarApuestasPorUsuario(Long usuarioId) {
         return participacionRepository.findByUsuarioId(usuarioId).stream()
@@ -524,4 +526,33 @@ public class ApuestaServiceImpl implements ApuestaService {
         participacionRepository.deleteByApuestaId(apuestaId);
         apuestaRepository.delete(apuesta);
     }
+  @Transactional(readOnly = true)
+@Override
+public List<ApuestaConParticipantesDTO> listarApuestasPorUsuarioCompleto(Long usuarioId) {
+    final List<Participacion> misParticipaciones = participacionRepository.findByUsuarioIdConApuesta(usuarioId);
+
+    final List<Long> apuestaIds = misParticipaciones.stream()
+            .map(p -> p.getApuesta().getId())
+            .toList();
+
+    final Map<Long, List<ParticipacionDTO>> porApuesta = participacionRepository
+            .findByApuestaIdInConUsuario(apuestaIds).stream()
+            .collect(Collectors.groupingBy(
+                    p -> p.getApuesta().getId(),
+                    Collectors.mapping(
+                            p -> new ParticipacionDTO(p.getId(), p.getUsuario().getId(),
+                                    p.getApuesta().getId(), p.getPuntos(), p.getPosicionRanking()),
+                            Collectors.toList())));
+
+    return misParticipaciones.stream()
+            .map(participacion -> {
+                final Apuesta apuesta = participacion.getApuesta();
+                return new ApuestaConParticipantesDTO(
+                        apuesta.getId(), apuesta.getNombre(), apuesta.getEstado(),
+                        apuesta.getCodigoInvitacion(), apuesta.getFechaCierre(),
+                        apuesta.getCreadaPor().getId(),
+                        porApuesta.getOrDefault(apuesta.getId(), List.of()));
+            })
+            .toList();
+}
 }

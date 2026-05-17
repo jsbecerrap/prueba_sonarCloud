@@ -254,6 +254,9 @@ export async function logoutApi(user?: CurrentUser | null): Promise<void> {
 }
 
 export async function getMeApi(): Promise<CurrentUser | null> {
+  const token = getAuthToken();
+  if (!token) return null;
+
   if (!USE_MOCK) {
     try {
       const res = await http.get<{
@@ -272,12 +275,10 @@ export async function getMeApi(): Promise<CurrentUser | null> {
         role: res.rol as ApiUser["role"],
       });
     } catch {
+      setAuthToken(null);
       return null;
     }
   }
-
-  const token = getAuthToken();
-  if (!token) return null;
 
   return parseMockToken(token);
 }

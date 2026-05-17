@@ -7,6 +7,7 @@ import {
   createNotification,
   deleteNotification,
   getNotifications,
+  getNotificationsByDate,
   markNotificationRead,
   markAllNotificationsRead,
 } from "../api/notificationApi";
@@ -26,31 +27,45 @@ export default function Notifications() {
   const [errors, setErrors] = useState<FieldErrors<NotificationField>>({});
   const [msg, setMsg] = useState<Msg>(null);
   const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [desde, setDesde] = useState("");
+  const [hasta, setHasta] = useState("");
+  const [buscando, setBuscando] = useState(false);
 
-  const refresh = async () => {
+  const refresh = async (p = 0) => {
     try {
-      setItems(await getNotifications());
+      const res = await getNotifications(p, 20);
+      setItems(res.items);
+      setTotalPages(res.totalPages);
+      setPage(p);
+      setBuscando(false);
+      setDesde("");
+      setHasta("");
     } catch (e) {
       setMsg({ text: e instanceof Error ? e.message : "Error cargando notificaciones.", severity: "error" });
     }
   };
 
-  useEffect(() => { void refresh(); }, []);
+  useEffect(() => { void refresh(0); }, []);
 
+  useEffect(() => {
+    const registrarToken = async () => {
+      try {
+        if (sessionStorage.getItem("fcm_registered")) return;
+        const permiso = await Notification.requestPermission();
+        if (permiso !== "granted") return;
+        const token = await getToken(messaging, { vapidKey: VAPID_KEY });
+        if (token) {
+          await registrarFcmToken(token);
+          sessionStorage.setItem("fcm_registered", "1");
+        }
+      } catch {
+      }
+    };
+    void registrarToken();
+  }, []);
 
-useEffect(() => {
-  const registrarToken = async () => {
-    try {
-      const permiso = await Notification.requestPermission();
-      if (permiso !== "granted") return;
-      const token = await getToken(messaging, { vapidKey: VAPID_KEY });
-      if (token) await registrarFcmToken(token);
-    } catch {
-      // silencioso
-    }
-  };
-  void registrarToken();
-}, []);
   const validateForm = () => {
     const nextErrors: FieldErrors<NotificationField> = {
       title: validateRequired(title, "El título", 5),
@@ -71,7 +86,7 @@ useEffect(() => {
       await createNotification(title.trim(), body.trim());
       setTitle(""); setBody("");
       setMsg({ text: "Notificación enviada correctamente.", severity: "success" });
-      await refresh();
+      await refresh(0);
     } catch (e) {
       setMsg({ text: e instanceof Error ? e.message : "Error creando notificación.", severity: "error" });
     } finally { setLoading(false); }
@@ -80,7 +95,7 @@ useEffect(() => {
   const onMarkRead = async (id: string) => {
     try {
       await markNotificationRead(id);
-      await refresh();
+      await refresh(page);
     } catch (e) {
       setMsg({ text: e instanceof Error ? e.message : "No se pudo marcar como leída.", severity: "error" });
     }
@@ -91,7 +106,7 @@ useEffect(() => {
       setLoading(true);
       await markAllNotificationsRead();
       setMsg({ text: "Todas marcadas como leídas.", severity: "success" });
-      await refresh();
+      await refresh(0);
     } catch (e) {
       setMsg({ text: e instanceof Error ? e.message : "Error al marcar todas.", severity: "error" });
     } finally { setLoading(false); }
@@ -101,9 +116,36 @@ useEffect(() => {
     try {
       await deleteNotification(id);
       setMsg({ text: "Notificación eliminada.", severity: "success" });
-      await refresh();
+      await refresh(page);
     } catch (e) {
       setMsg({ text: e instanceof Error ? e.message : "No se pudo eliminar.", severity: "error" });
+    }
+  };
+
+  const onBuscar = async () => {
+    if (!desde || !hasta) {
+      setMsg({ text: "Selecciona un rango de fechas.", severity: "error" });
+      return;
+    }
+    try {
+      const res = await getNotificationsByDate(desde, hasta, 0, 20);
+      setItems(res.items);
+      setTotalPages(res.totalPages);
+      setPage(0);
+      setBuscando(true);
+    } catch (e) {
+      setMsg({ text: e instanceof Error ? e.message : "Error buscando notificaciones.", severity: "error" });
+    }
+  };
+
+  const onBuscarPagina = async (p: number) => {
+    if (buscando) {
+      const res = await getNotificationsByDate(desde, hasta, p, 20);
+      setItems(res.items);
+      setTotalPages(res.totalPages);
+      setPage(p);
+    } else {
+      await refresh(p);
     }
   };
 
@@ -154,6 +196,21 @@ useEffect(() => {
           )}
         </Stack>
 
+        <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ mb: 2 }} alignItems="center">
+          <TextField
+            label="Desde" type="date" size="small"
+            value={desde} onChange={(e) => setDesde(e.target.value)}
+            InputLabelProps={{ shrink: true }} sx={{ width: 180 }}
+          />
+          <TextField
+            label="Hasta" type="date" size="small"
+            value={hasta} onChange={(e) => setHasta(e.target.value)}
+            InputLabelProps={{ shrink: true }} sx={{ width: 180 }}
+          />
+          <Button variant="contained" size="small" onClick={onBuscar}>Buscar</Button>
+          {buscando && <Button variant="outlined" size="small" onClick={() => refresh(0)}>Limpiar</Button>}
+        </Stack>
+
         {items.length === 0 ? (
           <Typography color="text.secondary">No hay notificaciones todavía.</Typography>
         ) : (
@@ -183,6 +240,14 @@ useEffect(() => {
                 </Stack>
               </Paper>
             ))}
+          </Stack>
+        )}
+
+        {totalPages > 1 && (
+          <Stack direction="row" spacing={1} justifyContent="center" sx={{ mt: 2 }}>
+            <Button size="small" disabled={page === 0} onClick={() => onBuscarPagina(page - 1)}>Anterior</Button>
+            <Typography sx={{ alignSelf: "center" }}>{page + 1} / {totalPages}</Typography>
+            <Button size="small" disabled={page >= totalPages - 1} onClick={() => onBuscarPagina(page + 1)}>Siguiente</Button>
           </Stack>
         )}
       </Paper>

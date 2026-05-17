@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -49,21 +50,21 @@ public class Usuario {
     @JoinColumn(name = "rol_id", nullable = false)
     private Rol rol;
 
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "usuarios_selecciones",
             joinColumns = @JoinColumn(name = USUARIO_ID),
             inverseJoinColumns = @JoinColumn(name = "seleccion_id"),
             uniqueConstraints = @UniqueConstraint(columnNames = { USUARIO_ID, "seleccion_id" }))
     private List<Seleccion> seleccionesU;
 
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "usuarios_preferenciasUbi",
             joinColumns = @JoinColumn(name = USUARIO_ID),
             inverseJoinColumns = @JoinColumn(name = "estadio_id"),
             uniqueConstraints = @UniqueConstraint(columnNames = { USUARIO_ID, "estadio_id" }))
     private List<EstadioFavorito> preferenciasu;
 
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(joinColumns = @JoinColumn(name = USUARIO_ID),
             inverseJoinColumns = @JoinColumn(name = "ciudad_id"),
             uniqueConstraints = @UniqueConstraint(columnNames = { USUARIO_ID, "ciudad_id" }))

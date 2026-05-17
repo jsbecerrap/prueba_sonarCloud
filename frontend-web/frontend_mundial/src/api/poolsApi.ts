@@ -46,18 +46,20 @@ export async function recalcPoolPoints(_poolId: string): Promise<void> {
 
 export async function getPools(usuarioId: number): Promise<Pool[]> {
   if (!USE_MOCK) {
-    const apuestas = await http.get<ApuestaDTO[]>(
-      `/api/apuestas/usuario/${usuarioId}`
-    );
-    const pools: Pool[] = await Promise.all(
-      apuestas.map(async (a) => {
-        const members = await http.get<ParticipacionDTO[]>(
-          `/api/apuestas/participantes/${a.id}`
-        );
-        return mapApuesta(a, members);
-      })
-    );
-    return pools;
+    const apuestas = await http.get<{
+      id: number;
+      nombre: string;
+      estado: string;
+      codigoInvitacion: string;
+      fechaCierre?: string;
+      creadoPor: number;
+      participantes: ParticipacionDTO[];
+    }[]>(`/api/apuestas/usuario/${usuarioId}/completo`);
+
+    return apuestas.map((a) => mapApuesta(
+      { id: a.id, nombre: a.nombre, estado: a.estado, codigoInvitacion: a.codigoInvitacion, fechaCierre: a.fechaCierre, creadoPor: a.creadoPor },
+      a.participantes
+    ));
   }
 
   await sleep(150);

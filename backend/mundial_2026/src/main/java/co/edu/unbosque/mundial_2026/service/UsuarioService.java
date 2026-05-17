@@ -19,22 +19,22 @@ public interface UsuarioService {
     void eliminarUsuario(Long usuarioId);
     Map<String, Object> actualizarPerfil(String correoUsuario, UsuarioActualizarRequestDTO dto);
 
-    // Selecciones favoritas
+  void agregarSeleccion(String correo, List<Long> ids);
+void agregarEstadio(String correo, List<Long> ids);
+void agregarCiudad(String correo, List<Long> ids);
     List<PreferenciaDTO> seleccionesUsuario(String correo);
-    UsuarioResponseDTO agregarSeleccion(String correo, List<Long> idSelecciones);
+  
     void eliminarSeleccion(String correo, Long seleccionId);
 
-    // Estadios favoritos
     List<PreferenciaDTO> estadiosUsuario(String correo);
-    UsuarioResponseDTO agregarEstadio(String correo, List<Long> idEstadios);
+   
     void eliminarEstadio(String correo, Long estadioId);
 
-    // Ciudades favoritas
+   
     List<PreferenciaDTO> ciudadesUsuario(String correo);
-    UsuarioResponseDTO agregarCiudad(String correo, List<Long> idCiudades);
+  
     void eliminarCiudad(String correo, Long ciudadId);
 
-    // Catálogos generales (para selectores del front)
     List<PreferenciaDTO> listarEstadios();
     List<PreferenciaDTO> listarCiudades();
     Usuario obtenerEntidadPorId(Long usuarioId);

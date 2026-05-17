@@ -6,13 +6,23 @@ import type { NotificationItem } from "../types/notification";
 const sleep = (ms = 200) => new Promise((r) => setTimeout(r, ms));
 const nid = () => `n_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 
-export async function getNotifications(): Promise<NotificationItem[]> {
+export async function getNotifications(page = 0, size = 20): Promise<{ items: NotificationItem[]; totalPages: number; totalElements: number }> {
   if (!USE_MOCK) {
-    const data = await http.get<{ id: number; titulo: string; mensaje: string; leida: boolean; fecha: string }[]>("/api/notificaciones");
-    return data.map((n) => ({ id: String(n.id), title: n.titulo, body: n.mensaje, read: n.leida, createdAt: n.fecha }));
+    const data = await http.get<{
+      content: { id: number; titulo: string; mensaje: string; leida: boolean; fecha: string }[];
+      totalPages: number;
+      totalElements: number;
+    }>(`/api/notificaciones?page=${page}&size=${size}`);
+    return {
+      items: data.content.map((n) => ({ id: String(n.id), title: n.titulo, body: n.mensaje, read: n.leida, createdAt: n.fecha })),
+      totalPages: data.totalPages,
+      totalElements: data.totalElements,
+    };
   }
   await sleep();
-  return mockDb.notifications.slice().sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+  const all = mockDb.notifications.slice().sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+  const start = page * size;
+  return { items: all.slice(start, start + size), totalPages: Math.ceil(all.length / size), totalElements: all.length };
 }
 
 export async function createNotification(title: string, body: string): Promise<void> {
@@ -83,4 +93,24 @@ export async function registrarFcmToken(fcmToken: string): Promise<void> {
     return;
   }
   await sleep();
+}
+export async function getNotificationsByDate(desde: string, hasta: string, page = 0, size = 20): Promise<{ items: NotificationItem[]; totalPages: number; totalElements: number }> {
+  if (!USE_MOCK) {
+    const data = await http.get<{
+      content: { id: number; titulo: string; mensaje: string; leida: boolean; fecha: string }[];
+      totalPages: number;
+      totalElements: number;
+    }>(`/api/notificaciones/buscar?desde=${desde}&hasta=${hasta}&page=${page}&size=${size}`);
+    return {
+      items: data.content.map((n) => ({ id: String(n.id), title: n.titulo, body: n.mensaje, read: n.leida, createdAt: n.fecha })),
+      totalPages: data.totalPages,
+      totalElements: data.totalElements,
+    };
+  }
+  await sleep();
+  const filtered = mockDb.notifications
+    .filter((n) => n.createdAt >= desde && n.createdAt <= hasta + "T23:59:59")
+    .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+  const start = page * size;
+  return { items: filtered.slice(start, start + size), totalPages: Math.ceil(filtered.length / size), totalElements: filtered.length };
 }

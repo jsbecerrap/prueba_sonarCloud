@@ -1,9 +1,13 @@
 package co.edu.unbosque.mundial_2026.service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.context.annotation.Lazy;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -118,16 +122,10 @@ public void enviarMasiva(NotificacionMasivaRequestDTO dto) {
     }
 
     @Override
-    @Transactional
-    public void marcarTodasLeidas(Long usuarioId) {
-        Usuario usuario = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new UsuarioNotFoundException(USUARIO_NO_ENCONTRADO));
-        List<Notificacion> lista = notificacionRepository.findByUsuario(usuario);
-        for (Notificacion n : lista) {
-            n.setLeida(true);
-        }
-        notificacionRepository.saveAll(lista);
-    }
+@Transactional
+public void marcarTodasLeidas(Long usuarioId) {
+    notificacionRepository.marcarTodasLeidasPorUsuario(usuarioId);
+}
 
   @Override
 @Transactional
@@ -281,7 +279,7 @@ public void notificarPorPartido(Long partidoId, String tipo, String titulo, Stri
         notificacionRepository.save(notificacion);
         enviarPush(usuario, titulo, mensaje);
     }
-
+@Async
     @Override
     @Transactional
     public void notificarApuestaUnirse(Usuario usuarioNuevo, Usuario creador, String nombreApuesta) {
@@ -373,5 +371,20 @@ public void notificarReservaCreada(Usuario usuario, String partido) {
     Notificacion notificacion = new Notificacion("RESERVA_CREADA", titulo, mensaje, CANAL_SISTEMA, ESTADO_ENVIADA, usuario);
     notificacionRepository.save(notificacion);
     enviarPush(usuario, titulo, mensaje);
+}
+@Override
+@Transactional(readOnly = true)
+public Page<NotificacionDTO> listarPorUsuarioPaginado(Long usuarioId, Pageable pageable) {
+    return notificacionRepository.findByUsuarioIdOrderByFechaDesc(usuarioId, pageable)
+            .map(this::toDTO);
+}
+
+@Override
+@Transactional(readOnly = true)
+public Page<NotificacionDTO> listarPorFecha(Long usuarioId, LocalDateTime desde,
+        LocalDateTime hasta, Pageable pageable) {
+    return notificacionRepository.findByUsuarioIdAndFechaBetweenOrderByFechaDesc(
+            usuarioId, desde, hasta, pageable)
+            .map(this::toDTO);
 }
 }

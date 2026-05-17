@@ -6,7 +6,9 @@ import co.edu.unbosque.mundial_2026.dto.NotificacionDTO;
 import co.edu.unbosque.mundial_2026.dto.request.NotificacionMasivaRequestDTO;
 import co.edu.unbosque.mundial_2026.dto.request.NotificacionRequestDTO;
 import co.edu.unbosque.mundial_2026.entity.Usuario;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import java.time.LocalDateTime;
 public interface NotificacionService {
 
     void enviarNotificacion(NotificacionRequestDTO dto);
@@ -51,4 +53,8 @@ void notificarCarritoAbandonado(Usuario usuario);
     void notificarRegistro(Usuario usuario);
     void notificarOrdenFallida(Usuario usuario);
 void notificarReservaCreada(Usuario usuario, String partido);
+Page<NotificacionDTO> listarPorUsuarioPaginado(Long usuarioId, Pageable pageable);
+
+Page<NotificacionDTO> listarPorFecha(Long usuarioId, LocalDateTime desde, 
+    LocalDateTime hasta, Pageable pageable);
 }

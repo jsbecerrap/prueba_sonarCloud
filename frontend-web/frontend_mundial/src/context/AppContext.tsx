@@ -44,16 +44,15 @@ export function AppProvider({ children }: { readonly children: React.ReactNode }
   const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
-  (async () => {
-    try {
-      const me = await getMeApi();
-      setUser(me);
-      setAuthLoading(false);
-    } catch {
-      setAuthLoading(false);
-    }
-  })();
-}, []);
+    (async () => {
+      try {
+        const me = await getMeApi();
+        setUser(me);
+      } finally {
+        setAuthLoading(false);
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     const rawPool = localStorage.getItem(LS_POOL);
@@ -95,7 +94,7 @@ export function AppProvider({ children }: { readonly children: React.ReactNode }
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
+
 export function useApp() {
   const ctx = useContext(AppContext);
   if (!ctx) throw new Error("useApp must be used inside <AppProvider>");

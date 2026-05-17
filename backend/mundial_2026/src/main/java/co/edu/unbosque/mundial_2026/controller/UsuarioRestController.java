@@ -112,11 +112,7 @@ public class UsuarioRestController {
         return ResponseEntity.ok(service.seleccionesUsuario(correo));
     }
 
-    @PutMapping("/usuarios/seleccionesFavoritas")
-    public ResponseEntity<UsuarioResponseDTO> agregarSeleccion(@RequestBody final List<Long> ids) {
-        final String correo = SecurityContextHolder.getContext().getAuthentication().getName();
-        return ResponseEntity.ok(service.agregarSeleccion(correo, ids));
-    }
+   
 
     @DeleteMapping("/usuarios/seleccionesFavoritas/{seleccionId}")
     public ResponseEntity<Void> eliminarSeleccion(@PathVariable final Long seleccionId) {
@@ -133,12 +129,7 @@ public class UsuarioRestController {
         return ResponseEntity.ok(service.estadiosUsuario(correo));
     }
 
-    @PutMapping("/usuarios/estadiosFav")
-    public ResponseEntity<UsuarioResponseDTO> agregarEstadio(@RequestBody final List<Long> ids) {
-        final String correo = SecurityContextHolder.getContext().getAuthentication().getName();
-        return ResponseEntity.ok(service.agregarEstadio(correo, ids));
-    }
-
+  
     @DeleteMapping("/usuarios/estadiosFav/{estadioId}")
     public ResponseEntity<Void> eliminarEstadio(@PathVariable final Long estadioId) {
         final String correo = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -154,11 +145,7 @@ public class UsuarioRestController {
         return ResponseEntity.ok(service.ciudadesUsuario(correo));
     }
 
-    @PutMapping("/usuarios/ciudadesFav")
-    public ResponseEntity<UsuarioResponseDTO> agregarCiudad(@RequestBody final List<Long> ids) {
-        final String correo = SecurityContextHolder.getContext().getAuthentication().getName();
-        return ResponseEntity.ok(service.agregarCiudad(correo, ids));
-    }
+    
 
     @DeleteMapping("/usuarios/ciudadesFav/{ciudadId}")
     public ResponseEntity<Void> eliminarCiudad(@PathVariable final Long ciudadId) {
@@ -181,6 +168,27 @@ public class UsuarioRestController {
 public ResponseEntity<Void> actualizarFcmToken(@RequestBody Map<String, String> body) {
     String correo = SecurityContextHolder.getContext().getAuthentication().getName();
     service.actualizarFcmToken(correo, body.get("fcmToken"));
+    return ResponseEntity.noContent().build();
+}
+
+@PutMapping("/usuarios/seleccionesFavoritas")
+public ResponseEntity<Void> agregarSeleccion(@RequestBody final List<Long> ids) {
+    final String correo = SecurityContextHolder.getContext().getAuthentication().getName();
+    service.agregarSeleccion(correo, ids);
+    return ResponseEntity.noContent().build();
+}
+
+@PutMapping("/usuarios/estadiosFav")
+public ResponseEntity<Void> agregarEstadio(@RequestBody final List<Long> ids) {
+    final String correo = SecurityContextHolder.getContext().getAuthentication().getName();
+    service.agregarEstadio(correo, ids);
+    return ResponseEntity.noContent().build();
+}
+
+@PutMapping("/usuarios/ciudadesFav")
+public ResponseEntity<Void> agregarCiudad(@RequestBody final List<Long> ids) {
+    final String correo = SecurityContextHolder.getContext().getAuthentication().getName();
+    service.agregarCiudad(correo, ids);
     return ResponseEntity.noContent().build();
 }
 }

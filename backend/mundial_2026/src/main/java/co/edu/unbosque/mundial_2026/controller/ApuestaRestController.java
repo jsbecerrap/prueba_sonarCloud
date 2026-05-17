@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import co.edu.unbosque.mundial_2026.dto.ApuestaConParticipantesDTO;
 import co.edu.unbosque.mundial_2026.dto.ApuestaDTO;
 import co.edu.unbosque.mundial_2026.dto.ParticipacionDTO;
 import co.edu.unbosque.mundial_2026.dto.PronosticoDTO;
@@ -114,5 +115,10 @@ public ResponseEntity<List<ApuestaDTO>> listarTodas() {
 public ResponseEntity<Void> eliminarApuesta(@PathVariable Long apuestaId) {
     apuestaService.eliminarApuesta(apuestaId);
     return ResponseEntity.noContent().build();
+}
+@GetMapping("/usuario/{usuarioId}/completo")
+public ResponseEntity<List<ApuestaConParticipantesDTO>> listarApuestasPorUsuarioCompleto(
+        @PathVariable Long usuarioId) {
+    return ResponseEntity.ok(apuestaService.listarApuestasPorUsuarioCompleto(usuarioId));
 }
 }

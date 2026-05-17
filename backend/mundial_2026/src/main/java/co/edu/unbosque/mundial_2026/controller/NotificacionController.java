@@ -1,7 +1,12 @@
 package co.edu.unbosque.mundial_2026.controller;
 
 import java.util.List;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.web.bind.annotation.RequestParam;
+import java.time.LocalDateTime;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -11,6 +16,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import co.edu.unbosque.mundial_2026.dto.NotificacionDTO;
@@ -33,11 +39,14 @@ public class NotificacionController {
     }
 
     @GetMapping
-    public ResponseEntity<List<NotificacionDTO>> listarMisNotificaciones() {
-        String correo = SecurityContextHolder.getContext().getAuthentication().getName();
-        Long usuarioId = usuarioService.obtenerPorCorreo(correo).getId();
-        return ResponseEntity.ok(notificacionService.listarPorUsuario(usuarioId));
-    }
+public ResponseEntity<Page<NotificacionDTO>> listarMisNotificaciones(
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "20") int size) {
+    String correo = SecurityContextHolder.getContext().getAuthentication().getName();
+    Long usuarioId = usuarioService.obtenerPorCorreo(correo).getId();
+    Pageable pageable = PageRequest.of(page, size);
+    return ResponseEntity.ok(notificacionService.listarPorUsuarioPaginado(usuarioId, pageable));
+}
 
     @PutMapping("/{id}/leida")
     public ResponseEntity<Void> marcarLeida(@PathVariable Long id) {
@@ -76,4 +85,18 @@ public class NotificacionController {
                 partidoId, dto.getTipo(), dto.getTitulo(), dto.getMensaje());
         return ResponseEntity.noContent().build();
     }
+    @GetMapping("/buscar")
+public ResponseEntity<Page<NotificacionDTO>> buscarPorFecha(
+        @RequestParam String desde,
+        @RequestParam String hasta,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "20") int size) {
+    String correo = SecurityContextHolder.getContext().getAuthentication().getName();
+    Long usuarioId = usuarioService.obtenerPorCorreo(correo).getId();
+    LocalDateTime fechaDesde = LocalDateTime.parse(desde + "T00:00:00");
+    LocalDateTime fechaHasta = LocalDateTime.parse(hasta + "T23:59:59");
+    Pageable pageable = PageRequest.of(page, size);
+    return ResponseEntity.ok(notificacionService.listarPorFecha(
+            usuarioId, fechaDesde, fechaHasta, pageable));
+}
 }

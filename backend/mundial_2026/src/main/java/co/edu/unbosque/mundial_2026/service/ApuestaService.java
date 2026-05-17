@@ -2,6 +2,7 @@ package co.edu.unbosque.mundial_2026.service;
 
 import java.util.List;
 
+import co.edu.unbosque.mundial_2026.dto.ApuestaConParticipantesDTO;
 import co.edu.unbosque.mundial_2026.dto.ApuestaDTO;
 import co.edu.unbosque.mundial_2026.dto.ParticipacionDTO;
 import co.edu.unbosque.mundial_2026.dto.PronosticoDTO;
@@ -38,4 +39,5 @@ void eliminarPronostico(Long pronosticoId);
 List<PronosticoDTO> calcularPuntosParciales(Long apuestaId);
 List<ApuestaDTO> listarTodas();
 void eliminarApuesta(Long apuestaId);
+List<ApuestaConParticipantesDTO> listarApuestasPorUsuarioCompleto(Long usuarioId);
 }

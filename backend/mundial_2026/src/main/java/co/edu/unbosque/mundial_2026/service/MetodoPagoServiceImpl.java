@@ -36,6 +36,7 @@ public MetodoPagoServiceImpl(MetodoPagoRepository metodoPagoRepository,
 
 
 
+@Transactional
 @Override
 public MetodoPagoResponseDTO agregar(String correo, MetodoPagoRequestDTO dto) {
     Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
@@ -102,7 +103,8 @@ public void eliminar(String correo, Long id) {
             UUID.randomUUID().toString(),
             ENTIDAD_METODO_PAGO);
 }
-   @Override
+  @Transactional
+@Override
 public MetodoPagoResponseDTO agregar(MetodoPagoRequestDTO dto) {
  Usuario usuario = usuarioService.obtenerEntidadPorId(dto.getUsuarioId());
 List<MetodoPago> existentes = metodoPagoRepository.findByUsuarioId(dto.getUsuarioId());
@@ -120,7 +122,8 @@ List<MetodoPago> existentes = metodoPagoRepository.findByUsuarioId(dto.getUsuari
     return toDTO(metodo);
 }
 
-    @Override
+    @Transactional(readOnly = true)
+@Override
     public List<MetodoPagoResponseDTO> listarPorUsuario(Long usuarioId) {
         List<MetodoPago> lista = metodoPagoRepository.findByUsuarioIdOrderByCreatedAtDesc(usuarioId);
         List<MetodoPagoResponseDTO> dtos = new ArrayList<>();
@@ -130,7 +133,8 @@ List<MetodoPago> existentes = metodoPagoRepository.findByUsuarioId(dto.getUsuari
         return dtos;
     }
 
-    @Override
+  @Transactional
+@Override
     public boolean setDefault(Long usuarioId, Long metodoPagoId) {
         List<MetodoPago> todos = metodoPagoRepository.findByUsuarioId(usuarioId);
         MetodoPago target = null;
@@ -172,6 +176,7 @@ public MetodoPago obtenerEntidadPorId(final Long id) {
 }
 
 
+@Transactional(readOnly = true)
 @Override
 public List<MetodoPagoResponseDTO> listarPorCorreo(String correo) {
     Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
