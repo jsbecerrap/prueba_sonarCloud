@@ -63,15 +63,14 @@ export default function Cart() {
     cargarCarrito();
   }, []);
 
- const handleMostrarPago = async () => {
-  if (metodos.length === 0) {
-    const data = await getMyPaymentMethods(user?.id ?? "");
-    setMetodos(data ?? []);
-    const def = data.find((m) => m.isDefault) ?? data[0];
-    if (def) setMetodoPagoId(def.id);
-  }
-  setMostrarPago(true);
-};
+  useEffect(() => {
+    if (!user) return;
+    getMyPaymentMethods(user.id).then((data) => {
+      setMetodos(data ?? []);
+      const def = data.find((m) => m.isDefault) ?? data[0];
+      if (def) setMetodoPagoId(def.id);
+    });
+  }, [user]);
 
   const handleEliminarItem = async (item: ItemOrdenResponse) => {
     try {

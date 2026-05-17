@@ -1,7 +1,5 @@
 package co.edu.unbosque.mundial_2026.dto.response;
 
-import java.util.List;
-
 public class ProductoListadoDTO {
     private Long id;
     private String nombre;
@@ -14,7 +12,6 @@ public class ProductoListadoDTO {
     private Boolean destacado;
     private Integer stockTotal;
     private Boolean tieneVariantes;
-    private List<VarianteDTO> variantes;
 
     public ProductoListadoDTO() {
     }
@@ -122,37 +119,5 @@ public class ProductoListadoDTO {
 
     public void setTieneVariantes(Boolean tieneVariantes) {
         this.tieneVariantes = tieneVariantes;
-    }
-
-    public List<VarianteDTO> getVariantes() {
-        return variantes;
-    }
-
-    public void setVariantes(List<VarianteDTO> variantes) {
-        this.variantes = variantes;
-    }
-
-    public static class VarianteDTO {
-        private Long id;
-        private String especificacion;
-        private Integer stock;
-
-        public VarianteDTO(Long id, String especificacion, Integer stock) {
-            this.id = id;
-            this.especificacion = especificacion;
-            this.stock = stock;
-        }
-
-        public Long getId() {
-            return id;
-        }
-
-        public String getEspecificacion() {
-            return especificacion;
-        }
-
-        public Integer getStock() {
-            return stock;
-        }
     }
 }
