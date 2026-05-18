@@ -71,6 +71,10 @@ private Rol rol;
             uniqueConstraints = @UniqueConstraint(columnNames = { USUARIO_ID, "ciudad_id" }))
     private List<CiudadFavorita> ciudadFavoritas;
 
+   
+
+    @Column(name = "fecha_registro")
+    private java.time.LocalDateTime fechaRegistro;
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private boolean activo;
 
@@ -88,6 +92,7 @@ private Rol rol;
     @PrePersist
     public void prePersist() {
         this.activo = true;
+        this.fechaRegistro = java.time.LocalDateTime.now();
     }
 
     public Long getId() {
@@ -177,4 +182,13 @@ private Rol rol;
     public void setFcmtoken(String fcmtoken) {
         this.fcmtoken = fcmtoken;
     }
+
+    public java.time.LocalDateTime getFechaRegistro() {
+        return fechaRegistro;
+    }
+
+    public void setFechaRegistro(java.time.LocalDateTime fechaRegistro) {
+        this.fechaRegistro = fechaRegistro;
+    }
+    
 }

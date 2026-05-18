@@ -77,7 +77,14 @@ export async function deleteNotification(id: string): Promise<boolean> {
   mockDb.notifications.splice(idx, 1);
   return true;
 }
-
+export async function getUnreadCount(): Promise<number> {
+  if (!USE_MOCK) {
+    const data = await http.get<{ total: number }>("/api/notificaciones/sin-leer/conteo");
+    return data.total;
+  }
+  await sleep();
+  return mockDb.notifications.filter((n) => !n.read).length;
+}
 export async function clearAll(): Promise<void> {
   if (!USE_MOCK) {
     await http.put<void>("/api/notificaciones/leidas");

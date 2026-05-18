@@ -81,7 +81,8 @@ public OrdenServiceImpl(OrdenRepository ordenRepository,
 @Transactional
 public OrdenResponseDTO agregarItem(String correo, AgregarItemDTO dto) {
     // 1. Cargar usuario SOLO con ID (no necesitamos rol aquí)
-    Long usuarioId = usuarioService.obtenerEntidadPorCorreo(correo).getId();
+    Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
+    Long usuarioId = usuario.getId();
 
     // 2. Buscar variante CON producto Y categoría en UNA query (no en cascada)
     VarianteProducto variante = varianteRepository.findByIdWithProductoYCategoria(dto.getVarianteId())
@@ -138,9 +139,11 @@ public OrdenResponseDTO agregarItem(String correo, AgregarItemDTO dto) {
     // y con @DynamicUpdate solo actualiza la columna total
 
     // 7. Auditoría async (pasa nombre+apellido como string, NO el usuarioId para evitar la recarga)
-    String descripcionAuditoria = "Usuario " + usuarioId 
-            + " agregó " + dto.getCantidad() + " x " + producto.getNombre()
-            + (variante.getEspecificacion() != null ? " (" + variante.getEspecificacion() + ")" : "");
+  String descripcionAuditoria = usuario.getNombre() + " " + usuario.getApellido()
+            + " (ID " + usuarioId + ") agregó "
+            + dto.getCantidad() + " x " + producto.getNombre()
+            + (variante.getEspecificacion() != null ? " (" + variante.getEspecificacion() + ")" : "")
+            + " | Subtotal: $" + (dto.getCantidad() * producto.getPrecio());
     auditoriaService.registrar(
             "ITEM_AGREGADO_CARRITO",
             descripcionAuditoria,

@@ -323,6 +323,8 @@ public void eliminarCiudad(final String correo, final Long ciudadId) {
         dto.setRol(usuario.getRol().getNombre());
         dto.setNombre(usuario.getNombre());
         dto.setApellido(usuario.getApellido());
+        dto.setActivo(usuario.isActivo());
+        dto.setFechaRegistro(usuario.getFechaRegistro());
         return dto;
     }
     @Override

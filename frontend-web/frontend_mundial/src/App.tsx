@@ -48,6 +48,13 @@ function SupportArea({ children }: GuardProps) {
   return <>{children}</>;
 }
 
+function RequireAuth({ children }: GuardProps) {
+  const { user, authLoading } = useApp();
+  if (authLoading) return <FullPageLoader />;
+  if (!user) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+}
+
 function UserOnly({ children }: GuardProps) {
   const { user, authLoading } = useApp();
   if (authLoading) return <FullPageLoader />;
@@ -56,7 +63,6 @@ function UserOnly({ children }: GuardProps) {
   if (user.role === "support") return <Navigate to="/support" replace />;
   return <>{children}</>;
 }
-
 function IndexRedirect() {
   const { user, authLoading } = useApp();
   if (authLoading) return <FullPageLoader />;
@@ -89,7 +95,7 @@ export default function App() {
 
         <Route path="home" element={<UserOnly><Home /></UserOnly>} />
         <Route path="matches" element={<UserOnly><Matches /></UserOnly>} />
-        <Route path="profile" element={<UserOnly><ProfilePage /></UserOnly>} />
+      <Route path="profile" element={<RequireAuth><ProfilePage /></RequireAuth>} />
 
         {/* Pollas */}
         <Route path="pools" element={<UserOnly><Pools /></UserOnly>} />

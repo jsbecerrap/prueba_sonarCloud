@@ -1,6 +1,8 @@
 package co.edu.unbosque.mundial_2026.controller;
 
 import java.util.List;
+import java.util.Map;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -98,5 +100,13 @@ public ResponseEntity<Page<NotificacionDTO>> buscarPorFecha(
     Pageable pageable = PageRequest.of(page, size);
     return ResponseEntity.ok(notificacionService.listarPorFecha(
             usuarioId, fechaDesde, fechaHasta, pageable));
+}
+@GetMapping("/sin-leer/conteo")
+public ResponseEntity<Map<String, Long>> contarSinLeer() {
+    String correo = SecurityContextHolder.getContext().getAuthentication().getName();
+    Long usuarioId = usuarioService.obtenerPorCorreo(correo).getId();
+    long total = notificacionService.listarPorUsuario(usuarioId)
+            .stream().filter(n -> !n.isLeida()).count();
+    return ResponseEntity.ok(Map.of("total", total));
 }
 }

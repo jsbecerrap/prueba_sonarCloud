@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Alert,
   Box,
@@ -100,6 +101,7 @@ function validateScore(value: number, label: string) {
 
 export default function Admin() {
   const { user } = useApp();
+  const navigate = useNavigate();
 
   const [tab, setTab] = useState(0);
   const [msg, setMsg] = useState<Msg>(null);
@@ -150,6 +152,7 @@ const [notiCanal, setNotiCanal] = useState("SISTEMA");
 const [notiPartidoId, setNotiPartidoId] = useState("");
 const [notiUsuarioIds, setNotiUsuarioIds] = useState("");
 const [usuarios, setUsuarios] = useState<UsuarioSistema[]>([]);
+const [usuarioFiltro, setUsuarioFiltro] = useState("");
   const [nuevoCorreo, setNuevoCorreo] = useState("");
   const [nuevoNombre, setNuevoNombre] = useState("");
   const [nuevoApellido, setNuevoApellido] = useState("");
@@ -294,10 +297,10 @@ setPools(ps);
       { label: "En vivo", value: live },
       { label: "Programados", value: scheduled },
       { label: "Por revisar", value: pending },
-   { label: "Pollas", value: apuestas.length },
-{ label: "Participantes", value: members },
+      { label: "Pollas", value: apuestas.length },
+      { label: "Usuarios", value: usuarios.length },
     ];
-  }, [matches, pools]);
+}, [matches, pools, apuestas, usuarios]);
 
   const partidosFiltrados = useMemo(() => {
   return partidos.filter((p) => {
@@ -325,7 +328,17 @@ const productosFiltrados = useMemo(() => {
     return true;
   });
 }, [productos, prodFiltroNombre, prodFiltroCategoria, prodFiltroEstado]);
-  const validateMatchForm = () => {
+const usuariosFiltrados = useMemo(() => {
+  if (!usuarioFiltro) return usuarios;
+  const q = usuarioFiltro.toLowerCase();
+  return usuarios.filter((u) =>
+    u.nombre.toLowerCase().includes(q) ||
+    u.apellido.toLowerCase().includes(q) ||
+    u.correoUsuario.toLowerCase().includes(q) ||
+    String(u.id).includes(q)
+  );
+}, [usuarios, usuarioFiltro]);  
+const validateMatchForm = () => {
     const nextErrors: FieldErrors<MatchField> = {
       homeName: validateRequired(homeName, "El equipo local", 2),
       awayName: validateRequired(awayName, "El equipo visitante", 2),
@@ -665,9 +678,20 @@ const onEnviarNotificacion = async () => {
             Gestiona partidos, publica marcadores y revisa cómo quedan las pollas después de cada resultado.
           </Typography>
           {user && (
-            <Typography variant="caption" sx={{ color: "rgba(234,242,255,.74)" }}>
-              Sesión operativa: {user.name}
-            </Typography>
+            <Stack direction="row" spacing={2} alignItems="center">
+              <Typography variant="caption" sx={{ color: "rgba(234,242,255,.74)" }}>
+                Sesión operativa: {user.name}
+              </Typography>
+             <Button
+                type="button"
+                variant="outlined"
+                size="small"
+                sx={{ color: "white", borderColor: "rgba(255,255,255,.4)" }}
+onClick={(e) => { e.preventDefault(); navigate("/profile", { state: { vista: "editar" } }); }}
+              >
+                Editar mi perfil
+              </Button>
+            </Stack>
           )}
         </Stack>
       </Paper>
@@ -994,17 +1018,32 @@ const onEnviarNotificacion = async () => {
           </Paper>
 
           <Paper sx={{ p: 2.5 }}>
-            <Typography variant="h6">Usuarios registrados</Typography>
-            {usuarios.length === 0 ? (
-              <Typography color="text.secondary" sx={{ mt: 1 }}>No hay usuarios registrados.</Typography>
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} alignItems={{ sm: "center" }} justifyContent="space-between" sx={{ mb: 2 }}>
+              <Typography variant="h6">Usuarios registrados</Typography>
+              <TextField
+                label="Buscar por nombre, correo o ID"
+                size="small"
+                value={usuarioFiltro}
+                onChange={(e) => setUsuarioFiltro(e.target.value)}
+                sx={{ minWidth: 280 }}
+              />
+            </Stack>
+            {usuariosFiltrados.length === 0 ? (
+              <Typography color="text.secondary" sx={{ mt: 1 }}>No se encontraron usuarios.</Typography>
             ) : (
-              <Stack spacing={1} sx={{ mt: 2 }}>
-                {usuarios.map((u) => (
+              <Stack spacing={1}>
+                {usuariosFiltrados.map((u) => (
                   <Paper key={u.id} variant="outlined" sx={{ p: 2 }}>
                     <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ sm: "center" }} spacing={1}>
                       <Box>
-                        <Typography sx={{ fontWeight: 700 }}>{u.nombre} {u.apellido}</Typography>
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          <Typography sx={{ fontWeight: 700 }}>{u.nombre} {u.apellido}</Typography>
+                          <Chip label={`ID: ${u.id}`} size="small" variant="outlined" />
+                        </Stack>
                         <Typography color="text.secondary">{u.correoUsuario}</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Registrado: {u.fechaRegistro ? new Date(u.fechaRegistro).toLocaleDateString("es-CO") : "Antes del sistema"}
+                        </Typography>
                       </Box>
                       <Stack direction="row" spacing={1} alignItems="center">
                         <Chip label={u.rol} size="small" color={u.rol === "ROLE_ADMIN" ? "error" : "default"} />

@@ -191,8 +191,11 @@ public EntradaResponseDTO reservarEntrada(String correo, EntradaRequestDTO dto) 
 
    auditoriaService.registrar(
     "ENTRADA_RESERVADA",
-    u.getNombre() + " " + u.getApellido() + " reservó " + dto.getCantidad()
-        + " entrada(s) para " + partido.getSeleccionLocal() + " vs " + partido.getSeleccionVisitante(),
+    u.getNombre() + " " + u.getApellido() + " (ID " + usuarioId + ") reservó "
+        + dto.getCantidad() + " entrada(s) — "
+        + partido.getSeleccionLocal() + " vs " + partido.getSeleccionVisitante()
+        + " | Zona: " + categoria + " | Sector: " + sector + " | Fila: " + fila
+        + " | Valor: $" + entrada.getPrecio(),
     usuarioId,
     String.valueOf(entrada.getId()),
     TIPO_ENTRADA
@@ -239,11 +242,15 @@ public EntradaResponseDTO confirmarPago(Long entradaId, String paymentRef) {
         entrada.setTtlReserva(null);
         entradaRepository.save(entrada);
 
-       auditoriaService.registrar(
+      auditoriaService.registrar(
     "ENTRADA_PAGADA",
     entrada.getUsuario().getNombre() + " " + entrada.getUsuario().getApellido()
-        + " pagó entrada para " + entrada.getPartido().getSeleccionLocal()
-        + " vs " + entrada.getPartido().getSeleccionVisitante(),
+        + " (ID " + entrada.getUsuario().getId() + ") confirmó pago de "
+        + entrada.getCantidad() + " entrada(s) — "
+        + entrada.getPartido().getSeleccionLocal() + " vs " + entrada.getPartido().getSeleccionVisitante()
+        + " | Zona: " + entrada.getCategoria()
+        + " | Valor total: $" + entrada.getPrecio()
+        + " | Ref. pago: " + intent.getId(),
     entrada.getUsuario().getId(),
     String.valueOf(entradaId),
     TIPO_ENTRADA
@@ -260,9 +267,12 @@ public EntradaResponseDTO confirmarPago(Long entradaId, String paymentRef) {
     } catch (StripeException e) {
         auditoriaService.registrar(
     "ENTRADA_PAGO_FALLIDO",
-    "Pago fallido de " + entrada.getUsuario().getNombre() + " " + entrada.getUsuario().getApellido()
-        + " para " + entrada.getPartido().getSeleccionLocal() + " vs " + entrada.getPartido().getSeleccionVisitante()
-        + " | " + e.getMessage(),
+    "Pago fallido — " + entrada.getUsuario().getNombre() + " " + entrada.getUsuario().getApellido()
+        + " (ID " + entrada.getUsuario().getId() + ") | "
+        + entrada.getPartido().getSeleccionLocal() + " vs " + entrada.getPartido().getSeleccionVisitante()
+        + " | Zona: " + entrada.getCategoria()
+        + " | Valor: $" + entrada.getPrecio()
+        + " | Error: " + e.getMessage(),
     entrada.getUsuario().getId(),
     String.valueOf(entradaId),
     TIPO_ENTRADA
@@ -298,8 +308,10 @@ public EntradaResponseDTO cancelarReserva(String correo, Long entradaId) {
 
     auditoriaService.registrar(
     "ENTRADA_CANCELADA",
-    u.getNombre() + " " + u.getApellido() + " canceló su entrada para "
-        + entrada.getPartido().getSeleccionLocal() + " vs " + entrada.getPartido().getSeleccionVisitante(),
+    u.getNombre() + " " + u.getApellido() + " (ID " + usuarioId + ") canceló "
+        + entrada.getCantidad() + " entrada(s) — "
+        + entrada.getPartido().getSeleccionLocal() + " vs " + entrada.getPartido().getSeleccionVisitante()
+        + " | Zona: " + entrada.getCategoria() + " | Sector: " + entrada.getSector(),
     usuarioId,
     String.valueOf(entradaId),
     TIPO_ENTRADA
@@ -359,9 +371,11 @@ public EntradaResponseDTO transferirEntrada(Long entradaId, TransferenciaRequest
 
     auditoriaService.registrar(
     "ENTRADA_TRANSFERIDA",
-    u.getNombre() + " " + u.getApellido() + " transfirió su entrada para "
+    u.getNombre() + " " + u.getApellido() + " (ID " + usuarioId + ") transfirió "
+        + entrada.getCantidad() + " entrada(s) — "
         + entrada.getPartido().getSeleccionLocal() + " vs " + entrada.getPartido().getSeleccionVisitante()
-        + " a " + dto.getCorreoDestino(),
+        + " | Zona: " + entrada.getCategoria()
+        + " | Destinatario: " + dto.getCorreoDestino(),
     usuarioId,
     String.valueOf(entradaId),
     TIPO_ENTRADA
@@ -405,21 +419,26 @@ public EntradaResponseDTO reembolsarEntrada(String correo, Long entradaId) {
 
        auditoriaService.registrar(
     "ENTRADA_REEMBOLSADA",
-    u.getNombre() + " " + u.getApellido() + " reembolsó su entrada para "
-        + entrada.getPartido().getSeleccionLocal() + " vs " + entrada.getPartido().getSeleccionVisitante(),
+    u.getNombre() + " " + u.getApellido() + " (ID " + usuarioId + ") reembolsó "
+        + entrada.getCantidad() + " entrada(s) — "
+        + entrada.getPartido().getSeleccionLocal() + " vs " + entrada.getPartido().getSeleccionVisitante()
+        + " | Zona: " + entrada.getCategoria()
+        + " | Valor reembolsado: $" + entrada.getPrecio(),
     usuarioId,
     String.valueOf(entradaId),
     TIPO_ENTRADA
 );
-
         notificacionService.notificarEntradaReembolsada(u, entradaId);
 
     } catch (StripeException e) {
       auditoriaService.registrar(
     "ENTRADA_REEMBOLSO_FALLIDO",
-    "Reembolso fallido de " + u.getNombre() + " " + u.getApellido()
-        + " para " + entrada.getPartido().getSeleccionLocal() + " vs " + entrada.getPartido().getSeleccionVisitante()
-        + " | " + e.getMessage(),
+    "Reembolso fallido — " + u.getNombre() + " " + u.getApellido()
+        + " (ID " + usuarioId + ") | "
+        + entrada.getPartido().getSeleccionLocal() + " vs " + entrada.getPartido().getSeleccionVisitante()
+        + " | Zona: " + entrada.getCategoria()
+        + " | Valor: $" + entrada.getPrecio()
+        + " | Error: " + e.getMessage(),
     usuarioId,
     String.valueOf(entradaId),
     TIPO_ENTRADA
@@ -460,15 +479,17 @@ public void expirarReservasVencidas() {
 
         partidoService.actualizarCapacidad(entrada.getPartido().getId(), entrada.getCantidad());
 
-        auditoriaService.registrar(
+       auditoriaService.registrar(
     "ENTRADA_EXPIRADA",
-    "Reserva expirada de " + entrada.getUsuario().getNombre() + " " + entrada.getUsuario().getApellido()
-        + " para " + entrada.getPartido().getSeleccionLocal() + " vs " + entrada.getPartido().getSeleccionVisitante(),
+    "Reserva expirada — " + entrada.getUsuario().getNombre() + " " + entrada.getUsuario().getApellido()
+        + " (ID " + entrada.getUsuario().getId() + ") | "
+        + entrada.getCantidad() + " entrada(s) — "
+        + entrada.getPartido().getSeleccionLocal() + " vs " + entrada.getPartido().getSeleccionVisitante()
+        + " | Zona: " + entrada.getCategoria(),
     entrada.getUsuario().getId(),
     String.valueOf(entrada.getId()),
     TIPO_ENTRADA
 );
-
         String nombrePartido = entrada.getPartido().getSeleccionLocal() + " vs " + entrada.getPartido().getSeleccionVisitante();
         notificacionService.notificarReservaExpirada(entrada.getUsuario(), nombrePartido);
     }

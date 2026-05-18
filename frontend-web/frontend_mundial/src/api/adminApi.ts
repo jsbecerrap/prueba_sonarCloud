@@ -73,6 +73,8 @@ export type UsuarioSistema = {
   nombre: string;
   apellido: string;
   rol: string;
+  activo: boolean;
+  fechaRegistro?: string;
 };
 
 export type RegistrarUsuarioPayload = {

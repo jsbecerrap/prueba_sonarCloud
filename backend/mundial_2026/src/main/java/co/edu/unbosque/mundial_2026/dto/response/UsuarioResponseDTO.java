@@ -6,7 +6,9 @@ public class UsuarioResponseDTO {
     private String correoUsuario;
     private String nombre;
     private String apellido;
-    private String rol;
+  private String rol;
+    private boolean activo;
+    private java.time.LocalDateTime fechaRegistro;
 
     public Long getId() {
         return id;
@@ -46,5 +48,20 @@ public class UsuarioResponseDTO {
 
     public void setRol(String rol) {
         this.rol = rol;
+    }
+    public boolean isActivo() {
+        return activo;
+    }
+
+    public void setActivo(boolean activo) {
+        this.activo = activo;
+    }
+
+    public java.time.LocalDateTime getFechaRegistro() {
+        return fechaRegistro;
+    }
+
+    public void setFechaRegistro(java.time.LocalDateTime fechaRegistro) {
+        this.fechaRegistro = fechaRegistro;
     }
 }

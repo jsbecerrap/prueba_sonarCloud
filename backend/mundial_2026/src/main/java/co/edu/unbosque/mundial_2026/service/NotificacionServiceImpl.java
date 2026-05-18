@@ -221,9 +221,9 @@ public void notificarPorPartido(Long partidoId, String tipo, String titulo, Stri
 @Async
     @Override
     @Transactional
-    public void notificarEntradaReembolsada(Usuario usuario, Long entradaId) {
+   public void notificarEntradaReembolsada(Usuario usuario, Long entradaId) {
         String titulo = "Reembolso procesado";
-        String mensaje = "Tu reembolso por la entrada " + entradaId + " fue procesado exitosamente.";
+        String mensaje = "Tu reembolso fue procesado exitosamente.";
         Notificacion notificacion = new Notificacion("ENTRADA_REEMBOLSADA", titulo, mensaje, CANAL_SISTEMA, ESTADO_ENVIADA, usuario);
         notificacionRepository.save(notificacion);
         enviarPush(usuario, titulo, mensaje);
@@ -231,9 +231,9 @@ public void notificarPorPartido(Long partidoId, String tipo, String titulo, Stri
 @Async
     @Override
     @Transactional
-    public void notificarEntradaReembolsoFallido(Usuario usuario, Long entradaId) {
+   public void notificarEntradaReembolsoFallido(Usuario usuario, Long entradaId) {
         String titulo = "Reembolso no procesado";
-        String mensaje = "No pudimos procesar el reembolso de tu entrada " + entradaId + ". Intenta de nuevo mas tarde.";
+        String mensaje = "No pudimos procesar tu reembolso. Intenta de nuevo mas tarde.";
         Notificacion notificacion = new Notificacion("ENTRADA_REEMBOLSO_FALLIDO", titulo, mensaje, CANAL_SISTEMA, ESTADO_ENVIADA, usuario);
         notificacionRepository.save(notificacion);
         enviarPush(usuario, titulo, mensaje);

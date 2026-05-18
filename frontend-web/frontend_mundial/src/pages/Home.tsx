@@ -4,12 +4,13 @@ import { useNavigate } from "react-router-dom";
 
 import { getMatches } from "../api/matchesApi";
 import { getMyProfile } from "../api/profileApi";
+import { getUnreadCount, getNotifications } from "../api/notificationApi";
+import type { NotificationItem } from "../types/notification";
 import { http } from "../api/http";
 import { useApp } from "../context/AppContext";
 import type { Match } from "../types/match";
 import type { Profile } from "../types/profile";
 import { bannerImages } from "../theme/bannerImages";
-
 type Preferencia = { id: number; nombre: string };
 
 function hasMatchPreference(
@@ -42,7 +43,9 @@ export default function Home() {
   const [selecciones, setSelecciones] = useState<Preferencia[]>([]);
   const [estadios, setEstadios] = useState<Preferencia[]>([]);
   const [ciudades, setCiudades] = useState<Preferencia[]>([]);
-  const [paginaAgenda, setPaginaAgenda] = useState(10);
+const [paginaAgenda, setPaginaAgenda] = useState(10);
+const [sinLeer, setSinLeer] = useState<number>(0);
+  const [ultimasNotif, setUltimasNotif] = useState<NotificationItem[]>([]);
   const cargadoRef = useRef<string | null>(null);
 useEffect(() => {
   if (!user || cargadoRef.current === user.id) return;
@@ -61,6 +64,10 @@ useEffect(() => {
 
   getMatches().then(setMatches).catch(() => {});
   http.get<Preferencia[]>("/api/usuarios/estadiosFav").then(setEstadios).catch(() => {});
+  getUnreadCount().then(setSinLeer).catch(() => {});
+  getNotifications(0, 20).then((r) => {
+    setUltimasNotif(r.items.filter((n) => !n.read).slice(0, 5));
+  }).catch(() => {});
 }, [user]);
 
   const personalizedAgenda = useMemo(() => {
@@ -114,8 +121,8 @@ useEffect(() => {
         </Stack>
       </Paper>
 
-      <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-        <Paper sx={{ p: 2.5, flex: 1 }}>
+     <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems="stretch">
+        <Paper sx={{ p: 2.5, flex: 1, display: "flex", flexDirection: "column" }}>
           <Typography sx={{ fontWeight: 900 }}>Tus favoritos ✨</Typography>
 
           <Typography color="text.secondary" sx={{ mt: 1 }}>Equipos</Typography>
@@ -146,13 +153,32 @@ useEffect(() => {
           </Stack>
         </Paper>
 
-        <Paper sx={{ p: 2.5, flex: 1 }}>
-          <Typography sx={{ fontWeight: 900 }}>Estado de alertas 🔔</Typography>
-          <Typography color="text.secondary" sx={{ mt: 1 }}>
-            {profile.notificationsEnabled
-              ? "Te avisaremos sobre partidos, reservas y novedades importantes."
-              : "Tus notificaciones están pausadas."}
+       <Paper sx={{ p: 2.5, flex: 1, display: "flex", flexDirection: "column" }}>
+          <Typography sx={{ fontWeight: 900 }}>
+            Estado de alertas 🔔 {sinLeer > 0 && <Chip label={`${sinLeer} sin leer`} color="error" size="small" sx={{ ml: 1 }} />}
           </Typography>
+          {ultimasNotif.length === 0 ? (
+            <Typography color="text.secondary" sx={{ mt: 1, flex: 1 }}>
+              No tienes notificaciones pendientes.
+            </Typography>
+          ) : (
+            <Stack spacing={1} sx={{ mt: 1.5, flex: 1 }}>
+              {ultimasNotif.map((n) => (
+                <Paper key={n.id} variant="outlined" sx={{ p: 1.2 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>{n.title}</Typography>
+                  <Typography variant="caption" color="text.secondary">{n.body}</Typography>
+                </Paper>
+              ))}
+            </Stack>
+          )}
+          <Button
+            variant="outlined"
+            size="small"
+            sx={{ mt: 2, alignSelf: "flex-start" }}
+            onClick={() => navigate("/notifications")}
+          >
+            Ver todas las notificaciones
+          </Button>
         </Paper>
       </Stack>
 

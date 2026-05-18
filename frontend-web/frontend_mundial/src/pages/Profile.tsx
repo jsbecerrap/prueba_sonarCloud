@@ -13,7 +13,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useApp } from "../context/AppContext";
 import { getMyProfile, updateMyProfile } from "../api/profileApi";
 import { http } from "../api/http";
@@ -28,7 +28,9 @@ export default function ProfilePage() {
   const navigate = useNavigate();
 
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [vista, setVista] = useState<Vista>("ver");
+ const location = useLocation();
+  const esAdmin = user?.role === "admin";
+  const [vista, setVista] = useState<Vista>((location.state as { vista?: Vista })?.vista ?? "ver");
   const [mensaje, setMensaje] = useState("");
   const [guardando, setGuardando] = useState(false);
 
@@ -223,7 +225,7 @@ useEffect(() => {
           <Stack direction="row" spacing={1}>
             <Button variant="contained" onClick={() => setVista("editar")}>Editar perfil</Button>
             <Button variant="outlined" onClick={() => setVista("preferencias")}>Editar preferencias</Button>
-            <Button color="inherit" onClick={() => navigate("/home")}>Volver</Button>
+            <Button color="inherit" onClick={() => navigate(esAdmin ? "/admin" : "/home")}>Volver</Button>
           </Stack>
         </Paper>
       )}
@@ -247,7 +249,7 @@ useEffect(() => {
               <Button variant="contained" onClick={onGuardarPerfil} disabled={guardando}>
                 {guardando ? "Guardando..." : "Guardar cambios"}
               </Button>
-              <Button color="inherit" onClick={() => { setVista("ver"); setMensaje(""); }} disabled={guardando}>Cancelar</Button>
+             <Button color="inherit" onClick={() => esAdmin ? navigate("/admin") : (setVista("ver"), setMensaje(""))} disabled={guardando}>Cancelar</Button>
             </Stack>
           </Stack>
         </Paper>
