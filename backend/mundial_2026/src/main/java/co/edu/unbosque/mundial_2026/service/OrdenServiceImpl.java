@@ -77,42 +77,43 @@ public OrdenServiceImpl(OrdenRepository ordenRepository,
     Stripe.apiKey = stripeApiKey;
 }
 
-   @Override
+  @Override
 @Transactional
 public OrdenResponseDTO agregarItem(String correo, AgregarItemDTO dto) {
-    Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
-    Long usuarioId = usuario.getId();
+    // 1. Cargar usuario SOLO con ID (no necesitamos rol aquí)
+    Long usuarioId = usuarioService.obtenerEntidadPorCorreo(correo).getId();
 
-    Producto producto = productoService.obtenerEntidadPorId(dto.getProductoId());
-
-    VarianteProducto variante = varianteRepository.findById(dto.getVarianteId())
+    // 2. Buscar variante CON producto Y categoría en UNA query (no en cascada)
+    VarianteProducto variante = varianteRepository.findByIdWithProductoYCategoria(dto.getVarianteId())
             .orElseThrow(() -> new ProductoNotFoundException("Variante no encontrada"));
 
-    if (!variante.getProducto().getId().equals(producto.getId())) {
+    Producto producto = variante.getProducto();  // Ya cargado, sin query extra
+
+    // 3. Validaciones (sin queries)
+    if (!producto.getId().equals(dto.getProductoId())) {
         throw new ProductoNotFoundException("La variante no pertenece al producto");
     }
-
     if (variante.getStock() < dto.getCantidad()) {
         throw new StockInsuficienteException("Stock insuficiente para esta variante");
     }
-
     if (Boolean.FALSE.equals(producto.getActivo())) {
         throw new ProductoNotFoundException("Este producto no está disponible");
     }
 
-    Optional<Orden> orden = ordenRepository.findByUsuarioIdAndEstado(usuarioId, ESTADO_PENDIENTE);
-    Orden ordenActual;
-    if (orden.isPresent()) {
-        ordenActual = orden.get();
-    } else {
-        Orden ordenNueva = new Orden();
-        ordenNueva.setUsuario(usuario);
-        ordenNueva.setEstado(ESTADO_PENDIENTE);
-        ordenNueva.setFechaCreacion(LocalDateTime.now());
-        ordenNueva.setTotal(0.0);
-        ordenActual = ordenRepository.save(ordenNueva);
-    }
+    // 4. Buscar o crear orden
+    Orden ordenActual = ordenRepository.findByUsuarioIdAndEstado(usuarioId, ESTADO_PENDIENTE)
+            .orElseGet(() -> {
+                Orden nueva = new Orden();
+                Usuario refUsuario = new Usuario();
+                refUsuario.setId(usuarioId);  // Solo referencia, sin cargar
+                nueva.setUsuario(refUsuario);
+                nueva.setEstado(ESTADO_PENDIENTE);
+                nueva.setFechaCreacion(LocalDateTime.now());
+                nueva.setTotal(0.0);
+                return ordenRepository.save(nueva);
+            });
 
+    // 5. Buscar item existente o crear nuevo
     Optional<ItemOrden> item = itemOrdenRepository
             .findByOrdenIdAndProductoIdAndVarianteId(ordenActual.getId(), producto.getId(), variante.getId());
 
@@ -130,22 +131,26 @@ public OrdenResponseDTO agregarItem(String correo, AgregarItemDTO dto) {
     }
     itemOrdenRepository.save(itemOrdenActual);
 
-    // Actualizar total en memoria — sin query extra al DB
+    // 6. Actualizar total
     double delta = dto.getCantidad() * itemOrdenActual.getPrecioUnitario();
     ordenActual.setTotal(ordenActual.getTotal() + delta);
-    ordenRepository.save(ordenActual);
+    // ordenRepository.save() NO NECESARIO con @Transactional, el dirty check lo hace solo
+    // y con @DynamicUpdate solo actualiza la columna total
 
+    // 7. Auditoría async (pasa nombre+apellido como string, NO el usuarioId para evitar la recarga)
+    String descripcionAuditoria = "Usuario " + usuarioId 
+            + " agregó " + dto.getCantidad() + " x " + producto.getNombre()
+            + (variante.getEspecificacion() != null ? " (" + variante.getEspecificacion() + ")" : "");
     auditoriaService.registrar(
             "ITEM_AGREGADO_CARRITO",
-            usuario.getNombre() + " " + usuario.getApellido()
-                    + " agregó " + dto.getCantidad() + " x " + producto.getNombre()
-                    + (variante.getEspecificacion() != null ? " (" + variante.getEspecificacion() + ")" : ""),
+            descripcionAuditoria,
             usuarioId,
             PREFIJO_ORDEN + ordenActual.getId(),
             TIPO_ORDEN);
 
-   List<ItemOrden> itemsRespuesta = itemOrdenRepository.findByOrdenIdConDetalles(ordenActual.getId());
-return toOrdenDTO(ordenActual, itemsRespuesta);
+    // 8. Cargar items con detalles para la respuesta
+    List<ItemOrden> itemsRespuesta = itemOrdenRepository.findByOrdenIdConDetalles(ordenActual.getId());
+    return toOrdenDTO(ordenActual, itemsRespuesta);
 }
 
     @Override

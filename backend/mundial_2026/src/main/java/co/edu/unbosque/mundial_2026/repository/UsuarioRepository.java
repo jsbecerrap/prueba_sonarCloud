@@ -42,4 +42,8 @@ void insertarCiudad(@Param("usuarioId") Long usuarioId, @Param("ciudadId") Long 
 @Modifying
 @Query(value = "DELETE FROM usuarios_ciudad_favoritas WHERE usuario_id = :usuarioId AND ciudad_id = :ciudadId", nativeQuery = true)
 void eliminarCiudad(@Param("usuarioId") Long usuarioId, @Param("ciudadId") Long ciudadId);
+
+@Query("SELECT u FROM Usuario u JOIN FETCH u.rol WHERE u.correoUsuario = :correo")
+Optional<Usuario> findByCorreoUsuarioConRol(@Param("correo") String correo);
+
 }

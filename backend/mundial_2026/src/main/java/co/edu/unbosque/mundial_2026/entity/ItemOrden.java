@@ -2,6 +2,7 @@ package co.edu.unbosque.mundial_2026.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -11,23 +12,26 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "items_orden")
+@org.hibernate.annotations.DynamicUpdate
 public class ItemOrden {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "orden_id", nullable = false)
-    private Orden orden;
+    @ManyToOne(fetch = FetchType.LAZY)
+@JoinColumn(name = "orden_id", nullable = false)
+private Orden orden;
 
-    @ManyToOne
-    @JoinColumn(name = "producto_id", nullable = false)
-    private Producto producto;
+@ManyToOne(fetch = FetchType.LAZY)
+@JoinColumn(name = "producto_id", nullable = false)
+private Producto producto;
 
-    @ManyToOne
-    @JoinColumn(name = "variante_id", nullable = false)
-    private VarianteProducto variante;
+@ManyToOne(fetch = FetchType.LAZY)
+@JoinColumn(name = "variante_id", nullable = false)
+private VarianteProducto variante;
+
+ 
 
     @Column(nullable = false)
     private Integer cantidad;

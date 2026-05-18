@@ -46,9 +46,10 @@ public class Usuario {
     @Column(name = "apellido_usuario", nullable = false)
     private String apellido;
 
-    @ManyToOne
-    @JoinColumn(name = "rol_id", nullable = false)
-    private Rol rol;
+    @ManyToOne(fetch = FetchType.LAZY)
+@JoinColumn(name = "rol_id", nullable = false)
+private Rol rol;
+ 
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "usuarios_selecciones",

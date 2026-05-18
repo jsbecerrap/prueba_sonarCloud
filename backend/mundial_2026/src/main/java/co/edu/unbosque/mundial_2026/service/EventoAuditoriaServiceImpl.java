@@ -27,20 +27,23 @@ public class EventoAuditoriaServiceImpl implements EventoAuditoriaService {
     }
 
     @Override
-    @Async
-    @Transactional
-    public void registrar(String tipo, String descripcion, Long usuarioId,
-            String idCorrelacion, String entidadCorrelacion) {
-        Usuario usuario = null;
-        if (usuarioId != null) {
-            usuario = usuarioService.obtenerEntidadPorId(usuarioId);
-        }
-        EventoAuditoria evento = new EventoAuditoria(
-                tipo, descripcion, LocalDateTime.now(),
-                idCorrelacion, entidadCorrelacion, usuario);
-        repository.save(evento);
+@Async
+@Transactional
+public void registrar(String tipo, String descripcion, Long usuarioId,
+        String idCorrelacion, String entidadCorrelacion) {
+    EventoAuditoria evento = new EventoAuditoria(
+            tipo, descripcion, LocalDateTime.now(),
+            idCorrelacion, entidadCorrelacion, null);
+    
+    // Solo asignar referencia, NO cargar el usuario completo
+    if (usuarioId != null) {
+        Usuario refUsuario = new Usuario();
+        refUsuario.setId(usuarioId);
+        evento.setUsuario(refUsuario);
     }
-
+    
+    repository.save(evento);
+}
     @Override
     @Transactional(readOnly = true)
     public Page<EventoAuditoriaDTO> obtenerTodos(Pageable pageable) {

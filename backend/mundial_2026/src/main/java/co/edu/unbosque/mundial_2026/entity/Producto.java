@@ -49,9 +49,9 @@ public class Producto {
     @Column(name = "destacado", nullable = false)
     private Boolean destacado = false;
 
-    @ManyToOne
-    @JoinColumn(name = "categoria_id", nullable = false)
-    private Categoria categoria;
+ @ManyToOne(fetch = FetchType.LAZY)
+@JoinColumn(name = "categoria_id", nullable = false)
+private Categoria categoria;
 
     @OneToMany(mappedBy = "producto", fetch = FetchType.LAZY)
     private List<VarianteProducto> variantes = new ArrayList<>();

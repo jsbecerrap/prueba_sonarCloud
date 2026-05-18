@@ -23,8 +23,8 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String correo) throws UsernameNotFoundException {
-        final Usuario usuario = usuarioRepository.findByCorreoUsuario(correo)
-                .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + correo));
+       final Usuario usuario = usuarioRepository.findByCorreoUsuarioConRol(correo)
+        .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + correo));
 
         if (!usuario.isActivo()) {
             throw new UsernameNotFoundException("Usuario inactivo");

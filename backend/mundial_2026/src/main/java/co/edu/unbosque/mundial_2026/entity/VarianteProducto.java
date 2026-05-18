@@ -2,6 +2,7 @@ package co.edu.unbosque.mundial_2026.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -17,9 +18,9 @@ public class VarianteProducto {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "producto_id", nullable = false)
-    private Producto producto;
+    @ManyToOne(fetch = FetchType.LAZY)
+@JoinColumn(name = "producto_id", nullable = false)
+private Producto producto;
 
     @Column(name = "especificacion")
     private String especificacion; // "S", "M", "38", "25 cm", null si no aplica

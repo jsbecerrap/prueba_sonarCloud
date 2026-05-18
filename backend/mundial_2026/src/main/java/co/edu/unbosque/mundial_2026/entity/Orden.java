@@ -19,6 +19,7 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "ordenes")
+@org.hibernate.annotations.DynamicUpdate 
 public class Orden {
 
     @Id
