@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -20,6 +21,7 @@ import com.stripe.param.PaymentIntentCreateParams;
 import com.stripe.param.RefundCreateParams;
 
 import co.edu.unbosque.mundial_2026.dto.CuposZonaDTO;
+import co.edu.unbosque.mundial_2026.dto.CuposFilaDTO;
 import co.edu.unbosque.mundial_2026.dto.PartidoCapacidadDTO;
 import co.edu.unbosque.mundial_2026.dto.request.EntradaRequestDTO;
 import co.edu.unbosque.mundial_2026.dto.request.TransferenciaRequestDTO;
@@ -108,6 +110,10 @@ static {
     PORCENTAJE_ZONA.put("ESQUINA", 0.15);
 }
 
+private static final List<String> FILAS = List.of("A", "B", "C", "D", "E", "F");
+private static final List<String> ZONAS = List.of("BARRA", "GENERAL", "PALCO", "ESQUINA");
+private static final List<String> ESTADOS_ACTIVOS = List.of(ESTADO_RESERVADA, ESTADO_PAGADA);
+
 @Transactional
 @Override
 public EntradaResponseDTO reservarEntrada(String correo, EntradaRequestDTO dto) {
@@ -147,28 +153,30 @@ public EntradaResponseDTO reservarEntrada(String correo, EntradaRequestDTO dto) 
     String sector = (dto.getSector() != null && !dto.getSector().isBlank())
             ? dto.getSector()
             : "Norte";
-    String fila = (dto.getFila() != null && !dto.getFila().isBlank())
-            ? dto.getFila().toUpperCase()
-            : "C";
 
-    
     int totalVendidoPartido = entradaRepository.sumCantidadByPartidoAndEstados(
-        partido.getId(), List.of(ESTADO_RESERVADA, ESTADO_PAGADA)
+        partido.getId(), ESTADOS_ACTIVOS
     );
     int capacidadTotal = partido.getCapacidadDisponible() + totalVendidoPartido;
-    double porcentajeZona = PORCENTAJE_ZONA.getOrDefault(categoria, 0.33);
-    int limiteZona = (int)(capacidadTotal * porcentajeZona);
 
-    int vendidosZona = entradaRepository.sumCantidadByPartidoAndCategoriaAndEstados(
-        partido.getId(), categoria, List.of(ESTADO_RESERVADA, ESTADO_PAGADA)
-    );
+    Map<String, Map<String, Integer>> distribucion = calcularDistribucion(capacidadTotal);
+    Map<String, Integer> cuposPorFila = distribucion.get(categoria);
+    if (cuposPorFila == null) {
+        throw new CupoNoDisponibleException("Zona inválida: " + categoria);
+    }
 
-    if (vendidosZona + dto.getCantidad() > limiteZona) {
+    String fila = asignarFilaDisponible(partido.getId(), categoria, dto.getCantidad(), cuposPorFila);
+    if (fila == null) {
         throw new CupoNoDisponibleException(
             "No hay cupos disponibles en la zona " + categoria +
-            ". Disponibles: " + (limiteZona - vendidosZona)
+            " para " + dto.getCantidad() + " entrada(s)."
         );
     }
+
+    int ultimoAsiento = entradaRepository.maxAsientoFinByPartidoCategoriaYFila(
+        partido.getId(), categoria, fila
+    );
+    int asientoInicio = ultimoAsiento + 1;
 
     Entrada entrada = new Entrada();
     entrada.setUsuario(u);
@@ -178,14 +186,11 @@ public EntradaResponseDTO reservarEntrada(String correo, EntradaRequestDTO dto) 
     entrada.setCategoria(categoria);
     entrada.setSector(sector);
     entrada.setFila(fila);
+    entrada.setAsientoInicio(asientoInicio);
     entrada.setPrecio(calcularPrecio(partido, categoria) * dto.getCantidad());
     entrada.setFechaCompra(LocalDateTime.now());
     entrada.setTtlReserva(LocalDateTime.now().plusMinutes(15));
 
-    entradaRepository.save(entrada);
-
-    int asientoInicio = (int)((entrada.getId() * 7) % 50) + 1;
-    entrada.setAsientoInicio(asientoInicio);
     entradaRepository.save(entrada);
     partidoService.actualizarCapacidad(partido.getId(), -dto.getCantidad());
 
@@ -463,7 +468,7 @@ public List<EntradaResponseDTO> listarEntradasUsuario(String correo) {
     @Transactional(readOnly = true)
 @Override
     public EntradaResponseDTO obtenerEntrada(Long entradaId) {
-        Entrada entrada = entradaRepository.findById(entradaId).orElseThrow(() -> new RuntimeException(ENTRADA_NO_ENCONTRADA));
+        Entrada entrada = entradaRepository.findById(entradaId).orElseThrow(() -> new EntradaNotFoundException(ENTRADA_NO_ENCONTRADA));
         return toDTO(entrada);
     }
 
@@ -556,21 +561,98 @@ public List<CuposZonaDTO> obtenerCuposPorZona(Long partidoId) {
     Partido partido = partidoService.obtenerPartidoEntidadPorId(partidoId);
 
     int totalVendido = entradaRepository.sumCantidadByPartidoAndEstados(
-        partidoId, List.of(ESTADO_RESERVADA, ESTADO_PAGADA)
+        partidoId, ESTADOS_ACTIVOS
     );
-   int capacidadTotal = (partido.getCapacidadDisponible() != null ? partido.getCapacidadDisponible() : 0) + totalVendido;
+    int capacidadDisponible = partido.getCapacidadDisponible() != null
+            ? partido.getCapacidadDisponible()
+            : 0;
+    int capacidadTotal = capacidadDisponible + totalVendido;
 
-    List<String> zonas = List.of("BARRA", "GENERAL", "PALCO", "ESQUINA");
+    Map<String, Map<String, Integer>> distribucion = calcularDistribucion(capacidadTotal);
     List<CuposZonaDTO> resultado = new ArrayList<>();
 
-    for (String zona : zonas) {
-        int limite = (int)(capacidadTotal * PORCENTAJE_ZONA.get(zona));
-        int vendidos = entradaRepository.sumCantidadByPartidoAndCategoriaAndEstados(
-            partidoId, zona, List.of(ESTADO_RESERVADA, ESTADO_PAGADA)
+    for (String zona : ZONAS) {
+        Map<String, Integer> cuposPorFila = distribucion.get(zona);
+        int limiteZona = cuposPorFila.values().stream().mapToInt(Integer::intValue).sum();
+        int vendidosZona = entradaRepository.sumCantidadByPartidoAndCategoriaAndEstados(
+            partidoId, zona, ESTADOS_ACTIVOS
         );
-        resultado.add(new CuposZonaDTO(zona, limite, vendidos));
+
+        List<CuposFilaDTO> filasDTO = new ArrayList<>();
+        for (String nombreFila : FILAS) {
+            int limiteFila = cuposPorFila.get(nombreFila);
+            int vendidosFila = entradaRepository.sumCantidadByPartidoCategoriaYFila(
+                partidoId, zona, nombreFila, ESTADOS_ACTIVOS
+            );
+            filasDTO.add(new CuposFilaDTO(nombreFila, limiteFila, vendidosFila));
+        }
+
+        resultado.add(new CuposZonaDTO(zona, limiteZona, vendidosZona, filasDTO));
     }
 
     return resultado;
 }
+
+    private Map<String, Map<String, Integer>> calcularDistribucion(int capacidadTotal) {
+        Map<String, Map<String, Integer>> resultado = new LinkedHashMap<>();
+
+        int asignadoZonas = 0;
+        for (int i = 0; i < ZONAS.size(); i++) {
+            String zona = ZONAS.get(i);
+            int cupoZona;
+            if (i < ZONAS.size() - 1) {
+                cupoZona = (int)(capacidadTotal * PORCENTAJE_ZONA.get(zona));
+                asignadoZonas += cupoZona;
+            } else {
+                cupoZona = capacidadTotal - asignadoZonas;
+            }
+            resultado.put(zona, dividirEnFilas(cupoZona));
+        }
+
+        int sumaZonas = resultado.values().stream()
+                .mapToInt(m -> m.values().stream().mapToInt(Integer::intValue).sum())
+                .sum();
+        if (sumaZonas != capacidadTotal) {
+            throw new IllegalStateException(
+                "Distribución incoherente: suma de zonas=" + sumaZonas +
+                " ≠ capacidad=" + capacidadTotal
+            );
+        }
+
+        return resultado;
+    }
+
+    private Map<String, Integer> dividirEnFilas(int cupoZona) {
+        Map<String, Integer> resultado = new LinkedHashMap<>();
+        int cupoBase = cupoZona / FILAS.size();
+        int asignadoFilas = 0;
+
+        for (int i = 0; i < FILAS.size(); i++) {
+            String fila = FILAS.get(i);
+            int cupoFila;
+            if (i < FILAS.size() - 1) {
+                cupoFila = cupoBase;
+                asignadoFilas += cupoFila;
+            } else {
+                cupoFila = cupoZona - asignadoFilas;
+            }
+            resultado.put(fila, cupoFila);
+        }
+
+        return resultado;
+    }
+
+    private String asignarFilaDisponible(Long partidoId, String categoria, int cantidad,
+                                         Map<String, Integer> cuposPorFila) {
+        for (String fila : FILAS) {
+            int limiteFila = cuposPorFila.get(fila);
+            int vendidosFila = entradaRepository.sumCantidadByPartidoCategoriaYFila(
+                partidoId, categoria, fila, ESTADOS_ACTIVOS
+            );
+            if (vendidosFila + cantidad <= limiteFila) {
+                return fila;
+            }
+        }
+        return null;
+    }
 }

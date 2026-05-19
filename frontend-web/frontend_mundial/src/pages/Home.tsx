@@ -111,7 +111,7 @@ useEffect(() => {
           </Avatar>
           <Stack spacing={0.5} sx={{ flex: 1, width: "100%" }}>
             <Typography variant="h4" sx={{ fontWeight: 900 }}>
-              Hola, {profile.name} {profile.lastName} ⚽
+              Hola, {profile.name} {profile.lastName} 
             </Typography>
             <Typography>{profile.email || "Correo pendiente"}</Typography>
           </Stack>
@@ -123,14 +123,14 @@ useEffect(() => {
 
      <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems="stretch">
         <Paper sx={{ p: 2.5, flex: 1, display: "flex", flexDirection: "column" }}>
-          <Typography sx={{ fontWeight: 900 }}>Tus favoritos ✨</Typography>
+          <Typography sx={{ fontWeight: 900 }}>Tus favoritos </Typography>
 
           <Typography color="text.secondary" sx={{ mt: 1 }}>Equipos</Typography>
           <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mt: 1 }}>
             {selecciones.length === 0 ? (
               <Typography color="text.secondary">Aún no has seleccionado equipos.</Typography>
             ) : (
-              selecciones.map((s) => <Chip key={s.id} label={`⭐ ${s.nombre}`} />)
+              selecciones.map((s) => <Chip key={s.id} label={`${s.nombre}`} />)
             )}
           </Stack>
 
@@ -139,7 +139,7 @@ useEffect(() => {
             {estadios.length === 0 ? (
               <Typography color="text.secondary">Aún no has seleccionado estadios.</Typography>
             ) : (
-              estadios.map((e) => <Chip key={e.id} label={`🏟️ ${e.nombre}`} />)
+              estadios.map((e) => <Chip key={e.id} label={`️ ${e.nombre}`} />)
             )}
           </Stack>
 
@@ -148,14 +148,14 @@ useEffect(() => {
             {ciudades.length === 0 ? (
               <Typography color="text.secondary">Aún no has seleccionado ciudades.</Typography>
             ) : (
-              ciudades.map((c) => <Chip key={c.id} label={`🌆 ${c.nombre}`} />)
+              ciudades.map((c) => <Chip key={c.id} label={` ${c.nombre}`} />)
             )}
           </Stack>
         </Paper>
 
        <Paper sx={{ p: 2.5, flex: 1, display: "flex", flexDirection: "column" }}>
           <Typography sx={{ fontWeight: 900 }}>
-            Estado de alertas 🔔 {sinLeer > 0 && <Chip label={`${sinLeer} sin leer`} color="error" size="small" sx={{ ml: 1 }} />}
+            Estado de alertas  {sinLeer > 0 && <Chip label={`${sinLeer} sin leer`} color="error" size="small" sx={{ ml: 1 }} />}
           </Typography>
           {ultimasNotif.length === 0 ? (
             <Typography color="text.secondary" sx={{ mt: 1, flex: 1 }}>
@@ -183,7 +183,7 @@ useEffect(() => {
       </Stack>
 
       <Paper sx={{ p: 2.5 }}>
-        <Typography sx={{ fontWeight: 900 }}>Agenda personalizada 🗓️</Typography>
+        <Typography sx={{ fontWeight: 900 }}>Agenda personalizada ️</Typography>
         <Typography color="text.secondary" sx={{ mt: 0.5 }}>
           Próximos partidos priorizados según tus equipos, ciudades y estadios favoritos.
         </Typography>
@@ -212,10 +212,10 @@ useEffect(() => {
                     }
                   </Stack>
                   <Typography color="text.secondary">
-                    🏟️ {match.city} · {match.stadium}
+                    ️ {match.city} · {match.stadium}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    🕒 {new Date(match.startTimeISO).toLocaleString("es-CO", { timeZone: "America/Bogota" })}
+                     {new Date(match.startTimeISO).toLocaleString("es-CO", { timeZone: "America/Bogota" })}
                   </Typography>
                 </Paper>
               ))}

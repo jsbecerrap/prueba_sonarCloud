@@ -51,9 +51,8 @@ export default function Tickets() {
   const [selectedMatchId, setSelectedMatchId] = useState("");
   const [quantity, setQuantity] = useState(1);
  const [categoria, setCategoria] = useState<string>("BARRA");
-  const [sector, setSector] = useState<string>("Norte");
-  const [fila, setFila] = useState<string>("C");
-
+ const [sector, setSector] = useState<string>("Norte");
+  const [fila, setFila] = useState<string>("A");
 
   const [quantityError, setQuantityError] = useState("");
   const [msg, setMsg] = useState<Msg>(null);
@@ -395,7 +394,7 @@ await reserveTicket(user.id, selectedMatchId, quantity, categoria, sector, fila)
             })}
           </Stack>
 
-          {/* Selector de sector y fila */}
+          {/* Selector de sector */}
           {categoria && (
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ mt: 2 }}>
               <TextField
@@ -410,21 +409,13 @@ await reserveTicket(user.id, selectedMatchId, quantity, categoria, sector, fila)
                   <MenuItem key={s} value={s}>{s}</MenuItem>
                 ))}
               </TextField>
-              <TextField
-                select
-                label="Fila"
-                value={fila}
-                onChange={(e) => setFila(e.target.value)}
-                disabled={loading}
-                fullWidth
-              >
-                {["A", "B", "C", "D"].map((f) => (
-                  <MenuItem key={f} value={f}>
-                    Fila {f}{f === "A" ? " · Más cerca del campo" : f === "D" ? " · Más alta" : ""}
-                  </MenuItem>
-                ))}
-              </TextField>
             </Stack>
+          )}
+
+          {categoria && (
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block" }}>
+              La fila y los asientos se asignan automáticamente según disponibilidad.
+            </Typography>
           )}
 
           {selectedMatchId && (

@@ -185,19 +185,19 @@ export default function Matches() {
                   }
                 </Stack>
                 <Typography color="text.secondary">
-                  🏟️ {match.city} · {match.stadium}
+                  ️ {match.city} · {match.stadium}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  🕒 {new Date(match.startTimeISO).toLocaleString("es-CO", { timeZone: "America/Bogota" })}
+                   {new Date(match.startTimeISO).toLocaleString("es-CO", { timeZone: "America/Bogota" })}
                 </Typography>
                 {match.score && (
                   <Typography>
-                    🥅 Resultado: {match.score.home} - {match.score.away}
+                     Resultado: {match.score.home} - {match.score.away}
                   </Typography>
                 )}
               </Stack>
               <Chip
-                label={`✨ ${statusLabels[match.status]}`}
+                label={` ${statusLabels[match.status]}`}
                 variant="outlined"
                 color={match.status === "LIVE" ? "error" : "default"}
               />

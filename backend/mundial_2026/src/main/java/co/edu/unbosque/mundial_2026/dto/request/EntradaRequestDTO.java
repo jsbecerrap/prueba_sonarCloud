@@ -1,11 +1,13 @@
 package co.edu.unbosque.mundial_2026.dto.request;
 
+
 public class EntradaRequestDTO {
+
     private Long partidoId;
     private Integer cantidad;
-private String categoria;
+    private String categoria;
     private String sector;
-    private String fila;
+
     public EntradaRequestDTO() {
         //Constructor vacio
     }
@@ -25,26 +27,20 @@ private String categoria;
     public void setCantidad(Integer cantidad) {
         this.cantidad = cantidad;
     }
-    public String getCategoria() {
-    return categoria;
-}
 
-public void setCategoria(String categoria) {
-    this.categoria = categoria;
-}
-public String getSector() {
+    public String getCategoria() {
+        return categoria;
+    }
+
+    public void setCategoria(String categoria) {
+        this.categoria = categoria;
+    }
+
+    public String getSector() {
         return sector;
     }
 
     public void setSector(String sector) {
         this.sector = sector;
-    }
-
-    public String getFila() {
-        return fila;
-    }
-
-    public void setFila(String fila) {
-        this.fila = fila;
     }
 }

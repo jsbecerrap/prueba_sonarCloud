@@ -98,9 +98,9 @@ export async function getTicketById(userId: string, ticketId: string): Promise<T
   return t ?? null;
 }
 
-export async function reserveTicket(userId: string, matchId: string, quantity: number, categoria: string = "BARRA", sector: string = "Norte", fila: string = "C"): Promise<Ticket> {
+export async function reserveTicket(userId: string, matchId: string, quantity: number, categoria: string = "BARRA", sector: string = "Norte"): Promise<Ticket> {
   if (!USE_MOCK) {
-    const data = await http.post<any>(`/api/entradas/reservar`, { partidoId: matchId, cantidad: quantity, categoria, sector, fila });
+    const data = await http.post<any>(`/api/entradas/reservar`, { partidoId: matchId, cantidad: quantity, categoria, sector });
     return {
       id: String(data.id),
       userId: String(data.usuarioId),
@@ -242,11 +242,19 @@ export async function getPartidosConCapacidad(): Promise<PartidoCapacidad[]> {
   }
   return [];
 }
+export interface CuposFila {
+  nombre: string;
+  limite: number;
+  vendidos: number;
+  disponibles: number;
+}
+
 export interface CuposZona {
   zona: string;
   limite: number;
   vendidos: number;
   disponibles: number;
+  filas?: CuposFila[];
 }
 
 export async function getCuposPorZona(partidoId: string): Promise<CuposZona[]> {
