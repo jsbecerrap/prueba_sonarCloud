@@ -191,4 +191,12 @@ public ResponseEntity<Void> agregarCiudad(@RequestBody final List<Long> ids) {
     service.agregarCiudad(correo, ids);
     return ResponseEntity.noContent().build();
 }
+@GetMapping("/usuarios/{idUsuario}/nombre")
+    public ResponseEntity<Map<String, String>> obtenerNombreUsuario(@PathVariable final Long idUsuario) {
+        UsuarioResponseDTO u = service.obtenerUsuario(idUsuario);
+        Map<String, String> response = new HashMap<>();
+        response.put("nombre", u.getNombre());
+        response.put("apellido", u.getApellido());
+        return ResponseEntity.ok(response);
+    }
 }

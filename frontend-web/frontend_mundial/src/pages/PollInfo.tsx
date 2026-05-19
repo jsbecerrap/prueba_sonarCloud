@@ -61,11 +61,11 @@ getMatches(),
     const nombresMap = new Map<number, string>();
     await Promise.all(
       rankingData.map(async (r) => {
-        try {
-          const u = await http.get<UsuarioDTO>(`/api/usuarios/${r.usuarioId}`);
+       try {
+          const u = await http.get<{nombre: string, apellido: string}>(`/api/usuarios/${r.usuarioId}/nombre`);
           nombresMap.set(r.usuarioId, `${u.nombre} ${u.apellido}`);
         } catch {
-          nombresMap.set(r.usuarioId, `Usuario ${r.usuarioId}`);
+          nombresMap.set(r.usuarioId, "Usuario");
         }
       })
     );

@@ -50,20 +50,17 @@ const [sinLeer, setSinLeer] = useState<number>(0);
 useEffect(() => {
   if (!user || cargadoRef.current === user.id) return;
   cargadoRef.current = user.id;
+getMyProfile(user.id, {
+  name: user.name,
+  lastName: user.lastName,
+  email: user.email,
+  avatarUrl: user.avatarUrl,
+}).then(setProfile);
 
-  getMyProfile(user.id, {
-    name: user.name,
-    lastName: user.lastName,
-    email: user.email,
-    avatarUrl: user.avatarUrl,
-  }).then((p) => {
-    setProfile(p);
-    setSelecciones(p.favoriteTeams.map((nombre, id) => ({ id, nombre })));
-    setCiudades(p.favoriteCities.map((nombre, id) => ({ id, nombre })));
-  });
-
-  getMatches().then(setMatches).catch(() => {});
-  http.get<Preferencia[]>("/api/usuarios/estadiosFav").then(setEstadios).catch(() => {});
+getMatches().then(setMatches).catch(() => {});
+http.get<Preferencia[]>("/api/usuarios/seleccionesFavoritas").then(setSelecciones).catch(() => {});
+http.get<Preferencia[]>("/api/usuarios/ciudadesFav").then(setCiudades).catch(() => {});
+http.get<Preferencia[]>("/api/usuarios/estadiosFav").then(setEstadios).catch(() => {});
   getUnreadCount().then(setSinLeer).catch(() => {});
   getNotifications(0, 20).then((r) => {
     setUltimasNotif(r.items.filter((n) => !n.read).slice(0, 5));

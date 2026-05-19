@@ -62,9 +62,9 @@ useEffect(() => {
     setProfile(p);
     setNombre(p.name);
     setApellido(p.lastName);
-    setSelecciones(p.favoriteTeams.map((nombre, id) => ({ id, nombre })));
-    setCiudades(p.favoriteCities.map((nombre, id) => ({ id, nombre })));
   });
+  http.get<Preferencia[]>("/api/usuarios/seleccionesFavoritas").then(setSelecciones).catch(() => {});
+  http.get<Preferencia[]>("/api/usuarios/ciudadesFav").then(setCiudades).catch(() => {});
   http.get<Preferencia[]>("/api/usuarios/estadiosFav").then(setEstadios).catch(() => {});
 }, [user]);
 
