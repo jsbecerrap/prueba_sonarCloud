@@ -95,7 +95,7 @@ export async function adminGetUsuarios(): Promise<UsuarioSistema[]> {
 
 export async function adminRegistrarUsuario(payload: RegistrarUsuarioPayload): Promise<UsuarioSistema> {
   if (!USE_MOCK) {
-    return http.post<UsuarioSistema>("/api/usuarios/registrar", payload);
+    return http.post<UsuarioSistema>("/api/usuarios/admin/registrar", payload);
   }
   await sleep(200);
   return { id: Date.now(), ...payload };

@@ -17,7 +17,7 @@ public class Pronostico {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "resultado_pronosticado", nullable = false)
+    @Column(name = "resultado_pronosticado", nullable = false, length = 20)
     private String resultadoPronosticado;
 
     @Column(name = "goles_local_pronosticados")
@@ -42,7 +42,6 @@ public class Pronostico {
     private Partido partido;
 
     public Pronostico() {
-        //Constructor vacio
     }
 
     public Long getId() {

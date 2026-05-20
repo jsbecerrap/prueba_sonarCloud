@@ -40,5 +40,5 @@ void agregarCiudad(String correo, List<Long> ids);
     Usuario obtenerEntidadPorId(Long usuarioId);
     Usuario obtenerEntidadPorCorreo(String correo);
     void actualizarFcmToken(String correo, String fcmToken);
-    
+    UsuarioResponseDTO registrarUsuarioComoAdmin(UsuarioRequestDTO dto);
 }

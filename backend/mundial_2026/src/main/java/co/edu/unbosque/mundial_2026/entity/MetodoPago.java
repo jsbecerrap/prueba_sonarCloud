@@ -21,22 +21,22 @@ public class MetodoPago {
     @JoinColumn(name = "usuario_id", nullable = false)
     private Usuario usuario;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 20)
     private String tipo;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 40)
     private String label;
 
+    @Column(length = 40)
     private String details;
 
     @Column(name = "is_default")
     private boolean isDefault;
 
-    @Column(name = "created_at", nullable = false)
+    @Column(name = "created_at", nullable = false, length = 40)
     private String createdAt;
 
     public MetodoPago() {
-        //Constructor vacio
     }
 
     public Long getId() {

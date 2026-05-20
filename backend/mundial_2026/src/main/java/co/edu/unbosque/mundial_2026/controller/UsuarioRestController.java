@@ -199,4 +199,10 @@ public ResponseEntity<Void> agregarCiudad(@RequestBody final List<Long> ids) {
         response.put("apellido", u.getApellido());
         return ResponseEntity.ok(response);
     }
+    @PreAuthorize("hasRole('ADMIN')")
+@PostMapping("/usuarios/admin/registrar")
+public ResponseEntity<UsuarioResponseDTO> registrarUsuarioPorAdmin(
+        @Valid @RequestBody final UsuarioRequestDTO dto) {
+    return ResponseEntity.status(HttpStatus.CREATED).body(service.registrarUsuarioComoAdmin(dto));
+}
 }

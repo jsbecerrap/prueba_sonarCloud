@@ -69,7 +69,9 @@ public class ApuestaServiceImpl implements ApuestaService {
     @Override
     public ApuestaDTO crearApuesta(ApuestaRequestDTO dto) {
         final Usuario usuario = usuarioService.obtenerEntidadPorId(dto.getUsuarioId());
-
+if (dto.getFechaCierre() != null && dto.getFechaCierre().isBefore(java.time.LocalDateTime.now())) {
+        throw new ApuestaCerradaException("La fecha de cierre debe ser futura");
+    }
         final Apuesta apuesta = new Apuesta();
         apuesta.setNombre(dto.getNombre());
         apuesta.setFechaCierre(dto.getFechaCierre());
@@ -178,9 +180,12 @@ public class ApuestaServiceImpl implements ApuestaService {
 
     @Transactional
     @Override
-    public PronosticoDTO editarPronostico(Long pronosticoId, PronosticoRequestDTO dto) {
+  public PronosticoDTO editarPronostico(Long pronosticoId, PronosticoRequestDTO dto, String correoUsuario) {
         final Pronostico pronostico = pronosticoRepository.findById(pronosticoId)
                 .orElseThrow(() -> new PronosticoNotFoundException(PRONOSTICO_NO_ENCONTRADO));
+                if (!pronostico.getUsuario().getCorreoUsuario().equalsIgnoreCase(correoUsuario)) {
+    throw new ApuestaCerradaException("No puedes editar un pronóstico que no es tuyo");
+}
 
         final Apuesta apuesta = pronostico.getApuesta();
         if (!ESTADO_ABIERTA.equalsIgnoreCase(apuesta.getEstado())) {
@@ -224,10 +229,12 @@ public class ApuestaServiceImpl implements ApuestaService {
 
     @Transactional
     @Override
-    public void eliminarPronostico(Long pronosticoId) {
+   public void eliminarPronostico(Long pronosticoId, String correoUsuario) {
         final Pronostico pronostico = pronosticoRepository.findById(pronosticoId)
                 .orElseThrow(() -> new PronosticoNotFoundException(PRONOSTICO_NO_ENCONTRADO));
-
+if (!pronostico.getUsuario().getCorreoUsuario().equalsIgnoreCase(correoUsuario)) {
+    throw new ApuestaCerradaException("No puedes eliminar un pronóstico que no es tuyo");
+}
         final Apuesta apuesta = pronostico.getApuesta();
         if (!ESTADO_ABIERTA.equalsIgnoreCase(apuesta.getEstado())) {
             throw new ApuestaCerradaException("No se puede eliminar un pronóstico de una polla cerrada");

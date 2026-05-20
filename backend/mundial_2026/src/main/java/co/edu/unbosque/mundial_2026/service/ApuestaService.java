@@ -34,10 +34,9 @@ public interface ApuestaService {
 
     void calcularPuntosAutomatico();
     List<PronosticoDTO> misPronosticos(Long apuestaId, Long usuarioId);
-PronosticoDTO editarPronostico(Long pronosticoId, PronosticoRequestDTO dto);
-void eliminarPronostico(Long pronosticoId);
+void eliminarPronostico(Long pronosticoId, String correoUsuario);
 List<PronosticoDTO> calcularPuntosParciales(Long apuestaId);
 List<ApuestaDTO> listarTodas();
 void eliminarApuesta(Long apuestaId);
 List<ApuestaConParticipantesDTO> listarApuestasPorUsuarioCompleto(Long usuarioId);
-}
+PronosticoDTO editarPronostico(Long pronosticoId, PronosticoRequestDTO dto, String correoUsuario);}

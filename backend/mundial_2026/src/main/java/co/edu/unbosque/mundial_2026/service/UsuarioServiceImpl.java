@@ -70,15 +70,21 @@ public UsuarioServiceImpl(UsuarioRepository repository, RolRepository rolReposit
     }
 //Registra al usuario guardandolo en la base de datos verificando los datos,aplicando las excepciones,hasheando la contraseña 
 //En caso de que no ponga rol por defecto se le asginara ROL_USUARIO
-    @Override
+  @Override
 @Transactional
 public UsuarioResponseDTO registrarUsuario(final UsuarioRequestDTO dto) {
     if (repository.findByCorreoUsuario(dto.getCorreoUsuario()).isPresent()) {
         throw new CorreoEnUsoException("El correo ya está en uso: " + dto.getCorreoUsuario());
     }
-    final String nombreRol = determinarRol(dto.getRol());
+
+    // SEGURIDAD: el endpoint público de registro IGNORA el campo "rol" del DTO
+    // y siempre asigna ROLE_USUARIO. Esto previene escalamiento de privilegios
+    // donde cualquier usuario anónimo podía registrarse como ADMIN.
+    // El endpoint administrativo (registrarUsuarioComoAdmin) sí honra el rol.
+    final String nombreRol = "ROLE_USUARIO";
     final Rol rol = rolRepository.findByNombre(nombreRol)
             .orElseThrow(() -> new RolNotFoundException("Rol no encontrado: " + nombreRol));
+
     final Usuario usuario = new Usuario();
     usuario.setCorreoUsuario(dto.getCorreoUsuario());
     usuario.setContrasena(passwordEncoder.encode(dto.getContrasena()));
@@ -86,14 +92,14 @@ public UsuarioResponseDTO registrarUsuario(final UsuarioRequestDTO dto) {
     usuario.setNombre(dto.getNombre());
     usuario.setApellido(dto.getApellido());
     Usuario guardado = repository.save(usuario);
- 
+
     auditoriaService.registrar(
             "USUARIO_REGISTRADO",
             "Nuevo usuario registrado: " + guardado.getCorreoUsuario() + " con rol " + nombreRol,
             guardado.getId(),
             UUID.randomUUID().toString(),
             "Usuario");
- 
+
     return toResponseDTO(guardado);
 }
     @Override
@@ -109,7 +115,39 @@ public UsuarioResponseDTO registrarUsuario(final UsuarioRequestDTO dto) {
         return toResponseDTO(repository.findByCorreoUsuario(correo)
                 .orElseThrow(() -> new UsuarioNotFoundException(USUARIO_NO_ENCONTRADO)));
     }
+/*
+ * Versión administrativa del registro. SOLO la usa el endpoint
+ * /api/usuarios/admin/registrar protegido por @PreAuthorize.
+ * Acepta el rol indicado en el DTO (típicamente ROLE_USUARIO o ROLE_ADMIN).
+ */
+@Override
+@Transactional
+public UsuarioResponseDTO registrarUsuarioComoAdmin(final UsuarioRequestDTO dto) {
+    if (repository.findByCorreoUsuario(dto.getCorreoUsuario()).isPresent()) {
+        throw new CorreoEnUsoException("El correo ya está en uso: " + dto.getCorreoUsuario());
+    }
 
+    final String nombreRol = determinarRol(dto.getRol());
+    final Rol rol = rolRepository.findByNombre(nombreRol)
+            .orElseThrow(() -> new RolNotFoundException("Rol no encontrado: " + nombreRol));
+
+    final Usuario usuario = new Usuario();
+    usuario.setCorreoUsuario(dto.getCorreoUsuario());
+    usuario.setContrasena(passwordEncoder.encode(dto.getContrasena()));
+    usuario.setRol(rol);
+    usuario.setNombre(dto.getNombre());
+    usuario.setApellido(dto.getApellido());
+    Usuario guardado = repository.save(usuario);
+
+    auditoriaService.registrar(
+            "USUARIO_REGISTRADO_POR_ADMIN",
+            "Usuario creado por admin: " + guardado.getCorreoUsuario() + " con rol " + nombreRol,
+            guardado.getId(),
+            UUID.randomUUID().toString(),
+            "Usuario");
+
+    return toResponseDTO(guardado);
+}
     @Override
 @Transactional
 public void eliminarUsuario(final Long usuarioId) {
@@ -282,13 +320,13 @@ public void eliminarCiudad(final String correo, final Long ciudadId) {
         }
     }
 
-    private void actualizarContrasena(final Usuario usuario, final UsuarioActualizarRequestDTO dto,
-            final String contrasenaOrig) {
-        if (dto.getContrasenaNueva() != null && !dto.getContrasenaNueva().isBlank()) {
-            validarContrasenaActual(dto.getContrasenaActual(), contrasenaOrig);//verifica que coincidan
-            usuario.setContrasena(passwordEncoder.encode(dto.getContrasenaNueva()));//Hace el hash
-        }
+   private void actualizarContrasena(final Usuario usuario, final UsuarioActualizarRequestDTO dto,
+        final String contrasenaOrig) {
+    if (dto.getContrasenaNueva() != null && !dto.getContrasenaNueva().isBlank()) {
+        validarContrasenaActual(dto.getContrasenaActual(), contrasenaOrig);
+        usuario.setContrasena(passwordEncoder.encode(dto.getContrasenaNueva()));
     }
+}
 //Verificacion del correo
     private boolean actualizarCorreo(final Usuario usuario, final UsuarioActualizarRequestDTO dto,
             final String contrasenaOrig) {

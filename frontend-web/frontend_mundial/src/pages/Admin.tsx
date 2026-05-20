@@ -726,7 +726,14 @@ onClick={(e) => { e.preventDefault(); navigate("/profile", { state: { vista: "ed
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(3, 1fr)" }, gap: 1.5 }}>
         <TextField label="Liga" type="number" value={sincLiga} onChange={(e) => setSincLiga(e.target.value)} disabled={loading} />
         <TextField label="Temporada" type="number" value={sincTemporada} onChange={(e) => setSincTemporada(e.target.value)} disabled={loading} />
-        <TextField label="Fecha (YYYY-MM-DD)" value={sincFecha} onChange={(e) => setSincFecha(e.target.value)} disabled={loading} />
+       <TextField
+  label="Fecha"
+  type="date"
+  value={sincFecha}
+  onChange={(e) => setSincFecha(e.target.value)}
+  disabled={loading}
+  slotProps={{ inputLabel: { shrink: true } }}
+/>
       </Box>
       <Button variant="contained" sx={{ mt: 2 }} disabled={loading} onClick={onSincronizar}>Sincronizar</Button>
     </Paper>

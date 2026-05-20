@@ -31,25 +31,29 @@ public class Usuario {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "usuario", unique = true, nullable = false)
+    @Column(name = "usuario", unique = true, nullable = false, length = 100)
     @NotBlank
     private String correoUsuario;
 
-    @Column(name = "contrasena", nullable = false)
+    /*
+     * length = 72 corresponde al límite de bcrypt; el hash resultante
+     * tiene siempre 60 caracteres ($2a$10$ + 53 chars), pero dejamos
+     * margen por si en el futuro se usa otra estrategia.
+     */
+    @Column(name = "contrasena", nullable = false, length = 72)
     @NotBlank
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String contrasena;
 
-    @Column(name = "nombre_usuario", nullable = false)
+    @Column(name = "nombre_usuario", nullable = false, length = 50)
     private String nombre;
 
-    @Column(name = "apellido_usuario", nullable = false)
+    @Column(name = "apellido_usuario", nullable = false, length = 50)
     private String apellido;
 
     @ManyToOne(fetch = FetchType.LAZY)
-@JoinColumn(name = "rol_id", nullable = false)
-private Rol rol;
- 
+    @JoinColumn(name = "rol_id", nullable = false)
+    private Rol rol;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "usuarios_selecciones",
@@ -71,15 +75,23 @@ private Rol rol;
             uniqueConstraints = @UniqueConstraint(columnNames = { USUARIO_ID, "ciudad_id" }))
     private List<CiudadFavorita> ciudadFavoritas;
 
-   
-
     @Column(name = "fecha_registro")
     private java.time.LocalDateTime fechaRegistro;
+
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private boolean activo;
 
     @Column(name = "fcm_token")
     private String fcmtoken;
+
+   
+    @Column(name = "intentos_fallidos", nullable = false)
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private Integer intentosFallidos = 0;
+
+    @Column(name = "bloqueado_hasta")
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private java.time.LocalDateTime bloqueadoHasta;
 
     public Usuario() {
     }
@@ -93,6 +105,9 @@ private Rol rol;
     public void prePersist() {
         this.activo = true;
         this.fechaRegistro = java.time.LocalDateTime.now();
+        if (this.intentosFallidos == null) {
+            this.intentosFallidos = 0;
+        }
     }
 
     public Long getId() {
@@ -190,5 +205,20 @@ private Rol rol;
     public void setFechaRegistro(java.time.LocalDateTime fechaRegistro) {
         this.fechaRegistro = fechaRegistro;
     }
-    
+
+    public Integer getIntentosFallidos() {
+        return intentosFallidos;
+    }
+
+    public void setIntentosFallidos(Integer intentosFallidos) {
+        this.intentosFallidos = intentosFallidos;
+    }
+
+    public java.time.LocalDateTime getBloqueadoHasta() {
+        return bloqueadoHasta;
+    }
+
+    public void setBloqueadoHasta(java.time.LocalDateTime bloqueadoHasta) {
+        this.bloqueadoHasta = bloqueadoHasta;
+    }
 }

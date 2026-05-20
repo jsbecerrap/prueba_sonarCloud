@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,6 +20,7 @@ import co.edu.unbosque.mundial_2026.service.EventoAuditoriaService;
 
 @RestController
 @RequestMapping("/api/auditoria")
+@PreAuthorize("hasRole('ADMIN')")
 public class EventoAuditoriaController {
 
     private final EventoAuditoriaService eventoService;
@@ -41,17 +43,18 @@ public class EventoAuditoriaController {
     }
 
     @GetMapping("/buscar")
-public ResponseEntity<Page<EventoAuditoriaDTO>> buscar(
-        @RequestParam(required = false) Long usuarioId,
-        @RequestParam(required = false) String tipos,
-        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fechaInicio,
-        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fechaFin,
-        @RequestParam(defaultValue = "0") int page,
-        @RequestParam(defaultValue = "50") int size) {
-    return ResponseEntity.ok(eventoService.buscarConFiltros(
-            usuarioId, tipos, fechaInicio, fechaFin,
-            buildPageable(page, size)));
-}
+    public ResponseEntity<Page<EventoAuditoriaDTO>> buscar(
+            @RequestParam(required = false) Long usuarioId,
+            @RequestParam(required = false) String tipos,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fechaInicio,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fechaFin,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
+        return ResponseEntity.ok(eventoService.buscarConFiltros(
+                usuarioId, tipos, fechaInicio, fechaFin,
+                buildPageable(page, size)));
+    }
+
     @GetMapping("/usuario/{usuarioId}")
     public ResponseEntity<Page<EventoAuditoriaDTO>> buscarPorUsuario(
             @PathVariable Long usuarioId,

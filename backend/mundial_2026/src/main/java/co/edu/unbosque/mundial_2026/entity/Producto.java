@@ -22,36 +22,36 @@ public class Producto {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 100)
     private String nombre;
 
-    @Column
+    @Column(length = 500)
     private String descripcion;
 
     @Column(nullable = false)
     private Double precio;
 
-    @Column(name = "imagen_url")
+    @Column(name = "imagen_url", length = 500)
     private String imagenUrl;
 
     @Column(nullable = false)
     private Boolean activo;
 
-    @Column(name = "codigo_producto", unique = true)
+    @Column(name = "codigo_producto", unique = true, length = 50)
     private String codigoProducto;
 
-    @Column(name = "equipo")
+    @Column(name = "equipo", length = 60)
     private String equipo;
 
-    @Column(name = "bandera")
+    @Column(name = "bandera", length = 10)
     private String bandera;
 
     @Column(name = "destacado", nullable = false)
     private Boolean destacado = false;
 
- @ManyToOne(fetch = FetchType.LAZY)
-@JoinColumn(name = "categoria_id", nullable = false)
-private Categoria categoria;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "categoria_id", nullable = false)
+    private Categoria categoria;
 
     @OneToMany(mappedBy = "producto", fetch = FetchType.LAZY)
     private List<VarianteProducto> variantes = new ArrayList<>();

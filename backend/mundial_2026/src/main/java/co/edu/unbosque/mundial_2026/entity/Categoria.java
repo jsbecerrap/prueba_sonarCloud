@@ -15,24 +15,25 @@ public class Categoria {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false, unique = true, length = 60)
     private String nombre;
 
-    @Column
+    @Column(length = 250)
     private String descripcion;
 
     @Column(nullable = false)
-private Boolean activo = true;
-    public Categoria() {
-        //Constructor vacio
-    }
-    public Boolean getActivo() {
-    return activo;
-}
+    private Boolean activo = true;
 
-public void setActivo(Boolean activo) {
-    this.activo = activo;
-}
+    public Categoria() {
+    }
+
+    public Boolean getActivo() {
+        return activo;
+    }
+
+    public void setActivo(Boolean activo) {
+        this.activo = activo;
+    }
 
     public Long getId() {
         return id;

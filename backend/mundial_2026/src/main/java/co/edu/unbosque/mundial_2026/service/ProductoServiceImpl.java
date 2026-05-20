@@ -81,35 +81,34 @@ public ProductoResponseDTO crear(ProductoRequestDTO dto) {
  
     return toDTO(producto);
 }
-
- @Override
+@Override
 @Transactional
 public ProductoResponseDTO actualizar(Long id, ProductoActualizarRequestDTO dto) {
     Producto producto = productoRepository.findById(id)
             .orElseThrow(() -> new ProductoNotFoundException(PRODUCTO_NO_ENCONTRADO));
- 
+
     final StringBuilder cambios = new StringBuilder();
     if (dto.getPrecio() != null) {
         cambios.append(" | precio: ").append(producto.getPrecio()).append(" -> ").append(dto.getPrecio());
         producto.setPrecio(dto.getPrecio());
     }
-    if (dto.getImagenUrl() != null) {
+    if (dto.getImagenUrl() != null && !dto.getImagenUrl().isBlank()) {
         cambios.append(" | imagenUrl actualizada");
         producto.setImagenUrl(dto.getImagenUrl());
     }
-    if (dto.getDescripcion() != null) {
+    if (dto.getDescripcion() != null && !dto.getDescripcion().isBlank()) {
         cambios.append(" | descripcion actualizada");
         producto.setDescripcion(dto.getDescripcion());
     }
-    if (dto.getCodigoProducto() != null) {
+    if (dto.getCodigoProducto() != null && !dto.getCodigoProducto().isBlank()) {
         cambios.append(" | codigo: ").append(dto.getCodigoProducto());
         producto.setCodigoProducto(dto.getCodigoProducto());
     }
-    if (dto.getEquipo() != null) {
+    if (dto.getEquipo() != null && !dto.getEquipo().isBlank()) {
         cambios.append(" | equipo: ").append(dto.getEquipo());
         producto.setEquipo(dto.getEquipo());
     }
-    if (dto.getBandera() != null) {
+    if (dto.getBandera() != null && !dto.getBandera().isBlank()) {
         cambios.append(" | bandera actualizada");
         producto.setBandera(dto.getBandera());
     }
@@ -117,16 +116,16 @@ public ProductoResponseDTO actualizar(Long id, ProductoActualizarRequestDTO dto)
         cambios.append(" | destacado: ").append(dto.getDestacado());
         producto.setDestacado(dto.getDestacado());
     }
- 
+
     productoRepository.save(producto);
- 
+
     auditoriaService.registrar(
             "PRODUCTO_ACTUALIZADO",
             "Producto actualizado: '" + producto.getNombre() + "'" + cambios,
             null,
             UUID.randomUUID().toString(),
             ENTIDAD_PRODUCTO);
- 
+
     return toDTO(producto);
 }
 
