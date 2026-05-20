@@ -3,7 +3,6 @@ package co.edu.unbosque.mundial_2026.dto.request;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 
 public class PronosticoRequestDTO {
@@ -15,23 +14,18 @@ public class PronosticoRequestDTO {
     )
     private String resultadoPronosticado;
 
-    @NotNull(message = "Los goles del local son obligatorios")
     @Min(value = 0, message = "Los goles no pueden ser negativos")
     @Max(value = 20, message = "Los goles no pueden ser mayores a 20")
     private Integer golesLocalPronosticados;
 
-    @NotNull(message = "Los goles del visitante son obligatorios")
     @Min(value = 0, message = "Los goles no pueden ser negativos")
     @Max(value = 20, message = "Los goles no pueden ser mayores a 20")
     private Integer golesVisitantePronosticados;
 
-    @NotNull(message = "El usuario es obligatorio")
     private Long usuarioId;
 
-    @NotNull(message = "La apuesta es obligatoria")
     private Long apuestaId;
 
-    @NotNull(message = "El partido es obligatorio")
     private Long partidoId;
 
     public String getResultadoPronosticado() {

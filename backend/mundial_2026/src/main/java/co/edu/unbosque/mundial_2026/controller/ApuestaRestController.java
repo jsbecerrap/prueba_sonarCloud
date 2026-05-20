@@ -102,22 +102,21 @@ public class ApuestaRestController {
         return ResponseEntity.ok(apuestaService.misPronosticos(apuestaId, usuarioId));
     }
 
-    @PutMapping("/pronostico/{pronosticoId}")
-    public ResponseEntity<PronosticoDTO> editarPronostico(
-            @PathVariable Long pronosticoId,
-            @Valid @RequestBody PronosticoRequestDTO dto,
-            @AuthenticationPrincipal UserDetails userDetails) {
-        return ResponseEntity.ok(apuestaService.editarPronostico(pronosticoId, dto, userDetails.getUsername()));
-    }
+ @PutMapping("/pronostico/{pronosticoId}")
+public ResponseEntity<PronosticoDTO> editarPronostico(
+        @PathVariable Long pronosticoId,
+        @Valid @RequestBody PronosticoRequestDTO dto,
+        @AuthenticationPrincipal String username) {
+    return ResponseEntity.ok(apuestaService.editarPronostico(pronosticoId, dto, username));
+}
 
-    @DeleteMapping("/pronostico/{pronosticoId}")
-    public ResponseEntity<Void> eliminarPronostico(
-            @PathVariable Long pronosticoId,
-            @AuthenticationPrincipal UserDetails userDetails) {
-        apuestaService.eliminarPronostico(pronosticoId, userDetails.getUsername());
-        return ResponseEntity.noContent().build();
-    }
-
+@DeleteMapping("/pronostico/{pronosticoId}")
+public ResponseEntity<Void> eliminarPronostico(
+        @PathVariable Long pronosticoId,
+        @AuthenticationPrincipal String username) {
+    apuestaService.eliminarPronostico(pronosticoId, username);
+    return ResponseEntity.noContent().build();
+}
     @GetMapping("/puntos-parciales/{apuestaId}")
     public ResponseEntity<List<PronosticoDTO>> calcularPuntosParciales(@PathVariable Long apuestaId) {
         return ResponseEntity.ok(apuestaService.calcularPuntosParciales(apuestaId));
