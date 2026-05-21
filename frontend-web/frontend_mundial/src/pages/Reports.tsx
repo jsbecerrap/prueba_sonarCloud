@@ -494,7 +494,7 @@ export default function Reports() {
     ? [...compras.productosMasVendidos]
         .sort((a, b) => a.ingresoTotal - b.ingresoTotal)
         .map((p) => ({
-          name: p.nombre.length > 28 ? p.nombre.substring(0, 28) + "..." : p.nombre,
+          name: p.nombre.length > 18 ? p.nombre.substring(0, 18) + "..." : p.nombre,
           fullName: p.nombre,
           ingreso: p.ingresoTotal,
           unidades: p.cantidadVendida,
@@ -754,11 +754,11 @@ export default function Reports() {
             <Box sx={{ p: 3 }}>
               <Box sx={{ width: "100%", height: 340 }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={productosChartData}
-                    layout="vertical"
-                    margin={{ top: 10, right: 80, left: 20, bottom: 10 }}
-                  >
+                <BarChart
+  data={productosChartData}
+  layout="vertical"
+  margin={{ top: 10, right: 60, left: 0, bottom: 10 }}
+>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(234,242,255,0.06)" horizontal={false} />
                     <XAxis
                       type="number"
@@ -767,12 +767,12 @@ export default function Reports() {
                       tickFormatter={formatCompactCOP}
                     />
                     <YAxis
-                      type="category"
-                      dataKey="name"
-                      stroke="rgba(234,242,255,0.5)"
-                      tick={{ fill: "rgba(234,242,255,0.85)", fontSize: 12, fontWeight: 600 }}
-                      width={210}
-                    />
+  type="category"
+  dataKey="name"
+  stroke="rgba(234,242,255,0.5)"
+  tick={{ fill: "rgba(234,242,255,0.85)", fontSize: 11, fontWeight: 600 }}
+  width={140}
+/>
                     <Tooltip
                       content={<DarkTooltip formatter={formatCOP} />}
                       cursor={{ fill: "rgba(255,209,102,0.06)" }}
