@@ -29,6 +29,8 @@ import Payments from "./pages/Payments";
 import Store from "./pages/Store";
 import Cart from "./pages/Cart";
 import { useApp } from "./context/AppContext";
+import Reports from "./pages/Reports";
+
 
 type GuardProps = { children: ReactNode };
 
@@ -114,9 +116,12 @@ export default function App() {
         <Route path="payments" element={<UserOnly><Payments /></UserOnly>} />
 <Route path="store" element={<UserOnly><Store /></UserOnly>} />
 <Route path="cart" element={<UserOnly><Cart /></UserOnly>} />
+<Route path="admin" element={<AdminOnly><Admin /></AdminOnly>} />
+<Route path="reports" element={<AdminOnly><Reports /></AdminOnly>} />
         <Route path="admin" element={<AdminOnly><Admin /></AdminOnly>} />
         <Route path="support" element={<SupportArea><Support /></SupportArea>} />
 <Route path="transactions" element={<UserOnly><Transactions /></UserOnly>} />
+        <Route path="reports" element={<AdminOnly><Reports /></AdminOnly>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

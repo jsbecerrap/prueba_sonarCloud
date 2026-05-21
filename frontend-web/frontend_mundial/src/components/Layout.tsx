@@ -44,7 +44,7 @@ export default function Layout() {
   const isUser = !!user && !isAdmin && !isSupport;
 
   const navSections: NavSection[] = useMemo(() => {
-    if (isAdmin) return [{ label: "Admin", items: [{ label: "Panel admin", to: "/admin" }] }];
+   if (isAdmin) return [{ label: "Admin", items: [{ label: "Panel admin", to: "/admin" }, { label: "Reportes", to: "/reports" }] }];
     if (isSupport) return [{ label: "Atención", items: [{ label: "Soporte", to: "/support" }] }];
     if (!isUser) return [];
 
