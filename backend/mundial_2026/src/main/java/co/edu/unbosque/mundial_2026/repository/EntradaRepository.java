@@ -3,6 +3,7 @@ package co.edu.unbosque.mundial_2026.repository;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -33,11 +34,6 @@ public interface EntradaRepository extends JpaRepository<Entrada, Long> {
 
     List<Entrada> findByEstadoAndTtlReservaBetween(String estado, LocalDateTime inicio, LocalDateTime fin);
 
-    /**
-     * Suma de cantidades vendidas (estado en :estados) para una combinación
-     * partido + categoría (zona) + fila. Se usa para validar cupo de fila
-     * antes de permitir una reserva.
-     */
     @Query("SELECT COALESCE(SUM(e.cantidad), 0) FROM Entrada e " +
            "WHERE e.partido.id = :partidoId " +
            "AND UPPER(e.categoria) = :categoria " +
@@ -48,12 +44,6 @@ public interface EntradaRepository extends JpaRepository<Entrada, Long> {
                                            @Param("fila") String fila,
                                            @Param("estados") List<String> estados);
 
-    /**
-     * Devuelve el mayor "último asiento usado" en la fila (asientoInicio + cantidad - 1),
-     * considerando TODAS las entradas históricas (incluyendo canceladas, expiradas,
-     * reembolsadas y transferidas). El próximo asientoInicio será este valor + 1.
-     * Si no hay entradas, devuelve 0 (entonces la próxima reserva empieza en asiento 1).
-     */
     @Query("SELECT COALESCE(MAX(e.asientoInicio + e.cantidad - 1), 0) FROM Entrada e " +
            "WHERE e.partido.id = :partidoId " +
            "AND UPPER(e.categoria) = :categoria " +
@@ -62,4 +52,25 @@ public interface EntradaRepository extends JpaRepository<Entrada, Long> {
     int maxAsientoFinByPartidoCategoriaYFila(@Param("partidoId") Long partidoId,
                                              @Param("categoria") String categoria,
                                              @Param("fila") String fila);
+
+    @Query("SELECT COALESCE(SUM(e.cantidad), 0) FROM Entrada e WHERE e.fechaPago IS NOT NULL")
+    Long sumEntradasVendidas();
+
+    @Query("SELECT e.partido.id, e.partido.seleccionLocal, e.partido.seleccionVisitante, " +
+           "e.partido.ronda, e.partido.estadio, " +
+           "SUM(e.cantidad), SUM(e.precio) " +
+           "FROM Entrada e " +
+           "WHERE e.fechaPago IS NOT NULL " +
+           "GROUP BY e.partido.id, e.partido.seleccionLocal, e.partido.seleccionVisitante, " +
+           "e.partido.ronda, e.partido.estadio " +
+           "ORDER BY SUM(e.cantidad) DESC")
+    List<Object[]> findEntradasPorPartido();
+
+    @Query("SELECT e.usuario.id, e.usuario.nombre, e.usuario.apellido, e.usuario.correoUsuario, " +
+           "SUM(e.cantidad), COALESCE(SUM(e.precio), 0.0) " +
+           "FROM Entrada e " +
+           "WHERE e.fechaPago IS NOT NULL " +
+           "GROUP BY e.usuario.id, e.usuario.nombre, e.usuario.apellido, e.usuario.correoUsuario " +
+           "ORDER BY COALESCE(SUM(e.precio), 0.0) DESC")
+    List<Object[]> findTopUsuariosEntrada(Pageable pageable);
 }
