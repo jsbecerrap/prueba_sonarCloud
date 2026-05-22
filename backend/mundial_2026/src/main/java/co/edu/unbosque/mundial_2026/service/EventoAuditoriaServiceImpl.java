@@ -2,7 +2,6 @@ package co.edu.unbosque.mundial_2026.service;
 
 import java.time.LocalDateTime;
 
-import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Async;
@@ -18,12 +17,11 @@ import co.edu.unbosque.mundial_2026.repository.EventoAuditoriaRepository;
 public class EventoAuditoriaServiceImpl implements EventoAuditoriaService {
 
     private final EventoAuditoriaRepository repository;
-    private final UsuarioService usuarioService;
+    
 
-    public EventoAuditoriaServiceImpl(EventoAuditoriaRepository repository,
-            @Lazy UsuarioService usuarioService) {
+    public EventoAuditoriaServiceImpl(EventoAuditoriaRepository repository) {
         this.repository = repository;
-        this.usuarioService = usuarioService;
+     
     }
 
     @Override

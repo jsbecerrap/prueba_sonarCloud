@@ -25,6 +25,7 @@ public class Categoria {
     private Boolean activo = true;
 
     public Categoria() {
+          //Constructor(Comentario que requiere sonarcloud)
     }
 
     public Boolean getActivo() {

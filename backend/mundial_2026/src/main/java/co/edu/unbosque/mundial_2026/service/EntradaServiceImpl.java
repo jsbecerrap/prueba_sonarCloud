@@ -52,7 +52,6 @@ public class EntradaServiceImpl implements EntradaService {
     private static final String ESTADO_TRANSFERIDA = "TRANSFERIDA";
     private static final String ENTRADA_NO_ENCONTRADA = "Entrada no encontrada";
     private static final String TIPO_ENTRADA = "ENTRADA";
-    private static final String PREFIJO_USUARIO = "Usuario ";
     private static final String ENTRADA_NO_PERTENECE = "Esta entrada no pertenece al usuario";
     private static final String ZONA_BARRA = "BARRA";
     private static final String ZONA_GENERAL = "GENERAL";

@@ -21,7 +21,7 @@ import co.edu.unbosque.mundial_2026.dto.response.EntradaResponseDTO;
 import co.edu.unbosque.mundial_2026.entity.*;
 import co.edu.unbosque.mundial_2026.exception.*;
 import co.edu.unbosque.mundial_2026.repository.EntradaRepository;
-import co.edu.unbosque.mundial_2026.service.*;
+
 
 @ExtendWith(MockitoExtension.class)
 class EntradaServiceImplTest {

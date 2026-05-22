@@ -19,7 +19,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import co.edu.unbosque.mundial_2026.controller.PartidoController;
 import co.edu.unbosque.mundial_2026.dto.response.*;
 import co.edu.unbosque.mundial_2026.entity.Partido;
 import co.edu.unbosque.mundial_2026.exception.PartidoNotFoundException;

@@ -18,7 +18,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 
-import co.edu.unbosque.mundial_2026.controller.EventoAuditoriaController;
 import co.edu.unbosque.mundial_2026.dto.EventoAuditoriaDTO;
 import co.edu.unbosque.mundial_2026.service.EventoAuditoriaService;
 

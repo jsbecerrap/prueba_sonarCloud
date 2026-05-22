@@ -15,7 +15,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 
-import co.edu.unbosque.mundial_2026.controller.ReporteController;
 import co.edu.unbosque.mundial_2026.dto.response.*;
 import co.edu.unbosque.mundial_2026.service.ReporteService;
 

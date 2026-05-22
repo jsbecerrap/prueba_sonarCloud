@@ -29,6 +29,7 @@ private Producto producto;
     private Integer stock;
 
     public VarianteProducto() {
+          //Constructor(Comentario que requiere sonarcloud)
     }
 
     public Long getId() {

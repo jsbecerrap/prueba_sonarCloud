@@ -49,11 +49,10 @@ public class OrdenServiceImpl implements OrdenService {
 
     private static final String ESTADO_PENDIENTE = "PENDIENTE";
     private static final String ESTADO_PAGADA = "PAGADA";
-    private static final String ESTADO_CANCELADA = "CANCELADA";
     private static final String TIPO_ORDEN = "Orden";
     private static final String PREFIJO_ORDEN = "ORDEN-";
     private static final String CARRITO_NO_ACTIVO = "No tienes un carrito activo";
-    private static final String PREFIJO_USUARIO = "Usuario ";
+
 
     private final NotificacionService notificacionService;
 

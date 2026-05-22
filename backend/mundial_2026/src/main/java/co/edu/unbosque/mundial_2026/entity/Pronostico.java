@@ -42,6 +42,7 @@ public class Pronostico {
     private Partido partido;
 
     public Pronostico() {
+          //Constructor(Comentario que requiere sonarcloud)
     }
 
     public Long getId() {

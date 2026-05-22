@@ -47,6 +47,7 @@ public class Apuesta {
     private List<Pronostico> pronosticos;
 
     public Apuesta() {
+        //Constructor(Comentario que requiere sonarcloud)
     }
 
     public Long getId() {

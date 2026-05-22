@@ -37,6 +37,7 @@ public class MetodoPago {
     private String createdAt;
 
     public MetodoPago() {
+          //Constructor(Comentario que requiere sonarcloud)
     }
 
     public Long getId() {

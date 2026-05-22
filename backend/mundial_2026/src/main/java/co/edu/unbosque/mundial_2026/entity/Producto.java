@@ -65,6 +65,7 @@ public class Producto {
     }
 
     public Producto() {
+          //Constructor(Comentario que requiere sonarcloud)
     }
 
     public Long getId() {

@@ -40,6 +40,7 @@ private VarianteProducto variante;
     private Double precioUnitario;
 
     public ItemOrden() {
+          //Constructor(Comentario que requiere sonarcloud)
     }
 
     public Long getId() {

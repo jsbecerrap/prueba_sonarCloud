@@ -25,7 +25,6 @@ import co.edu.unbosque.mundial_2026.exception.UsuarioNotFoundException;
 import co.edu.unbosque.mundial_2026.repository.CiudadRepository;
 import co.edu.unbosque.mundial_2026.repository.EstadioRepository;
 import co.edu.unbosque.mundial_2026.repository.RolRepository;
-import co.edu.unbosque.mundial_2026.repository.SeleccionRepository;
 import co.edu.unbosque.mundial_2026.repository.UsuarioRepository;
 import java.util.UUID;
 @Service
@@ -36,7 +35,6 @@ public class UsuarioServiceImpl implements UsuarioService {
     private final UsuarioRepository repository;
     private final RolRepository rolRepository;
     private final PasswordEncoder passwordEncoder;
-    private final SeleccionRepository seleccionRepository;
     private final EstadioRepository estadioRepository;
     private final CiudadRepository ciudadRepository;
 private final EventoAuditoriaService auditoriaService;
@@ -46,13 +44,12 @@ private final EventoAuditoriaService auditoriaService;
    private final NotificacionService notificacionService;
 
 public UsuarioServiceImpl(UsuarioRepository repository, RolRepository rolRepository,
-        PasswordEncoder passwordEncoder, SeleccionRepository seleccionRepository,
+        PasswordEncoder passwordEncoder,
         EstadioRepository estadioRepository, CiudadRepository ciudadRepository,
         NotificacionService notificacionService,EventoAuditoriaService auditoriaService) {
     this.repository = repository;
     this.rolRepository = rolRepository;
     this.passwordEncoder = passwordEncoder;
-    this.seleccionRepository = seleccionRepository;
     this.estadioRepository = estadioRepository;
     this.ciudadRepository = ciudadRepository;
     this.notificacionService = notificacionService;

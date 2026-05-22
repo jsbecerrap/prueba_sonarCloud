@@ -13,7 +13,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
 
-import co.edu.unbosque.mundial_2026.controller.ProductoController;
 import co.edu.unbosque.mundial_2026.dto.request.ActivarLoteRequestDTO;
 import co.edu.unbosque.mundial_2026.dto.request.ProductoActualizarRequestDTO;
 import co.edu.unbosque.mundial_2026.dto.request.ProductoRequestDTO;

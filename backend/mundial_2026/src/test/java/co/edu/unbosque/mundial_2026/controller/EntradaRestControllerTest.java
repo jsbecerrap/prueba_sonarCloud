@@ -14,7 +14,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
 
-import co.edu.unbosque.mundial_2026.controller.EntradaRestController;
 import co.edu.unbosque.mundial_2026.dto.CuposZonaDTO;
 import co.edu.unbosque.mundial_2026.dto.PartidoCapacidadDTO;
 import co.edu.unbosque.mundial_2026.dto.request.EntradaRequestDTO;

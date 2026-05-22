@@ -21,7 +21,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import co.edu.unbosque.mundial_2026.controller.UsuarioRestController;
 import co.edu.unbosque.mundial_2026.dto.request.UsuarioActualizarRequestDTO;
 import co.edu.unbosque.mundial_2026.dto.request.UsuarioRequestDTO;
 import co.edu.unbosque.mundial_2026.dto.response.PreferenciaDTO;
