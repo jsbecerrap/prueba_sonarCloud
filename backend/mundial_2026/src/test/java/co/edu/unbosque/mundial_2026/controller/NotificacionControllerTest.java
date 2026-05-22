@@ -50,8 +50,8 @@ class NotificacionControllerTest {
 
     @BeforeEach
     void setUpSecurityContext() {
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getName()).thenReturn("user@test.com");
+lenient().when(securityContext.getAuthentication()).thenReturn(authentication);
+lenient().when(authentication.getName()).thenReturn("user@test.com");
         SecurityContextHolder.setContext(securityContext);
     }
 

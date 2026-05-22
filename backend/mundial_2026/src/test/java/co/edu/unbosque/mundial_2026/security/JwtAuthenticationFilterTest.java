@@ -121,8 +121,7 @@ class JwtAuthenticationFilterTest {
         String contrasenaLarga = "a".repeat(73);
         MockHttpServletRequest request = requestConCredenciales("user@test.com", contrasenaLarga);
         MockHttpServletResponse response = new MockHttpServletResponse();
-        Usuario usuario = usuarioSinBloqueo("user@test.com");
-        when(usuarioRepo.findByCorreoUsuario("user@test.com")).thenReturn(Optional.of(usuario));
+       
 
         assertThrows(Exception.class,
                 () -> filter.attemptAuthentication(request, response));
@@ -133,7 +132,7 @@ class JwtAuthenticationFilterTest {
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
         request.setAttribute("correoIntentoLogin", "user@test.com");
-        Usuario usuario = usuarioSinBloqueo("user@test.com");
+      Usuario usuario = usuarioSinBloqueo("user@test.com");
         when(usuarioRepo.findByCorreoUsuario("user@test.com")).thenReturn(Optional.of(usuario));
 
         invokeUnsuccessful(request, response, new BadCredentialsException("bad credentials"));
