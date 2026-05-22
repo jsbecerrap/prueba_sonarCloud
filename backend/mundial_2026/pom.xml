@@ -14,10 +14,14 @@
     <name>mundial_2026</name>
     <description>Mundial 2026 Hub</description>
     <properties>
-        <java.version>21</java.version>
-        <sonar.organization>jsbecerrap</sonar.organization>
-        <sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
-    </properties>
+    <java.version>21</java.version>
+    <sonar.organization>jsbecerrap</sonar.organization>
+    <sonar.coverage.jacoco.xmlReportPaths>target/site/jacoco/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+    <sonar.cpd.exclusions>
+        **/dto/**,
+        **/entity/**
+    </sonar.cpd.exclusions>
+</properties>
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
