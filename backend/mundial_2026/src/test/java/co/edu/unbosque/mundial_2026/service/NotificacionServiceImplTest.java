@@ -26,8 +26,7 @@ import co.edu.unbosque.mundial_2026.entity.*;
 import co.edu.unbosque.mundial_2026.exception.PartidoNotFoundException;
 import co.edu.unbosque.mundial_2026.exception.UsuarioNotFoundException;
 import co.edu.unbosque.mundial_2026.repository.*;
-import co.edu.unbosque.mundial_2026.service.EventoAuditoriaService;
-import co.edu.unbosque.mundial_2026.service.NotificacionServiceImpl;
+
 
 @ExtendWith(MockitoExtension.class)
 class NotificacionServiceImplTest {

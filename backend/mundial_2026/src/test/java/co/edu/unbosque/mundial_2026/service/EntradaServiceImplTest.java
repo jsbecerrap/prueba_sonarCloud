@@ -146,7 +146,7 @@ class EntradaServiceImplTest {
                 () -> service.reservarEntrada("user1@test.com", crearRequestDTO(1L, 2, "BARRA")));
     }
 
-    
+
     @Test
     void reservarEntrada_cantidadMayorACuatro_lanzaLimiteSuperado() {
         Usuario usuario = crearUsuario(1L);
@@ -279,7 +279,7 @@ class EntradaServiceImplTest {
         when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
         when(entradaRepository.findById(1L)).thenReturn(Optional.of(entrada));
         when(entradaRepository.save(any(Entrada.class))).thenAnswer(inv -> inv.getArgument(0));
-        doNothing().when(partidoService).actualizarCapacidad(eq(1L), eq(2));
+        doNothing().when(partidoService).actualizarCapacidad(1L, 2);
         doNothing().when(auditoriaService).registrar(any(), any(), any(), any(), any());
 
         EntradaResponseDTO resultado = service.cancelarReserva("user1@test.com", 1L);

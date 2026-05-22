@@ -3,8 +3,8 @@ package co.edu.unbosque.mundial_2026.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+
+
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -208,44 +208,42 @@ class EventoAuditoriaServiceImplTest {
     class BuscarConFiltros {
 
         @Test
-        void cuandoTodosLosFiltrosTienenValor_pasaStringsDeFecha() {
-            LocalDateTime inicio = LocalDateTime.of(2026, 1, 1, 0, 0);
-            LocalDateTime fin = LocalDateTime.of(2026, 12, 31, 23, 59);
+void cuandoTodosLosFiltrosTienenValor_pasaStringsDeFecha() {
+    LocalDateTime inicio = LocalDateTime.of(2026, 1, 1, 0, 0);
+    LocalDateTime fin = LocalDateTime.of(2026, 12, 31, 23, 59);
 
-            Page<EventoAuditoria> page = new PageImpl<>(List.of(evento), pageable, 1);
-            when(repository.buscarConFiltros(eq(1L), eq("USUARIO_REGISTRADO"),
-                    eq(inicio.toString()), eq(fin.toString()), eq(pageable)))
-                    .thenReturn(page);
+    Page<EventoAuditoria> page = new PageImpl<>(List.of(evento), pageable, 1);
+    when(repository.buscarConFiltros(1L, "USUARIO_REGISTRADO",
+            inicio.toString(), fin.toString(), pageable))
+            .thenReturn(page);
 
-            Page<EventoAuditoriaDTO> resultado = auditoriaService.buscarConFiltros(
-                    1L, "USUARIO_REGISTRADO", inicio, fin, pageable);
+    Page<EventoAuditoriaDTO> resultado = auditoriaService.buscarConFiltros(
+            1L, "USUARIO_REGISTRADO", inicio, fin, pageable);
 
-            assertEquals(1, resultado.getTotalElements());
-        }
-
-        @Test
-        void cuandoFechasNull_pasaNullAlRepositorio() {
-            Page<EventoAuditoria> page = new PageImpl<>(List.of(evento), pageable, 1);
-            when(repository.buscarConFiltros(eq(1L), eq("USUARIO_REGISTRADO"),
-                    eq(null), eq(null), eq(pageable)))
-                    .thenReturn(page);
-
-            Page<EventoAuditoriaDTO> resultado = auditoriaService.buscarConFiltros(
-                    1L, "USUARIO_REGISTRADO", null, null, pageable);
-
-            assertEquals(1, resultado.getTotalElements());
-        }
-
-        @Test
-        void cuandoFiltrosNull_pasaTodosNulls() {
-            Page<EventoAuditoria> page = new PageImpl<>(List.of(evento), pageable, 1);
-            when(repository.buscarConFiltros(eq(null), eq(null), eq(null), eq(null), eq(pageable)))
-                    .thenReturn(page);
-
-            Page<EventoAuditoriaDTO> resultado = auditoriaService.buscarConFiltros(
-                    null, null, null, null, pageable);
-
-            assertEquals(1, resultado.getTotalElements());
-        }
-    }
+    assertEquals(1, resultado.getTotalElements());
 }
+
+@Test
+void cuandoFechasNull_pasaNullAlRepositorio() {
+    Page<EventoAuditoria> page = new PageImpl<>(List.of(evento), pageable, 1);
+    when(repository.buscarConFiltros(1L, "USUARIO_REGISTRADO", null, null, pageable))
+            .thenReturn(page);
+
+    Page<EventoAuditoriaDTO> resultado = auditoriaService.buscarConFiltros(
+            1L, "USUARIO_REGISTRADO", null, null, pageable);
+
+    assertEquals(1, resultado.getTotalElements());
+}
+
+@Test
+void cuandoFiltrosNull_pasaTodosNulls() {
+    Page<EventoAuditoria> page = new PageImpl<>(List.of(evento), pageable, 1);
+    when(repository.buscarConFiltros(null, null, null, null, pageable))
+            .thenReturn(page);
+
+    Page<EventoAuditoriaDTO> resultado = auditoriaService.buscarConFiltros(
+            null, null, null, null, pageable);
+
+    assertEquals(1, resultado.getTotalElements());
+}
+}}
