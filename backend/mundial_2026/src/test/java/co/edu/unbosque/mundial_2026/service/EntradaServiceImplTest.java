@@ -146,6 +146,7 @@ class EntradaServiceImplTest {
                 () -> service.reservarEntrada("user1@test.com", crearRequestDTO(1L, 2, "BARRA")));
     }
 
+    
     @Test
     void reservarEntrada_cantidadMayorACuatro_lanzaLimiteSuperado() {
         Usuario usuario = crearUsuario(1L);
