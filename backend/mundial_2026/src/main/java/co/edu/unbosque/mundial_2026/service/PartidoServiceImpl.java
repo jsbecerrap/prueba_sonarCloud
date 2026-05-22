@@ -340,7 +340,6 @@ public int actualizarResultado(Long partidoId, int golesLocal,
 
     final Integer golesLocalAnterior = partido.getGolesLocal();
     final Integer golesVisitanteAnterior = partido.getGolesVisitante();
-    final String estadoAnterior = partido.getEstado();
 
     partido.setGolesLocal(golesLocal);
     partido.setGolesVisitante(golesVisitante);

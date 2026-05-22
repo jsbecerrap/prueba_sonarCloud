@@ -2,8 +2,8 @@ package co.edu.unbosque.mundial_2026.dto.response;
 
 public class PreferenciaDTO {
 
-    private Long id;
-    private String nombre;
+    private final Long id;
+    private final String nombre;
 
     public PreferenciaDTO(Long id, String nombre) {
         this.id = id;

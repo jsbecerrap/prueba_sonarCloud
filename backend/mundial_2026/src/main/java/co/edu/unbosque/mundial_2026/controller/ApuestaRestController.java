@@ -6,7 +6,6 @@ import java.util.regex.Pattern;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -34,6 +33,7 @@ public class ApuestaRestController {
         "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}|[A-Za-z0-9]{4,40})$"
     );
 
+    private static final String ROL_ADMIN = "hasRole('ADMIN')";
     private final ApuestaService apuestaService;
 
     public ApuestaRestController(ApuestaService apuestaService) {
@@ -64,13 +64,13 @@ public class ApuestaRestController {
         return ResponseEntity.ok(apuestaService.obtenerRanking(apuestaId));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize(ROL_ADMIN)
     @PostMapping("/cerrar/{apuestaId}")
     public ResponseEntity<ApuestaDTO> cerrarApuesta(@PathVariable Long apuestaId) {
         return ResponseEntity.ok(apuestaService.cerrarApuesta(apuestaId));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize(ROL_ADMIN)
     @GetMapping("/puntos/{apuestaId}")
     public ResponseEntity<List<PronosticoDTO>> calcularPuntos(@PathVariable Long apuestaId) {
         return ResponseEntity.ok(apuestaService.calcularPuntos(apuestaId));
@@ -122,13 +122,13 @@ public ResponseEntity<Void> eliminarPronostico(
         return ResponseEntity.ok(apuestaService.calcularPuntosParciales(apuestaId));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize(ROL_ADMIN)
     @GetMapping("/todas")
     public ResponseEntity<List<ApuestaDTO>> listarTodas() {
         return ResponseEntity.ok(apuestaService.listarTodas());
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize(ROL_ADMIN)
     @DeleteMapping("/{apuestaId}")
     public ResponseEntity<Void> eliminarApuesta(@PathVariable Long apuestaId) {
         apuestaService.eliminarApuesta(apuestaId);

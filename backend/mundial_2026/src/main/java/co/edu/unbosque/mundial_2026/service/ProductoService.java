@@ -1,8 +1,6 @@
 package co.edu.unbosque.mundial_2026.service;
 
 import java.util.List;
-import java.util.Map;
- import org.springframework.data.domain.Pageable;
 import co.edu.unbosque.mundial_2026.dto.request.ProductoActualizarRequestDTO;
 import co.edu.unbosque.mundial_2026.dto.request.ProductoRequestDTO;
 import co.edu.unbosque.mundial_2026.dto.response.ProductoListadoDTO;

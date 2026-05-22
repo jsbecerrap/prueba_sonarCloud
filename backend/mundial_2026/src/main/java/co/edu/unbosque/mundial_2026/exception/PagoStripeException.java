@@ -4,4 +4,8 @@ public class PagoStripeException extends RuntimeException {
     public PagoStripeException(String mensaje) {
         super(mensaje);
     }
+
+    public PagoStripeException(String mensaje, Throwable causa) {
+        super(mensaje, causa);
+    }
 }

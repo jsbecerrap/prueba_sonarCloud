@@ -36,6 +36,7 @@ public class UsuarioRestController {
     private final UsuarioService service;
     private final TokenBlacklist tokenBlacklist;
     private static final String KEY_USUARIO = "usuario";
+    private static final String ROL_ADMIN = "hasRole('ADMIN')";
 
     public UsuarioRestController(final UsuarioService service,
             final TokenBlacklist tokenBlacklist) {
@@ -44,12 +45,12 @@ public class UsuarioRestController {
     }
 
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize(ROL_ADMIN)
 @GetMapping("/usuarios/listar")
     public ResponseEntity<List<UsuarioResponseDTO>> listarTodos() {
         return ResponseEntity.ok(service.listarTodos());
     }
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize(ROL_ADMIN)
     @GetMapping("/usuarios/{idUsuario}")
     public ResponseEntity<UsuarioResponseDTO> obtenerUsuario(@PathVariable final Long idUsuario) {
         return ResponseEntity.ok(service.obtenerUsuario(idUsuario));
@@ -66,13 +67,14 @@ public class UsuarioRestController {
             @Valid @RequestBody final UsuarioRequestDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.registrarUsuario(dto));
     }
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize(ROL_ADMIN)
     @DeleteMapping("/usuarios/{idUsuario}")
     public ResponseEntity<Void> eliminarUsuario(@PathVariable final Long idUsuario) {
         service.eliminarUsuario(idUsuario);
         return ResponseEntity.noContent().build();
     }
-//Verifica si el correo cambio ya que si si cambio el token se añade a la lista negra para que quede invalido y le indica qe debe iniciar sesion nuevamente con el nuevo correo y credenciales
+    //Verifica si el correo cambio ya que si si cambio el token se añade a la lista negra para que quede invalido
+    //le indica qe debe iniciar sesion nuevamente con el nuevo correo y credenciales
     @PutMapping("/usuarios/perfil")
     public ResponseEntity<Object> actualizarPerfil(
             @Valid @RequestBody final UsuarioActualizarRequestDTO dto,
@@ -92,7 +94,7 @@ public class UsuarioRestController {
         }
         return ResponseEntity.ok(resultado.get(KEY_USUARIO));
     }
-//Cuando cierra sesion añade el token a la lista negra para que nadie mas lo pueda usar
+    //Cuando cierra sesion añade el token a la lista negra para que nadie mas lo pueda usar
     @PostMapping("/auth/logout")
     public ResponseEntity<Object> logout(final HttpServletRequest request) {
         final String header = request.getHeader(HEADER_AUTHORIZATION);

@@ -1,6 +1,6 @@
 package co.edu.unbosque.mundial_2026.service;
 
-import java.util.ArrayList;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,10 +15,8 @@ import co.edu.unbosque.mundial_2026.dto.request.UsuarioActualizarRequestDTO;
 import co.edu.unbosque.mundial_2026.dto.request.UsuarioRequestDTO;
 import co.edu.unbosque.mundial_2026.dto.response.PreferenciaDTO;
 import co.edu.unbosque.mundial_2026.dto.response.UsuarioResponseDTO;
-import co.edu.unbosque.mundial_2026.entity.CiudadFavorita;
-import co.edu.unbosque.mundial_2026.entity.EstadioFavorito;
 import co.edu.unbosque.mundial_2026.entity.Rol;
-import co.edu.unbosque.mundial_2026.entity.Seleccion;
+
 import co.edu.unbosque.mundial_2026.entity.Usuario;
 import co.edu.unbosque.mundial_2026.exception.ContrasenaIncorrectaException;
 import co.edu.unbosque.mundial_2026.exception.CorreoEnUsoException;
@@ -33,8 +31,8 @@ import java.util.UUID;
 @Service
 public class UsuarioServiceImpl implements UsuarioService {
 
-    private static final String USUARIO_NO_ENCONTRADO = "Usuario no encontrado";
-
+  private static final String USUARIO_NO_ENCONTRADO = "Usuario no encontrado";
+    private static final String ENTIDAD_USUARIO = "Usuario";
     private final UsuarioRepository repository;
     private final RolRepository rolRepository;
     private final PasswordEncoder passwordEncoder;
@@ -60,7 +58,7 @@ public UsuarioServiceImpl(UsuarioRepository repository, RolRepository rolReposit
     this.notificacionService = notificacionService;
     this.auditoriaService = auditoriaService;
 }
-//retorna el dto de los usuarios que estan registrados en el aplicativo
+    //retorna el dto de los usuarios que estan registrados en el aplicativo
     @Override
     @Transactional(readOnly = true)
     public List<UsuarioResponseDTO> listarTodos() {
@@ -77,10 +75,7 @@ public UsuarioResponseDTO registrarUsuario(final UsuarioRequestDTO dto) {
         throw new CorreoEnUsoException("El correo ya está en uso: " + dto.getCorreoUsuario());
     }
 
-    // SEGURIDAD: el endpoint público de registro IGNORA el campo "rol" del DTO
-    // y siempre asigna ROLE_USUARIO. Esto previene escalamiento de privilegios
-    // donde cualquier usuario anónimo podía registrarse como ADMIN.
-    // El endpoint administrativo (registrarUsuarioComoAdmin) sí honra el rol.
+  
     final String nombreRol = "ROLE_USUARIO";
     final Rol rol = rolRepository.findByNombre(nombreRol)
             .orElseThrow(() -> new RolNotFoundException("Rol no encontrado: " + nombreRol));
@@ -93,12 +88,12 @@ public UsuarioResponseDTO registrarUsuario(final UsuarioRequestDTO dto) {
     usuario.setApellido(dto.getApellido());
     Usuario guardado = repository.save(usuario);
 
-    auditoriaService.registrar(
+  auditoriaService.registrar(
             "USUARIO_REGISTRADO",
             "Nuevo usuario registrado: " + guardado.getCorreoUsuario() + " con rol " + nombreRol,
             guardado.getId(),
             UUID.randomUUID().toString(),
-            "Usuario");
+            ENTIDAD_USUARIO);
 
     return toResponseDTO(guardado);
 }
@@ -115,11 +110,7 @@ public UsuarioResponseDTO registrarUsuario(final UsuarioRequestDTO dto) {
         return toResponseDTO(repository.findByCorreoUsuario(correo)
                 .orElseThrow(() -> new UsuarioNotFoundException(USUARIO_NO_ENCONTRADO)));
     }
-/*
- * Versión administrativa del registro. SOLO la usa el endpoint
- * /api/usuarios/admin/registrar protegido por @PreAuthorize.
- * Acepta el rol indicado en el DTO (típicamente ROLE_USUARIO o ROLE_ADMIN).
- */
+
 @Override
 @Transactional
 public UsuarioResponseDTO registrarUsuarioComoAdmin(final UsuarioRequestDTO dto) {
@@ -139,12 +130,12 @@ public UsuarioResponseDTO registrarUsuarioComoAdmin(final UsuarioRequestDTO dto)
     usuario.setApellido(dto.getApellido());
     Usuario guardado = repository.save(usuario);
 
-    auditoriaService.registrar(
+   auditoriaService.registrar(
             "USUARIO_REGISTRADO_POR_ADMIN",
             "Usuario creado por admin: " + guardado.getCorreoUsuario() + " con rol " + nombreRol,
             guardado.getId(),
             UUID.randomUUID().toString(),
-            "Usuario");
+            ENTIDAD_USUARIO);
 
     return toResponseDTO(guardado);
 }
@@ -161,7 +152,7 @@ public void eliminarUsuario(final Long usuarioId) {
             "Usuario desactivado: " + usuario.getCorreoUsuario(),
             usuario.getId(),
             UUID.randomUUID().toString(),
-            "Usuario");
+            ENTIDAD_USUARIO);
 }
 //Actualiza los valores del usuario, es importante mandar si cambio el correo ya que se debe generar un nuevo token y hacer log out con el anterior
   @Override
@@ -178,25 +169,29 @@ public Map<String, Object> actualizarPerfil(final String correoUsuario,
     final Usuario usuarioGuardado = repository.save(usuario);
     notificacionService.notificarActualizacionPerfil(usuarioGuardado);
  
-    final StringBuilder descripcion = new StringBuilder();
-descripcion.append("Perfil actualizado: ")
-    .append(usuarioGuardado.getNombre()).append(" ").append(usuarioGuardado.getApellido())
-    .append(" (").append(usuarioGuardado.getCorreoUsuario()).append(")");
-    if (dto.getNombre() != null && !dto.getNombre().isBlank())
+    final StringBuilder descripcion = new StringBuilder(128);
+    descripcion.append("Perfil actualizado: ")
+        .append(usuarioGuardado.getNombre()).append(' ').append(usuarioGuardado.getApellido())
+        .append(" (").append(usuarioGuardado.getCorreoUsuario()).append(')');
+    if (dto.getNombre() != null && !dto.getNombre().isBlank()) {
         descripcion.append(" | nombre cambiado");
-    if (dto.getApellido() != null && !dto.getApellido().isBlank())
+    }
+    if (dto.getApellido() != null && !dto.getApellido().isBlank()) {
         descripcion.append(" | apellido cambiado");
-    if (dto.getContrasenaNueva() != null && !dto.getContrasenaNueva().isBlank())
+    }
+    if (dto.getContrasenaNueva() != null && !dto.getContrasenaNueva().isBlank()) {
         descripcion.append(" | contrasena cambiada");
-    if (correoCambio)
+    }
+    if (correoCambio) {
         descripcion.append(" | correo cambiado");
- 
+    }
+
     auditoriaService.registrar(
             "USUARIO_ACTUALIZADO",
             descripcion.toString(),
             usuarioGuardado.getId(),
             UUID.randomUUID().toString(),
-            "Usuario");
+            ENTIDAD_USUARIO);
  
     final Map<String, Object> resultado = new HashMap<>();
     resultado.put("usuario", toResponseDTO(usuarioGuardado));

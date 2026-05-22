@@ -22,7 +22,7 @@ public class Seleccion {
     private List<Usuario> usuarios;
 
     public Seleccion() {
-        //Constructor vacio
+        // Constructor vacio
     }
 
     public Long getId() {
@@ -51,10 +51,12 @@ public class Seleccion {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o)
+        if (this == o) {
             return true;
-        if (o == null || getClass() != o.getClass())
+        }
+        if (o == null || getClass() != o.getClass()) {
             return false;
+        }
         Seleccion seleccion = (Seleccion) o;
         return id != null && id.equals(seleccion.id);
     }

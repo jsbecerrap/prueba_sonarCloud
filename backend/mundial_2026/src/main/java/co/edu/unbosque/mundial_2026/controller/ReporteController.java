@@ -25,6 +25,7 @@ import co.edu.unbosque.mundial_2026.service.ReporteService;
 public class ReporteController {
 
     private final ReporteService reportesService;
+    private static final String ROL_ADMIN = "hasRole('ADMIN')";
 
    
 
@@ -32,50 +33,50 @@ public class ReporteController {
         this.reportesService = reportesService;
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize(ROL_ADMIN)
     @GetMapping("/estadisticas-generales")
     public ResponseEntity<ReportesResponseDTO> obtenerEstadisticasGenerales() {
         return ResponseEntity.ok(reportesService.obtenerEstadisticasGenerales());
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize(ROL_ADMIN)
     @GetMapping("/compras")
     public ResponseEntity<ReportesComprasDTO> obtenerReportesCompras() {
         return ResponseEntity.ok(reportesService.obtenerReportesCompras());
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize(ROL_ADMIN)
     @GetMapping("/partidos-apostados")
     public ResponseEntity<List<PartidoMasApostadoDTO>> obtenerPartidosMasApostados() {
         return ResponseEntity.ok(reportesService.obtenerPartidosMasApostados());
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize(ROL_ADMIN)
     @GetMapping("/pollas")
     public ResponseEntity<List<PollaRankingDTO>> obtenerPollaRanking() {
         return ResponseEntity.ok(reportesService.obtenerPollaRanking());
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize(ROL_ADMIN)
     @GetMapping("/metodos-pago")
     public ResponseEntity<List<IngresoMetodoPagoDTO>> obtenerIngresosPorMetodoPago() {
         return ResponseEntity.ok(reportesService.obtenerIngresosPorMetodoPago());
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize(ROL_ADMIN)
     @GetMapping("/entradas-por-partido")
     public ResponseEntity<List<EntradaPorPartidoDTO>> obtenerEntradasPorPartido() {
         return ResponseEntity.ok(reportesService.obtenerEntradasPorPartido());
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize(ROL_ADMIN)
     @GetMapping("/top-souvenir")
     public ResponseEntity<List<TopUsuarioSouvenirDTO>> obtenerTopUsuariosSouvenir(
             @RequestParam(defaultValue = "5") int size) {
         return ResponseEntity.ok(reportesService.obtenerTopUsuariosSouvenir(PageRequest.of(0, size)));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize(ROL_ADMIN)
     @GetMapping("/top-entradas")
     public ResponseEntity<List<TopUsuarioEntradaDTO>> obtenerTopUsuariosEntrada(
             @RequestParam(defaultValue = "5") int size) {

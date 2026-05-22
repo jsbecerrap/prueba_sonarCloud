@@ -1,9 +1,7 @@
 package co.edu.unbosque.mundial_2026.controller;
 
 import java.util.List;
-import java.util.Map;
 
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -32,38 +30,39 @@ public class ProductoController {
 
     private final ProductoService productoService;
 
+    private static final String ROL_ADMIN = "hasRole('ADMIN')";
     public ProductoController(ProductoService productoService) {
         this.productoService = productoService;
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize(ROL_ADMIN)
     @PostMapping
     public ResponseEntity<ProductoResponseDTO> crear(@Valid @RequestBody ProductoRequestDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(productoService.crear(dto));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize(ROL_ADMIN)
     @PutMapping("/{id}")
     public ResponseEntity<ProductoResponseDTO> actualizar(@PathVariable Long id,
             @Valid @RequestBody ProductoActualizarRequestDTO dto) {
         return ResponseEntity.ok(productoService.actualizar(id, dto));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize(ROL_ADMIN)
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         productoService.eliminar(id);
         return ResponseEntity.noContent().build();
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize(ROL_ADMIN )
     @PatchMapping("/{id}/reactivar")
     public ResponseEntity<Void> reactivar(@PathVariable Long id) {
         productoService.reactivar(id);
         return ResponseEntity.noContent().build();
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize(ROL_ADMIN )
     @GetMapping("/admin/todos")
     public ResponseEntity<List<ProductoResponseDTO>> listarTodosAdmin() {
         return ResponseEntity.ok(productoService.listarTodos(false));
@@ -86,7 +85,7 @@ public class ProductoController {
 public ResponseEntity<List<ProductoListadoDTO>> listarLiviano() {
     return ResponseEntity.ok(productoService.listarTodosLiviano());
 } 
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize(ROL_ADMIN )
     @PatchMapping("/activar-lote")
     public ResponseEntity<Void> activarLote(@RequestBody ActivarLoteRequestDTO dto) {
         productoService.activarLote(dto.getIds());

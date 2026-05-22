@@ -53,7 +53,7 @@ private Usuario usuario;
     @BatchSize(size = 30)
     private List<ItemOrden> items = new ArrayList<>();
     @Column(name = "notificado_abandonado", nullable = false)
-    private boolean notificadoAbandonado = false;
+    private boolean notificadoAbandonado ;
 
     public boolean isNotificadoAbandonado() {
         return notificadoAbandonado;

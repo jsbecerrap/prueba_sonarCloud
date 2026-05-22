@@ -31,6 +31,7 @@ public class MetodoPagoRequestDTO {
     private String details;
 
     public MetodoPagoRequestDTO() {
+        //Constructor(Comentario requerido por sonar)
     }
 
     public Long getUsuarioId() {

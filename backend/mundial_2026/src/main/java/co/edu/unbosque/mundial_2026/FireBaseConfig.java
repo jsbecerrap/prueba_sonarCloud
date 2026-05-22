@@ -13,9 +13,9 @@ import java.io.InputStream;
 public class FireBaseConfig {
 
     @PostConstruct
-    public void inicializar() throws IOException {
-        InputStream serviceAccount = getClass().getClassLoader()
-                .getResourceAsStream("firebase-service-account.json");
+public void inicializar() throws IOException {
+    try (InputStream serviceAccount = Thread.currentThread().getContextClassLoader()
+            .getResourceAsStream("firebase-service-account.json")) {
 
         if (serviceAccount == null) {
             return;
@@ -29,4 +29,5 @@ public class FireBaseConfig {
             FirebaseApp.initializeApp(options);
         }
     }
+}
 }

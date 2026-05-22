@@ -13,7 +13,7 @@ import co.edu.unbosque.mundial_2026.service.PartidoService;
 public class PartidoScheduler {
 
     private static final Logger logger = Logger.getLogger(PartidoScheduler.class.getName());
-    private static final int LIGA_MUNDIAL = 239;
+    private static final int LIGA_MUNDIAL = 1;
     private static final int TEMPORADA_MUNDIAL = 2026;
 
     private final PartidoService partidoService;
@@ -32,7 +32,7 @@ public class PartidoScheduler {
                     .sincronizarPorFechaYLiga(hoy, LIGA_MUNDIAL, TEMPORADA_MUNDIAL);
           logger.log(java.util.logging.Level.INFO, "Partidos actualizados hoy: {0}", actualizados);
         } catch (Exception e) {
-            logger.warning("Error actualizando partidos: " + e.getMessage());
+         logger.log(java.util.logging.Level.WARNING, "Error actualizando partidos: {0}", e.getMessage());
         }
     }
 }

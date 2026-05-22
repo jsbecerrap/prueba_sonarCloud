@@ -1,5 +1,7 @@
 package co.edu.unbosque.mundial_2026;
 
+import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.springframework.boot.CommandLineRunner;
@@ -7,6 +9,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 
+import co.edu.unbosque.mundial_2026.dto.response.EquipoMundialDTO;
+import co.edu.unbosque.mundial_2026.dto.response.EquipoInfoDTO;
 import co.edu.unbosque.mundial_2026.entity.CiudadFavorita;
 import co.edu.unbosque.mundial_2026.entity.EstadioFavorito;
 import co.edu.unbosque.mundial_2026.entity.Rol;
@@ -34,14 +38,14 @@ public class AppConfig {
                     "ROLE_SOPORTE",
                     "ROLE_LEGAL"
             };
-            for (int i = 0; i < roles.length; i++) {
-                if (rolRepository.findByNombre(roles[i]).isEmpty()) {
+            for (String nombreRol : roles) {
+                if (rolRepository.findByNombre(nombreRol).isEmpty()) {
                     Rol rol = new Rol();
-                    rol.setNombre(roles[i]);
+                    rol.setNombre(nombreRol);
                     rolRepository.save(rol);
                 }
             }
-            logger.info("Roles cargados: " + roles.length);
+            logger.log(Level.INFO, "Roles cargados: {0}", roles.length);
         };
     }
 
@@ -52,7 +56,7 @@ public class AppConfig {
         return args -> {
             if (partidoRepository.count() == 0) {
                 int total = partidoService.sincronizarDesdeAPI();
-                logger.info("Partidos cargados: " + total);
+                logger.log(Level.INFO, "Partidos cargados: {0}", total);
             }
         };
     }
@@ -64,11 +68,11 @@ public class AppConfig {
             PartidoService partidoService) {
         return args -> {
             if (seleccionRepository.count() == 0) {
-                final var equipos = partidoService.obtenerSelecciones();
+                final List<EquipoMundialDTO> equipos = partidoService.obtenerSelecciones();
                 int total = 0;
 
-                for (int i = 0; i < equipos.size(); i++) {
-                    final var equipo = equipos.get(i).getSeleccion();
+                for (EquipoMundialDTO equipoDTO : equipos) {
+                    final EquipoInfoDTO equipo = equipoDTO.getSeleccion();
                     if (equipo != null && equipo.getId() != null && !seleccionRepository.existsById(equipo.getId())) {
                         Seleccion s = new Seleccion();
                         s.setId(equipo.getId());
@@ -77,7 +81,7 @@ public class AppConfig {
                         total++;
                     }
                 }
-                logger.info("Selecciones cargadas: " + total);
+                logger.log(Level.INFO, "Selecciones cargadas: {0}", total);
             }
         };
     }
@@ -117,7 +121,8 @@ public class AppConfig {
                     CiudadFavorita ciudad = ciudadesGuardadas.get(nombreCiudad);
                     if (ciudad == null) {
                         ciudad = new CiudadFavorita();
-                        ciudad.setId(ciudadId++);
+                        ciudad.setId(ciudadId);
+                        ciudadId++;
                         ciudad.setNombre(nombreCiudad);
                         ciudad.setPais("USA/CAN/MEX");
                         ciudadRepository.save(ciudad);
@@ -125,14 +130,15 @@ public class AppConfig {
                     }
 
                     EstadioFavorito estadio = new EstadioFavorito();
-                    estadio.setId(estadioId++);
+                    estadio.setId(estadioId);
+                    estadioId++;
                     estadio.setNombre(nombreEstadio);
                     estadio.setCiudad(ciudad);
                     estadioRepository.save(estadio);
                 }
 
-                logger.info("Ciudades cargadas: " + ciudadesGuardadas.size());
-                logger.info("Estadios cargados: " + estadioCiudad.size());
+                logger.log(Level.INFO, "Ciudades cargadas: {0}", ciudadesGuardadas.size());
+                logger.log(Level.INFO, "Estadios cargados: {0}", estadioCiudad.size());
             }
         };
     }

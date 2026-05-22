@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -43,76 +44,81 @@ public class EntradaServiceImpl implements EntradaService {
 
     private final EntradaRepository entradaRepository;
     private final UsuarioService usuarioService;
-private final PartidoService partidoService;
+    private final PartidoService partidoService;
     private final EventoAuditoriaService auditoriaService;
-    
+
     private static final String ESTADO_RESERVADA = "RESERVADA";
-private static final String ESTADO_PAGADA = "PAGADA";
-private static final String ESTADO_TRANSFERIDA = "TRANSFERIDA";
-private static final String ENTRADA_NO_ENCONTRADA = "Entrada no encontrada";
-private static final String TIPO_ENTRADA = "ENTRADA";
-private static final String PREFIJO_USUARIO = "Usuario ";
-private final NotificacionService notificacionService;
+    private static final String ESTADO_PAGADA = "PAGADA";
+    private static final String ESTADO_TRANSFERIDA = "TRANSFERIDA";
+    private static final String ENTRADA_NO_ENCONTRADA = "Entrada no encontrada";
+    private static final String TIPO_ENTRADA = "ENTRADA";
+    private static final String PREFIJO_USUARIO = "Usuario ";
+    private static final String ENTRADA_NO_PERTENECE = "Esta entrada no pertenece al usuario";
+    private static final String ZONA_BARRA = "BARRA";
+    private static final String ZONA_GENERAL = "GENERAL";
+    private static final String ZONA_PALCO = "PALCO";
+    private static final String ZONA_ESQUINA = "ESQUINA";
 
-public EntradaServiceImpl(EntradaRepository entradaRepository,
-    UsuarioService usuarioService,
-    PartidoService partidoService,
-    EventoAuditoriaService auditoriaService,
-    NotificacionService notificacionService,
-    @Value("${stripe.api.key}") String stripeApiKey) {
-    this.entradaRepository = entradaRepository;
-    this.usuarioService = usuarioService;
-    this.partidoService = partidoService;
-    this.auditoriaService = auditoriaService;
-    this.notificacionService = notificacionService;
-    Stripe.apiKey = stripeApiKey;
-}
-
+    private final NotificacionService notificacionService;
 
     private static final Map<String, Long> PRECIO_POR_RONDA = new HashMap<>();
-static {
-    PRECIO_POR_RONDA.put("Group Stage - 1", 50000L);
-    PRECIO_POR_RONDA.put("Group Stage - 2", 50000L);
-    PRECIO_POR_RONDA.put("Group Stage - 3", 50000L);
-    PRECIO_POR_RONDA.put("Round of 32", 80000L);
-    PRECIO_POR_RONDA.put("Round of 16", 100000L);
-    PRECIO_POR_RONDA.put("Quarter-finals", 150000L);
-    PRECIO_POR_RONDA.put("Semi-finals", 200000L);
-    PRECIO_POR_RONDA.put("3rd Place Final", 180000L);
-    PRECIO_POR_RONDA.put("Final", 300000L);
-}
-private static final Set<String> SELECCIONES_TOP = new HashSet<>();
-static {
-    SELECCIONES_TOP.add("France");
-    SELECCIONES_TOP.add("Spain");
-    SELECCIONES_TOP.add("Argentina");
-    SELECCIONES_TOP.add("England");
-    SELECCIONES_TOP.add("Portugal");
-    SELECCIONES_TOP.add("Brazil");
-    SELECCIONES_TOP.add("Netherlands");
-    SELECCIONES_TOP.add("Morocco");
-    SELECCIONES_TOP.add("Belgium");
-    SELECCIONES_TOP.add("Germany");
-    SELECCIONES_TOP.add("Colombia");
-}
-private static final Map<String, Double> MULTIPLICADOR_CATEGORIA = new HashMap<>();
-static {
-    MULTIPLICADOR_CATEGORIA.put("BARRA", 1.0);
-    MULTIPLICADOR_CATEGORIA.put("GENERAL", 2.0);
-    MULTIPLICADOR_CATEGORIA.put("PALCO", 3.5);
-    MULTIPLICADOR_CATEGORIA.put("ESQUINA", 0.7);
-}
-private static final Map<String, Double> PORCENTAJE_ZONA = new HashMap<>();
-static {
-    PORCENTAJE_ZONA.put("BARRA", 0.33);
-    PORCENTAJE_ZONA.put("GENERAL", 0.37);
-    PORCENTAJE_ZONA.put("PALCO", 0.15);
-    PORCENTAJE_ZONA.put("ESQUINA", 0.15);
-}
+    static {
+        PRECIO_POR_RONDA.put("Group Stage - 1", 50000L);
+        PRECIO_POR_RONDA.put("Group Stage - 2", 50000L);
+        PRECIO_POR_RONDA.put("Group Stage - 3", 50000L);
+        PRECIO_POR_RONDA.put("Round of 32", 80000L);
+        PRECIO_POR_RONDA.put("Round of 16", 100000L);
+        PRECIO_POR_RONDA.put("Quarter-finals", 150000L);
+        PRECIO_POR_RONDA.put("Semi-finals", 200000L);
+        PRECIO_POR_RONDA.put("3rd Place Final", 180000L);
+        PRECIO_POR_RONDA.put("Final", 300000L);
+    }
+    private static final Set<String> SELECCIONES_TOP = new HashSet<>();
+    static {
+        SELECCIONES_TOP.add("France");
+        SELECCIONES_TOP.add("Spain");
+        SELECCIONES_TOP.add("Argentina");
+        SELECCIONES_TOP.add("England");
+        SELECCIONES_TOP.add("Portugal");
+        SELECCIONES_TOP.add("Brazil");
+        SELECCIONES_TOP.add("Netherlands");
+        SELECCIONES_TOP.add("Morocco");
+        SELECCIONES_TOP.add("Belgium");
+        SELECCIONES_TOP.add("Germany");
+        SELECCIONES_TOP.add("Colombia");
+    }
+    private static final Map<String, Double> MULTIPLICADOR_CATEGORIA = new HashMap<>();
+    static {
+        MULTIPLICADOR_CATEGORIA.put(ZONA_BARRA, 1.0);
+        MULTIPLICADOR_CATEGORIA.put(ZONA_GENERAL, 2.0);
+        MULTIPLICADOR_CATEGORIA.put(ZONA_PALCO, 3.5);
+        MULTIPLICADOR_CATEGORIA.put(ZONA_ESQUINA, 0.7);
+    }
+    private static final Map<String, Double> PORCENTAJE_ZONA = new HashMap<>();
+    static {
+        PORCENTAJE_ZONA.put(ZONA_BARRA, 0.33);
+        PORCENTAJE_ZONA.put(ZONA_GENERAL, 0.37);
+        PORCENTAJE_ZONA.put(ZONA_PALCO, 0.15);
+        PORCENTAJE_ZONA.put(ZONA_ESQUINA, 0.15);
+    }
 
-private static final List<String> FILAS = List.of("A", "B", "C", "D", "E", "F");
-private static final List<String> ZONAS = List.of("BARRA", "GENERAL", "PALCO", "ESQUINA");
-private static final List<String> ESTADOS_ACTIVOS = List.of(ESTADO_RESERVADA, ESTADO_PAGADA);
+    private static final List<String> FILAS = List.of("A", "B", "C", "D", "E", "F");
+    private static final List<String> ZONAS = List.of(ZONA_BARRA, ZONA_GENERAL, ZONA_PALCO, ZONA_ESQUINA);
+    private static final List<String> ESTADOS_ACTIVOS = List.of(ESTADO_RESERVADA, ESTADO_PAGADA);
+
+    public EntradaServiceImpl(EntradaRepository entradaRepository,
+        UsuarioService usuarioService,
+        PartidoService partidoService,
+        EventoAuditoriaService auditoriaService,
+        NotificacionService notificacionService,
+        @Value("${stripe.api.key}") String stripeApiKey) {
+        this.entradaRepository = entradaRepository;
+        this.usuarioService = usuarioService;
+        this.partidoService = partidoService;
+        this.auditoriaService = auditoriaService;
+        this.notificacionService = notificacionService;
+        Stripe.apiKey = stripeApiKey;
+    }
 
 @Transactional
 @Override
@@ -136,9 +142,8 @@ public EntradaResponseDTO reservarEntrada(String correo, EntradaRequestDTO dto) 
     List<Entrada> entradasHoy = entradaRepository.findByUsuarioIdAndFechaCompraBetween(usuarioId, inicioDia, finDia);
 
     int compradasHoy = 0;
-    for (int i = 0; i < entradasHoy.size(); i++) {
-        Entrada entrada = entradasHoy.get(i);
-        if (entrada.getEstado().equals(ESTADO_RESERVADA) || entrada.getEstado().equals(ESTADO_PAGADA)) {
+    for (Entrada entrada : entradasHoy) {
+        if (ESTADO_RESERVADA.equals(entrada.getEstado()) || ESTADO_PAGADA.equals(entrada.getEstado())) {
             compradasHoy += entrada.getCantidad();
         }
     }
@@ -148,8 +153,8 @@ public EntradaResponseDTO reservarEntrada(String correo, EntradaRequestDTO dto) 
     }
 
     String categoria = (dto.getCategoria() != null && !dto.getCategoria().isBlank())
-            ? dto.getCategoria().toUpperCase()
-            : "BARRA";
+            ? dto.getCategoria().toUpperCase(Locale.ROOT)
+            : ZONA_BARRA;
     String sector = (dto.getSector() != null && !dto.getSector().isBlank())
             ? dto.getSector()
             : "Norte";
@@ -217,7 +222,7 @@ public EntradaResponseDTO confirmarPago(Long entradaId, String paymentRef) {
     Entrada entrada = entradaRepository.findById(entradaId)
             .orElseThrow(() -> new EntradaNotFoundException(ENTRADA_NO_ENCONTRADA));
 
-    if (!entrada.getEstado().equals(ESTADO_RESERVADA)) {
+    if (!ESTADO_RESERVADA.equals(entrada.getEstado())) {
         throw new EstadoInvalidoException("La entrada no está en estado RESERVADA");
     }
 
@@ -283,7 +288,7 @@ public EntradaResponseDTO confirmarPago(Long entradaId, String paymentRef) {
     TIPO_ENTRADA
 );
         notificacionService.notificarEntradaPagoFallido(entrada.getUsuario());
-        throw new PagoStripeException("Error al procesar el pago. Revisa los datos de tu tarjeta e intenta de nuevo.");
+        throw new PagoStripeException("Error al procesar el pago. Revisa los datos de tu tarjeta e intenta de nuevo.", e);
     }
 
     return toDTO(entrada);
@@ -292,17 +297,17 @@ public EntradaResponseDTO confirmarPago(Long entradaId, String paymentRef) {
 @Transactional
 @Override
 public EntradaResponseDTO cancelarReserva(String correo, Long entradaId) {
-    Usuario u = usuarioService.obtenerEntidadPorCorreo(correo); // ← cambio
+    Usuario u = usuarioService.obtenerEntidadPorCorreo(correo);
     Long usuarioId = u.getId();
 
     Entrada entrada = entradaRepository.findById(entradaId)
             .orElseThrow(() -> new EntradaNotFoundException(ENTRADA_NO_ENCONTRADA));
 
     if (!entrada.getUsuario().getId().equals(usuarioId)) {
-        throw new EstadoInvalidoException("Esta entrada no pertenece al usuario");
+        throw new EstadoInvalidoException(ENTRADA_NO_PERTENECE);
     }
 
-    if (!entrada.getEstado().equals(ESTADO_RESERVADA)) {
+    if (!ESTADO_RESERVADA.equals(entrada.getEstado())) {
         throw new EstadoInvalidoException("Solo se pueden cancelar entradas en estado RESERVADA");
     }
 
@@ -334,10 +339,10 @@ public EntradaResponseDTO transferirEntrada(Long entradaId, TransferenciaRequest
             .orElseThrow(() -> new EntradaNotFoundException(ENTRADA_NO_ENCONTRADA));
 
     if (!entrada.getUsuario().getId().equals(usuarioId)) {
-        throw new EstadoInvalidoException("Esta entrada no pertenece al usuario");
+        throw new EstadoInvalidoException(ENTRADA_NO_PERTENECE);
     }
 
-    if (!entrada.getEstado().equals(ESTADO_PAGADA)) {
+    if (!ESTADO_PAGADA.equals(entrada.getEstado())) {
         throw new EstadoInvalidoException("Solo se pueden transferir entradas pagadas");
     }
 
@@ -346,9 +351,8 @@ public EntradaResponseDTO transferirEntrada(Long entradaId, TransferenciaRequest
 
     List<Entrada> transferenciasHoy = entradaRepository.findByUsuarioIdAndFechaCompraBetween(usuarioId, inicioDia, finDia);
     int totalTransferidas = 0;
-    for (int i = 0; i < transferenciasHoy.size(); i++) {
-        Entrada entradaActual = transferenciasHoy.get(i);
-        if (entradaActual.getEstado().equals(ESTADO_TRANSFERIDA)) {
+    for (Entrada entradaActual : transferenciasHoy) {
+        if (ESTADO_TRANSFERIDA.equals(entradaActual.getEstado())) {
             totalTransferidas += entradaActual.getCantidad();
         }
     }
@@ -402,10 +406,10 @@ public EntradaResponseDTO reembolsarEntrada(String correo, Long entradaId) {
             .orElseThrow(() -> new EntradaNotFoundException(ENTRADA_NO_ENCONTRADA));
 
     if (!entrada.getUsuario().getId().equals(usuarioId)) {
-        throw new EstadoInvalidoException("Esta entrada no pertenece al usuario");
+        throw new EstadoInvalidoException(ENTRADA_NO_PERTENECE);
     }
 
-    if (!entrada.getEstado().equals(ESTADO_PAGADA)) {
+    if (!ESTADO_PAGADA.equals(entrada.getEstado())) {
         throw new EstadoInvalidoException("Solo se pueden reembolsar entradas pagadas");
     }
 
@@ -449,7 +453,7 @@ public EntradaResponseDTO reembolsarEntrada(String correo, Long entradaId) {
     TIPO_ENTRADA
 );
         notificacionService.notificarEntradaReembolsoFallido(u, entradaId);
-        throw new PagoStripeException("Error al procesar el reembolso. Intenta de nuevo más tarde.");
+        throw new PagoStripeException("Error al procesar el reembolso. Intenta de nuevo más tarde.", e);
     }
 
     return toDTO(entrada);
@@ -458,7 +462,7 @@ public EntradaResponseDTO reembolsarEntrada(String correo, Long entradaId) {
 @Transactional(readOnly = true)
 @Override
 public List<EntradaResponseDTO> listarEntradasUsuario(String correo) {
-    Usuario u = usuarioService.obtenerEntidadPorCorreo(correo); 
+    Usuario u = usuarioService.obtenerEntidadPorCorreo(correo);
   return entradaRepository.findByUsuarioId(u.getId())
     .stream()
     .sorted((a, b) -> b.getFechaCompra().compareTo(a.getFechaCompra()))
@@ -477,8 +481,7 @@ public List<EntradaResponseDTO> listarEntradasUsuario(String correo) {
 public void expirarReservasVencidas() {
     List<Entrada> vencidas = entradaRepository.findByEstadoAndTtlReservaLessThan(ESTADO_RESERVADA, LocalDateTime.now());
 
-    for (int i = 0; i < vencidas.size(); i++) {
-        Entrada entrada = vencidas.get(i);
+    for (Entrada entrada : vencidas) {
         entrada.setEstado("EXPIRADA");
         entradaRepository.save(entrada);
 
@@ -507,8 +510,7 @@ public void avisarReservasPorExpirar() {
     LocalDateTime en4Minutos = ahora.plusMinutes(4);
     List<Entrada> porExpirar = entradaRepository.findByEstadoAndTtlReservaBetween(ESTADO_RESERVADA, en4Minutos, en6Minutos);
 
-    for (int i = 0; i < porExpirar.size(); i++) {
-        Entrada entrada = porExpirar.get(i);
+    for (Entrada entrada : porExpirar) {
         String nombrePartido = entrada.getPartido().getSeleccionLocal() + " vs " + entrada.getPartido().getSeleccionVisitante();
         notificacionService.notificarReservaPorExpirar(entrada.getUsuario(), nombrePartido);
     }
@@ -551,7 +553,7 @@ private Double calcularPrecio(Partido partido, String categoria) {
         precioBase = (long)(precioBase * 1.5);
     }
     Double multiplicador = MULTIPLICADOR_CATEGORIA.getOrDefault(
-        categoria != null ? categoria.toUpperCase() : "BARRA", 1.0
+        categoria != null ? categoria.toUpperCase(Locale.ROOT) : ZONA_BARRA, 1.0
     );
     return precioBase * multiplicador;
 }

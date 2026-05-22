@@ -36,6 +36,7 @@ public class Partido {
     @Column(name = "capacidad_disponible")
     private Integer capacidadDisponible;
 
+    private String estadio;
     public Integer getCapacidadDisponible() {
         return capacidadDisponible;
     }
@@ -44,7 +45,7 @@ public class Partido {
         this.capacidadDisponible = capacidadDisponible;
     }
 
-    private String estadio;
+    
 
     public Partido() {
         //Constructor vacio

@@ -1,12 +1,9 @@
 package co.edu.unbosque.mundial_2026.service;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -87,7 +84,7 @@ public ProductoResponseDTO actualizar(Long id, ProductoActualizarRequestDTO dto)
     Producto producto = productoRepository.findById(id)
             .orElseThrow(() -> new ProductoNotFoundException(PRODUCTO_NO_ENCONTRADO));
 
-    final StringBuilder cambios = new StringBuilder();
+    final StringBuilder cambios = new StringBuilder(128);
     if (dto.getPrecio() != null) {
         cambios.append(" | precio: ").append(producto.getPrecio()).append(" -> ").append(dto.getPrecio());
         producto.setPrecio(dto.getPrecio());
@@ -134,8 +131,8 @@ public ProductoResponseDTO actualizar(Long id, ProductoActualizarRequestDTO dto)
     public List<ProductoResponseDTO> listarTodos() {
      List<Producto> productos = productoRepository.findByActivoTrueWithVariantes();
         List<ProductoResponseDTO> responseDTOs = new ArrayList<>();
-        for (int i = 0; i < productos.size(); i++) {
-            responseDTOs.add(toDTO(productos.get(i)));
+      for (Producto p : productos) {
+            responseDTOs.add(toDTO(p));
         }
         return responseDTOs;
     }
@@ -147,8 +144,8 @@ public ProductoResponseDTO actualizar(Long id, ProductoActualizarRequestDTO dto)
             ? productoRepository.findByActivoTrueWithVariantes()
             : productoRepository.findAllWithVariantes();
         List<ProductoResponseDTO> responseDTOs = new ArrayList<>();
-        for (int i = 0; i < productos.size(); i++) {
-            responseDTOs.add(toDTO(productos.get(i)));
+        for (Producto p : productos) {
+            responseDTOs.add(toDTO(p));
         }
         return responseDTOs;
     }
@@ -159,8 +156,8 @@ public ProductoResponseDTO actualizar(Long id, ProductoActualizarRequestDTO dto)
         categoriaService.obtenerEntidadPorId(categoriaId);
         List<Producto> productos = productoRepository.findByCategoriaIdAndActivoTrue(categoriaId);
         List<ProductoResponseDTO> responseDTOs = new ArrayList<>();
-        for (int i = 0; i < productos.size(); i++) {
-            responseDTOs.add(toDTO(productos.get(i)));
+       for (Producto p : productos) {
+            responseDTOs.add(toDTO(p));
         }
         return responseDTOs;
     }

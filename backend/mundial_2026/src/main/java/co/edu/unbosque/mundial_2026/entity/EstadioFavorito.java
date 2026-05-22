@@ -26,7 +26,7 @@ public class EstadioFavorito {
     private List<Usuario> usuarios;
 
     public EstadioFavorito() {
-        //Constructor vacio
+        // Constructor vacio
     }
 
     public Long getId() {
@@ -63,10 +63,12 @@ public class EstadioFavorito {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o)
+        if (this == o) {
             return true;
-        if (o == null || getClass() != o.getClass())
+        }
+        if (o == null || getClass() != o.getClass()) {
             return false;
+        }
         EstadioFavorito estadio = (EstadioFavorito) o;
         return id != null && id.equals(estadio.id);
     }

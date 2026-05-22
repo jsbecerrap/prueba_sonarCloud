@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,7 +23,6 @@ public class MetodoPagoServiceImpl implements MetodoPagoService {
     private static final String ENTIDAD_METODO_PAGO = "MetodoPago";
     private static final String METODO_NO_ENCONTRADO = "Método de pago no encontrado";
     private static final String METODO_NO_PERTENECE = "Este método de pago no pertenece al usuario";
-
     private final MetodoPagoRepository metodoPagoRepository;
     private final UsuarioService usuarioService;
     private final EventoAuditoriaService auditoriaService;
@@ -112,8 +110,8 @@ public class MetodoPagoServiceImpl implements MetodoPagoService {
         List<MetodoPago> lista = metodoPagoRepository
                 .findByUsuarioIdOrderByIsDefaultDescCreatedAtDesc(usuario.getId());
         List<MetodoPagoResponseDTO> dtos = new ArrayList<>();
-        for (int i = 0; i < lista.size(); i++) {
-            dtos.add(toDTO(lista.get(i)));
+        for (MetodoPago m : lista) {
+            dtos.add(toDTO(m));
         }
         return dtos;
     }
@@ -124,10 +122,10 @@ public class MetodoPagoServiceImpl implements MetodoPagoService {
         Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
         List<MetodoPago> todos = metodoPagoRepository.findByUsuarioId(usuario.getId());
         MetodoPago target = null;
-        for (int i = 0; i < todos.size(); i++) {
-            todos.get(i).setDefault(false);
-            if (todos.get(i).getId().equals(metodoPagoId)) {
-                target = todos.get(i);
+        for (MetodoPago m : todos) {
+            m.setDefault(false);
+            if (m.getId().equals(metodoPagoId)) {
+                target = m;
             }
         }
         if (target == null) {

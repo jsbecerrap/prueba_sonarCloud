@@ -34,7 +34,7 @@ public class Apuesta {
     private LocalDateTime fechaCierre;
 
     @Column(name = "puntos_calculados", nullable = false, columnDefinition = "boolean default false")
-    private boolean puntosCalculados = false;
+    private boolean puntosCalculados;
 
     @ManyToOne
     @JoinColumn(name = "usuario_id", nullable = false)

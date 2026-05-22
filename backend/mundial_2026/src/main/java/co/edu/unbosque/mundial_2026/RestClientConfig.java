@@ -7,15 +7,16 @@ import org.springframework.web.client.RestClient;
 
 @Configuration
 public class RestClientConfig {
-//Se llaman las variables del env para seguridad
+
+    // Se llaman las variables del env para seguridad
     @Value("${api.football.url}")
     private String apiFootballUrl;
 
     @Value("${api.football.key}")
     private String apiFootballKey;
 
-  
-//Inicializa el restcliente con la url base y el header que proporciona Api-Fotball
+    // Inicializa el RestClient con la URL base
+    // y el header de API Football
     @Bean
     public RestClient footballClient() {
         return RestClient.builder()

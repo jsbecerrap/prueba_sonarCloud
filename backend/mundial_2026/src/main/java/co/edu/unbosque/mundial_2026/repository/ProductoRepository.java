@@ -18,7 +18,7 @@ List<Producto> findByActivoTrueWithVariantes();
 @Query("SELECT DISTINCT p FROM Producto p LEFT JOIN FETCH p.variantes WHERE p.activo = true")
 List<Producto> findByActivoTrueWithVariantes(Pageable pageable);
 
-@Query(value = "SELECT COUNT(DISTINCT p) FROM Producto p WHERE p.activo = true")
+@Query("SELECT COUNT(DISTINCT p) FROM Producto p WHERE p.activo = true")
 long countByActivoTrue();
 @Query("SELECT new co.edu.unbosque.mundial_2026.dto.response.ProductoListadoDTO(" +
        "p.id, p.nombre, p.descripcion, p.precio, p.imagenUrl, " +

@@ -57,104 +57,95 @@ public class OrdenServiceImpl implements OrdenService {
 
     private final NotificacionService notificacionService;
 
-public OrdenServiceImpl(OrdenRepository ordenRepository,
-        ItemOrdenRepository itemOrdenRepository,
-        VarianteProductoRepository varianteRepository,
-        UsuarioService usuarioService,
-        ProductoService productoService,
-        MetodoPagoService metodoPagoService,
-        EventoAuditoriaService auditoriaService,
-        NotificacionService notificacionService,
-        @Value("${stripe.api.key}") String stripeApiKey) {
-    this.ordenRepository = ordenRepository;
-    this.itemOrdenRepository = itemOrdenRepository;
-    this.varianteRepository = varianteRepository;
-    this.usuarioService = usuarioService;
-    this.productoService = productoService;
-    this.metodoPagoService = metodoPagoService;
-    this.auditoriaService = auditoriaService;
-    this.notificacionService = notificacionService;
-    Stripe.apiKey = stripeApiKey;
-}
-
-  @Override
-@Transactional
-public OrdenResponseDTO agregarItem(String correo, AgregarItemDTO dto) {
-    // 1. Cargar usuario SOLO con ID (no necesitamos rol aquí)
-    Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
-    Long usuarioId = usuario.getId();
-
-    // 2. Buscar variante CON producto Y categoría en UNA query (no en cascada)
-    VarianteProducto variante = varianteRepository.findByIdWithProductoYCategoria(dto.getVarianteId())
-            .orElseThrow(() -> new ProductoNotFoundException("Variante no encontrada"));
-
-    Producto producto = variante.getProducto();  // Ya cargado, sin query extra
-
-    // 3. Validaciones (sin queries)
-    if (!producto.getId().equals(dto.getProductoId())) {
-        throw new ProductoNotFoundException("La variante no pertenece al producto");
-    }
-    if (variante.getStock() < dto.getCantidad()) {
-        throw new StockInsuficienteException("Stock insuficiente para esta variante");
-    }
-    if (Boolean.FALSE.equals(producto.getActivo())) {
-        throw new ProductoNotFoundException("Este producto no está disponible");
+    public OrdenServiceImpl(OrdenRepository ordenRepository,
+            ItemOrdenRepository itemOrdenRepository,
+            VarianteProductoRepository varianteRepository,
+            UsuarioService usuarioService,
+            ProductoService productoService,
+            MetodoPagoService metodoPagoService,
+            EventoAuditoriaService auditoriaService,
+            NotificacionService notificacionService,
+            @Value("${stripe.api.key}") String stripeApiKey) {
+        this.ordenRepository = ordenRepository;
+        this.itemOrdenRepository = itemOrdenRepository;
+        this.varianteRepository = varianteRepository;
+        this.usuarioService = usuarioService;
+        this.productoService = productoService;
+        this.metodoPagoService = metodoPagoService;
+        this.auditoriaService = auditoriaService;
+        this.notificacionService = notificacionService;
+        Stripe.apiKey = stripeApiKey;
     }
 
-    // 4. Buscar o crear orden
-    Orden ordenActual = ordenRepository.findByUsuarioIdAndEstado(usuarioId, ESTADO_PENDIENTE)
-            .orElseGet(() -> {
-                Orden nueva = new Orden();
-                Usuario refUsuario = new Usuario();
-                refUsuario.setId(usuarioId);  // Solo referencia, sin cargar
-                nueva.setUsuario(refUsuario);
-                nueva.setEstado(ESTADO_PENDIENTE);
-                nueva.setFechaCreacion(LocalDateTime.now());
-                nueva.setTotal(0.0);
-                return ordenRepository.save(nueva);
-            });
+    @Override
+    @Transactional
+    public OrdenResponseDTO agregarItem(String correo, AgregarItemDTO dto) {
 
-    // 5. Buscar item existente o crear nuevo
-    Optional<ItemOrden> item = itemOrdenRepository
-            .findByOrdenIdAndProductoIdAndVarianteId(ordenActual.getId(), producto.getId(), variante.getId());
+        Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
+        Long usuarioId = usuario.getId();
 
-    ItemOrden itemOrdenActual;
-    if (item.isPresent()) {
-        itemOrdenActual = item.get();
-        itemOrdenActual.setCantidad(itemOrdenActual.getCantidad() + dto.getCantidad());
-    } else {
-        itemOrdenActual = new ItemOrden();
-        itemOrdenActual.setOrden(ordenActual);
-        itemOrdenActual.setProducto(producto);
-        itemOrdenActual.setVariante(variante);
-        itemOrdenActual.setCantidad(dto.getCantidad());
-        itemOrdenActual.setPrecioUnitario(producto.getPrecio());
+        VarianteProducto variante = varianteRepository.findByIdWithProductoYCategoria(dto.getVarianteId())
+                .orElseThrow(() -> new ProductoNotFoundException("Variante no encontrada"));
+
+        Producto producto = variante.getProducto();
+
+        if (!producto.getId().equals(dto.getProductoId())) {
+            throw new ProductoNotFoundException("La variante no pertenece al producto");
+        }
+        if (variante.getStock() < dto.getCantidad()) {
+            throw new StockInsuficienteException("Stock insuficiente para esta variante");
+        }
+        if (Boolean.FALSE.equals(producto.getActivo())) {
+            throw new ProductoNotFoundException("Este producto no está disponible");
+        }
+
+        Orden ordenActual = ordenRepository.findByUsuarioIdAndEstado(usuarioId, ESTADO_PENDIENTE)
+                .orElseGet(() -> {
+                    Orden nueva = new Orden();
+                    Usuario refUsuario = new Usuario();
+                    refUsuario.setId(usuarioId);
+                    nueva.setUsuario(refUsuario);
+                    nueva.setEstado(ESTADO_PENDIENTE);
+                    nueva.setFechaCreacion(LocalDateTime.now());
+                    nueva.setTotal(0.0);
+                    return ordenRepository.save(nueva);
+                });
+
+        Optional<ItemOrden> item = itemOrdenRepository
+                .findByOrdenIdAndProductoIdAndVarianteId(ordenActual.getId(), producto.getId(), variante.getId());
+
+        ItemOrden itemOrdenActual;
+        if (item.isPresent()) {
+            itemOrdenActual = item.get();
+            itemOrdenActual.setCantidad(itemOrdenActual.getCantidad() + dto.getCantidad());
+        } else {
+            itemOrdenActual = new ItemOrden();
+            itemOrdenActual.setOrden(ordenActual);
+            itemOrdenActual.setProducto(producto);
+            itemOrdenActual.setVariante(variante);
+            itemOrdenActual.setCantidad(dto.getCantidad());
+            itemOrdenActual.setPrecioUnitario(producto.getPrecio());
+        }
+        itemOrdenRepository.save(itemOrdenActual);
+
+        double delta = dto.getCantidad() * itemOrdenActual.getPrecioUnitario();
+        ordenActual.setTotal(ordenActual.getTotal() + delta);
+
+        String descripcionAuditoria = usuario.getNombre() + " " + usuario.getApellido()
+                + " (ID " + usuarioId + ") agregó "
+                + dto.getCantidad() + " x " + producto.getNombre()
+                + (variante.getEspecificacion() != null ? " (" + variante.getEspecificacion() + ")" : "")
+                + " | Subtotal: $" + (dto.getCantidad() * producto.getPrecio());
+        auditoriaService.registrar(
+                "ITEM_AGREGADO_CARRITO",
+                descripcionAuditoria,
+                usuarioId,
+                PREFIJO_ORDEN + ordenActual.getId(),
+                TIPO_ORDEN);
+
+        List<ItemOrden> itemsRespuesta = itemOrdenRepository.findByOrdenIdConDetalles(ordenActual.getId());
+        return toOrdenDTO(ordenActual, itemsRespuesta);
     }
-    itemOrdenRepository.save(itemOrdenActual);
-
-    // 6. Actualizar total
-    double delta = dto.getCantidad() * itemOrdenActual.getPrecioUnitario();
-    ordenActual.setTotal(ordenActual.getTotal() + delta);
-    // ordenRepository.save() NO NECESARIO con @Transactional, el dirty check lo hace solo
-    // y con @DynamicUpdate solo actualiza la columna total
-
-    // 7. Auditoría async (pasa nombre+apellido como string, NO el usuarioId para evitar la recarga)
-  String descripcionAuditoria = usuario.getNombre() + " " + usuario.getApellido()
-            + " (ID " + usuarioId + ") agregó "
-            + dto.getCantidad() + " x " + producto.getNombre()
-            + (variante.getEspecificacion() != null ? " (" + variante.getEspecificacion() + ")" : "")
-            + " | Subtotal: $" + (dto.getCantidad() * producto.getPrecio());
-    auditoriaService.registrar(
-            "ITEM_AGREGADO_CARRITO",
-            descripcionAuditoria,
-            usuarioId,
-            PREFIJO_ORDEN + ordenActual.getId(),
-            TIPO_ORDEN);
-
-    // 8. Cargar items con detalles para la respuesta
-    List<ItemOrden> itemsRespuesta = itemOrdenRepository.findByOrdenIdConDetalles(ordenActual.getId());
-    return toOrdenDTO(ordenActual, itemsRespuesta);
-}
 
     @Override
     @Transactional(readOnly = true)
@@ -162,7 +153,7 @@ public OrdenResponseDTO agregarItem(String correo, AgregarItemDTO dto) {
         Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
         Orden orden = ordenRepository.findByUsuarioIdAndEstado(usuario.getId(), ESTADO_PENDIENTE)
                 .orElseThrow(() -> new OrdenNotFoundException(CARRITO_NO_ACTIVO));
-      List<ItemOrden> items = itemOrdenRepository.findByOrdenIdConDetalles(orden.getId());
+        List<ItemOrden> items = itemOrdenRepository.findByOrdenIdConDetalles(orden.getId());
         return toOrdenDTO(orden, items);
     }
 
@@ -175,8 +166,9 @@ public OrdenResponseDTO agregarItem(String correo, AgregarItemDTO dto) {
         ItemOrden itemAEliminar = itemOrdenRepository.findById(itemId)
                 .orElseThrow(() -> new ItemNotFoundException("No existe ese item"));
         itemOrdenRepository.delete(itemAEliminar);
-        ordenActual.setTotal(ordenActual.getTotal() - (itemAEliminar.getCantidad() * itemAEliminar.getPrecioUnitario()));
-       List<ItemOrden> itemsRestantes = itemOrdenRepository.findByOrdenIdConDetalles(ordenActual.getId());
+        ordenActual
+                .setTotal(ordenActual.getTotal() - (itemAEliminar.getCantidad() * itemAEliminar.getPrecioUnitario()));
+        List<ItemOrden> itemsRestantes = itemOrdenRepository.findByOrdenIdConDetalles(ordenActual.getId());
         if (itemsRestantes.isEmpty()) {
             ordenRepository.delete(ordenActual);
             return toOrdenDTO(ordenActual, itemsRestantes);
@@ -185,69 +177,68 @@ public OrdenResponseDTO agregarItem(String correo, AgregarItemDTO dto) {
         return toOrdenDTO(ordenActual, itemsRestantes);
     }
 
-   @Override
-@Transactional
-public OrdenResponseDTO confirmarOrden(String correo, ConfirmarOrdenDTO dto) {
-    Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
-    Long usuarioId = usuario.getId();
-    Orden ordenAPagar = ordenRepository.findByUsuarioIdAndEstado(usuarioId, ESTADO_PENDIENTE)
-            .orElseThrow(() -> new OrdenNotFoundException(CARRITO_NO_ACTIVO));
-    List<ItemOrden> items = itemOrdenRepository.findByOrdenId(ordenAPagar.getId());
-    if (items.isEmpty()) {
-        throw new CarritoVacioException("El carrito está vacío");
-    }
-    MetodoPago metodoPago = metodoPagoService.obtenerEntidadPorId(dto.getMetodoPagoId());
-    if (!metodoPago.getUsuario().getId().equals(usuarioId)) {
-        throw new MetodoPagoInvalidoException("El método de pago no pertenece al usuario");
-    }
-    for (int i = 0; i < items.size(); i++) {
-        ItemOrden item = items.get(i);
-        if (item.getVariante().getStock() < item.getCantidad()) {
-            throw new StockInsuficienteException("Stock insuficiente para " + item.getProducto().getNombre()
-                    + (item.getVariante().getEspecificacion() != null
-                            ? " (" + item.getVariante().getEspecificacion() + ")"
-                            : ""));
+    @Override
+    @Transactional
+    public OrdenResponseDTO confirmarOrden(String correo, ConfirmarOrdenDTO dto) {
+        Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
+        Long usuarioId = usuario.getId();
+        Orden ordenAPagar = ordenRepository.findByUsuarioIdAndEstado(usuarioId, ESTADO_PENDIENTE)
+                .orElseThrow(() -> new OrdenNotFoundException(CARRITO_NO_ACTIVO));
+        List<ItemOrden> items = itemOrdenRepository.findByOrdenId(ordenAPagar.getId());
+        if (items.isEmpty()) {
+            throw new CarritoVacioException("El carrito está vacío");
         }
-    }
-    try {
-        long totalCentavos = (long) (ordenAPagar.getTotal() * 100);
-        PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
-                .setAmount(totalCentavos)
-                .setCurrency("usd")
-                .setPaymentMethod(metodoPago.getDetails())
-                .setConfirm(true)
-                .setAutomaticPaymentMethods(
-                        PaymentIntentCreateParams.AutomaticPaymentMethods.builder()
-                                .setEnabled(true)
-                                .setAllowRedirects(
-                                        PaymentIntentCreateParams.AutomaticPaymentMethods.AllowRedirects.NEVER)
-                                .build())
-                .build();
-        PaymentIntent paymentIntent = PaymentIntent.create(params);
-        ordenAPagar.setEstado(ESTADO_PAGADA);
-        ordenAPagar.setFechaPago(LocalDateTime.now());
-        ordenAPagar.setPaymentRef(paymentIntent.getId());
-        ordenAPagar.setMetodoPago(metodoPago);
-        for (int i = 0; i < items.size(); i++) {
-            ItemOrden item = items.get(i);
-            productoService.actualizarStock(item.getVariante().getId(), item.getCantidad());
+        MetodoPago metodoPago = metodoPagoService.obtenerEntidadPorId(dto.getMetodoPagoId());
+        if (!metodoPago.getUsuario().getId().equals(usuarioId)) {
+            throw new MetodoPagoInvalidoException("El método de pago no pertenece al usuario");
         }
-        ordenRepository.save(ordenAPagar);
-        auditoriaService.registrar(
-                "ORDEN_PAGADA",
-                usuario.getNombre() + " " + usuario.getApellido()
-                        + " pagó orden por $" + ordenAPagar.getTotal()
-                        + " con " + metodoPago.getLabel(),
-                usuarioId,
-                PREFIJO_ORDEN + ordenAPagar.getId(),
-                TIPO_ORDEN);
-        notificacionService.notificarOrdenConfirmada(usuario, ordenAPagar.getTotal());
-   } catch (StripeException e) {
-    notificacionService.notificarOrdenFallida(usuario);
-    throw new PagoStripeException("Error al procesar el pago. Revisa los datos de tu tarjeta e intenta de nuevo.");
-}
-    return toOrdenDTO(ordenAPagar, items);
-}
+        for (ItemOrden item : items) {
+            if (item.getVariante().getStock() < item.getCantidad()) {
+                throw new StockInsuficienteException("Stock insuficiente para " + item.getProducto().getNombre()
+                        + (item.getVariante().getEspecificacion() != null
+                                ? " (" + item.getVariante().getEspecificacion() + ")"
+                                : ""));
+            }
+        }
+        try {
+            long totalCentavos = (long) (ordenAPagar.getTotal() * 100);
+            PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
+                    .setAmount(totalCentavos)
+                    .setCurrency("usd")
+                    .setPaymentMethod(metodoPago.getDetails())
+                    .setConfirm(true)
+                    .setAutomaticPaymentMethods(
+                            PaymentIntentCreateParams.AutomaticPaymentMethods.builder()
+                                    .setEnabled(true)
+                                    .setAllowRedirects(
+                                            PaymentIntentCreateParams.AutomaticPaymentMethods.AllowRedirects.NEVER)
+                                    .build())
+                    .build();
+            PaymentIntent paymentIntent = PaymentIntent.create(params);
+            ordenAPagar.setEstado(ESTADO_PAGADA);
+            ordenAPagar.setFechaPago(LocalDateTime.now());
+            ordenAPagar.setPaymentRef(paymentIntent.getId());
+            ordenAPagar.setMetodoPago(metodoPago);
+            for (ItemOrden item : items) {
+                productoService.actualizarStock(item.getVariante().getId(), item.getCantidad());
+            }
+            ordenRepository.save(ordenAPagar);
+            auditoriaService.registrar(
+                    "ORDEN_PAGADA",
+                    usuario.getNombre() + " " + usuario.getApellido()
+                            + " pagó orden por $" + ordenAPagar.getTotal()
+                            + " con " + metodoPago.getLabel(),
+                    usuarioId,
+                    PREFIJO_ORDEN + ordenAPagar.getId(),
+                    TIPO_ORDEN);
+            notificacionService.notificarOrdenConfirmada(usuario, ordenAPagar.getTotal());
+        } catch (StripeException e) {
+            notificacionService.notificarOrdenFallida(usuario);
+            throw new PagoStripeException(
+                    "Error al procesar el pago. Revisa los datos de tu tarjeta e intenta de nuevo.", e);
+        }
+        return toOrdenDTO(ordenAPagar, items);
+    }
 
     @Override
     @Transactional(readOnly = true)
@@ -264,21 +255,22 @@ public OrdenResponseDTO confirmarOrden(String correo, ConfirmarOrdenDTO dto) {
 
     @Override
     @Transactional
-   public OrdenResponseDTO cancelarOrden(String correo) {
-    Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
-    Orden orden = ordenRepository.findByUsuarioIdAndEstado(usuario.getId(), ESTADO_PENDIENTE)
-            .orElseThrow(() -> new OrdenNotFoundException(CARRITO_NO_ACTIVO));
-  List<ItemOrden> items = itemOrdenRepository.findByOrdenIdConDetalles(orden.getId());
-    itemOrdenRepository.deleteAll(items);
-    ordenRepository.delete(orden);
-   auditoriaService.registrar(
-            "ORDEN_CANCELADA",
-            usuario.getNombre() + " " + usuario.getApellido() + " vació el carrito",
-            usuario.getId(),
-            PREFIJO_ORDEN + orden.getId(),
-            TIPO_ORDEN);
-    return toOrdenDTO(orden, items);
-}
+    public OrdenResponseDTO cancelarOrden(String correo) {
+        Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
+        Orden orden = ordenRepository.findByUsuarioIdAndEstado(usuario.getId(), ESTADO_PENDIENTE)
+                .orElseThrow(() -> new OrdenNotFoundException(CARRITO_NO_ACTIVO));
+        List<ItemOrden> items = itemOrdenRepository.findByOrdenIdConDetalles(orden.getId());
+        itemOrdenRepository.deleteAll(items);
+        ordenRepository.delete(orden);
+        auditoriaService.registrar(
+                "ORDEN_CANCELADA",
+                usuario.getNombre() + " " + usuario.getApellido() + " vació el carrito",
+                usuario.getId(),
+                PREFIJO_ORDEN + orden.getId(),
+                TIPO_ORDEN);
+        return toOrdenDTO(orden, items);
+    }
+
     private ItemOrdenResponseDTO toItemDTO(ItemOrden item) {
         ItemOrdenResponseDTO response = new ItemOrdenResponseDTO();
         response.setId(item.getId());
@@ -306,59 +298,59 @@ public OrdenResponseDTO confirmarOrden(String correo, ConfirmarOrdenDTO dto) {
             response.setMetodoPagoLabel(orden.getMetodoPago().getLabel());
         }
         List<ItemOrdenResponseDTO> itemDTOs = new ArrayList<>();
-        for (int i = 0; i < items.size(); i++) {
-            itemDTOs.add(toItemDTO(items.get(i)));
+        for (ItemOrden item : items) {
+            itemDTOs.add(toItemDTO(item));
         }
         response.setItems(itemDTOs);
         return response;
     }
-    @Override
-@Transactional(readOnly = true)
-public List<OrdenHistorialDTO> historialLiviano(String correo) {
-    Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
-    List<Orden> ordenes = ordenRepository.findHistorialByUsuarioIdAndEstadoIn(
-        usuario.getId(),
-        List.of(ESTADO_PAGADA, "REEMBOLSADA")
-    );
-    List<OrdenHistorialDTO> resultado = new ArrayList<>();
-    for (Orden o : ordenes) {
-        OrdenHistorialDTO dto = new OrdenHistorialDTO();
-        dto.setId(o.getId());
-        dto.setEstado(o.getEstado());
-        dto.setTotal(o.getTotal());
-        dto.setFechaCreacion(o.getFechaCreacion());
-        dto.setFechaPago(o.getFechaPago());
-        dto.setPaymentRef(o.getPaymentRef());
-       dto.setMetodoPagoLabel(o.getMetodoPago() != null ? o.getMetodoPago().getLabel() : null);
-        List<OrdenHistorialDTO.ItemHistorialDTO> items = new ArrayList<>();
-        for (ItemOrden item : o.getItems()) {
-            OrdenHistorialDTO.ItemHistorialDTO itemDto = new OrdenHistorialDTO.ItemHistorialDTO();
-            itemDto.setProductoNombre(item.getProducto().getNombre());
-            itemDto.setCategoriaNombre(item.getProducto().getCategoria().getNombre());
-            itemDto.setCantidad(item.getCantidad());
-            itemDto.setPrecioUnitario(item.getPrecioUnitario());
-            itemDto.setSubtotal(item.getCantidad() * item.getPrecioUnitario());
-            items.add(itemDto);
-        }
-        dto.setItems(items);
-        resultado.add(dto);
-    }
-    return resultado;
-}
 
-@Transactional
-@org.springframework.scheduling.annotation.Scheduled(fixedRate = 300000)
-public void notificarCarritosAbandonados() {
-    LocalDateTime haceUnaHora = LocalDateTime.now().minusHours(1);
-    List<Orden> abandonadas = ordenRepository
-        .findByEstadoAndFechaCreacionBeforeAndNotificadoAbandonadoFalse(ESTADO_PENDIENTE, haceUnaHora);
-    for (Orden orden : abandonadas) {
-        List<ItemOrden> items = itemOrdenRepository.findByOrdenId(orden.getId());
-        if (!items.isEmpty()) {
-            notificacionService.notificarCarritoAbandonado(orden.getUsuario());
-            orden.setNotificadoAbandonado(true);
-            ordenRepository.save(orden);
+    @Override
+    @Transactional(readOnly = true)
+    public List<OrdenHistorialDTO> historialLiviano(String correo) {
+        Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
+        List<Orden> ordenes = ordenRepository.findHistorialByUsuarioIdAndEstadoIn(
+                usuario.getId(),
+                List.of(ESTADO_PAGADA, "REEMBOLSADA"));
+        List<OrdenHistorialDTO> resultado = new ArrayList<>();
+        for (Orden o : ordenes) {
+            OrdenHistorialDTO dto = new OrdenHistorialDTO();
+            dto.setId(o.getId());
+            dto.setEstado(o.getEstado());
+            dto.setTotal(o.getTotal());
+            dto.setFechaCreacion(o.getFechaCreacion());
+            dto.setFechaPago(o.getFechaPago());
+            dto.setPaymentRef(o.getPaymentRef());
+            dto.setMetodoPagoLabel(o.getMetodoPago() != null ? o.getMetodoPago().getLabel() : null);
+            List<OrdenHistorialDTO.ItemHistorialDTO> items = new ArrayList<>();
+            for (ItemOrden item : o.getItems()) {
+                OrdenHistorialDTO.ItemHistorialDTO itemDto = new OrdenHistorialDTO.ItemHistorialDTO();
+                itemDto.setProductoNombre(item.getProducto().getNombre());
+                itemDto.setCategoriaNombre(item.getProducto().getCategoria().getNombre());
+                itemDto.setCantidad(item.getCantidad());
+                itemDto.setPrecioUnitario(item.getPrecioUnitario());
+                itemDto.setSubtotal(item.getCantidad() * item.getPrecioUnitario());
+                items.add(itemDto);
+            }
+            dto.setItems(items);
+            resultado.add(dto);
+        }
+        return resultado;
+    }
+
+    @Transactional
+    @org.springframework.scheduling.annotation.Scheduled(fixedRate = 300000)
+    public void notificarCarritosAbandonados() {
+        LocalDateTime haceUnaHora = LocalDateTime.now().minusHours(1);
+        List<Orden> abandonadas = ordenRepository
+                .findByEstadoAndFechaCreacionBeforeAndNotificadoAbandonadoFalse(ESTADO_PENDIENTE, haceUnaHora);
+        for (Orden orden : abandonadas) {
+            List<ItemOrden> items = itemOrdenRepository.findByOrdenId(orden.getId());
+            if (!items.isEmpty()) {
+                notificacionService.notificarCarritoAbandonado(orden.getUsuario());
+                orden.setNotificadoAbandonado(true);
+                ordenRepository.save(orden);
+            }
         }
     }
-}
 }

@@ -28,11 +28,12 @@ public class CategoriaController {
 
     private final CategoriaService categoriaService;
 
+    private static final String ROL_ADMIN = "hasRole('ADMIN')";
     public CategoriaController(CategoriaService categoriaService) {
         this.categoriaService = categoriaService;
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize(ROL_ADMIN)
     @PostMapping
     public ResponseEntity<CategoriaResponseDTO> crear(@Valid @RequestBody CategoriaRequestDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(categoriaService.crear(dto));
@@ -43,7 +44,7 @@ public class CategoriaController {
         return ResponseEntity.ok(categoriaService.listar());
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize(ROL_ADMIN)
     @PutMapping("/{id}")
     public ResponseEntity<CategoriaResponseDTO> actualizar(
             @PathVariable Long id,
@@ -51,23 +52,23 @@ public class CategoriaController {
         return ResponseEntity.ok(categoriaService.actualizar(id, dto));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize(ROL_ADMIN)
     @PatchMapping("/{id}/desactivar")
     public ResponseEntity<DesactivarCategoriaResponseDTO> desactivar(@PathVariable Long id) {
         return ResponseEntity.ok(categoriaService.desactivar(id));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize(ROL_ADMIN)
     @PatchMapping("/{id}/reactivar")
     public ResponseEntity<ReactivarCategoriaResponseDTO> reactivar(@PathVariable Long id) {
         return ResponseEntity.ok(categoriaService.reactivar(id));
     }
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize(ROL_ADMIN)
 @GetMapping("/todas")
 public ResponseEntity<List<CategoriaResponseDTO>> listarTodas() {
     return ResponseEntity.ok(categoriaService.listarTodas());
 }
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize(ROL_ADMIN)
 @GetMapping("/{id}/productos")
 public ResponseEntity<List<ProductoResponseDTO>> obtenerProductos(@PathVariable Long id) {
     return ResponseEntity.ok(categoriaService.obtenerProductosPorCategoria(id));

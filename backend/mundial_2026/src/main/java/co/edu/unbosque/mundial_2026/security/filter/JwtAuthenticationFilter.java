@@ -159,7 +159,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
         final Object attrCorreo = request.getAttribute(ATTR_CORREO_INTENTO);
         final String correo = (attrCorreo != null) ? attrCorreo.toString() : null;
-        final boolean estabaBloqueado = (failed instanceof LockedException);
+       final boolean estabaBloqueado = failed instanceof LockedException;
 
         if (!estabaBloqueado && correo != null && !correo.isBlank()) {
             usuarioRepo.findByCorreoUsuario(correo).ifPresent(this::registrarIntentoFallido);
