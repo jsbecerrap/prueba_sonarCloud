@@ -26,6 +26,9 @@ class OrdenControllerTest {
 
     @Mock private OrdenService ordenService;
     @InjectMocks private OrdenController controller;
+    private static final String USER_CORREO = "user@test.com";
+private static final String PENDIENTE = "PENDIENTE";
+private static final String PAGADA = "PAGADA";
 
     private OrdenResponseDTO responseDTO(String estado) {
         OrdenResponseDTO dto = new OrdenResponseDTO();
@@ -52,142 +55,142 @@ class OrdenControllerTest {
     @Test
     void agregar_exitoso_retornaOk() {
         AgregarItemDTO dto = agregarItemDTO();
-        when(ordenService.agregarItem("user@test.com", dto)).thenReturn(responseDTO("PENDIENTE"));
+        when(ordenService.agregarItem(USER_CORREO, dto)).thenReturn(responseDTO(PENDIENTE));
 
-        ResponseEntity<OrdenResponseDTO> res = controller.agregar("user@test.com", dto);
+        ResponseEntity<OrdenResponseDTO> res = controller.agregar(USER_CORREO, dto);
 
         assertEquals(200, res.getStatusCode().value());
         assertNotNull(res.getBody());
-        assertEquals("PENDIENTE", res.getBody().getEstado());
-        verify(ordenService).agregarItem("user@test.com", dto);
+        assertEquals(PENDIENTE, res.getBody().getEstado());
+        verify(ordenService).agregarItem(USER_CORREO, dto);
     }
 
     @Test
     void agregar_varianteNoEncontrada_propagaExcepcion() {
         when(ordenService.agregarItem(any(), any())).thenThrow(new ProductoNotFoundException("variante no encontrada"));
 
-        assertThrows(ProductoNotFoundException.class, () -> controller.agregar("user@test.com", agregarItemDTO()));
+        assertThrows(ProductoNotFoundException.class, () -> controller.agregar(USER_CORREO, agregarItemDTO()));
     }
 
     @Test
     void agregar_stockInsuficiente_propagaExcepcion() {
         when(ordenService.agregarItem(any(), any())).thenThrow(new StockInsuficienteException("sin stock"));
 
-        assertThrows(StockInsuficienteException.class, () -> controller.agregar("user@test.com", agregarItemDTO()));
+        assertThrows(StockInsuficienteException.class, () -> controller.agregar(USER_CORREO, agregarItemDTO()));
     }
 
     @Test
     void agregar_productoInactivo_propagaExcepcion() {
         when(ordenService.agregarItem(any(), any())).thenThrow(new ProductoNotFoundException("producto inactivo"));
 
-        assertThrows(ProductoNotFoundException.class, () -> controller.agregar("user@test.com", agregarItemDTO()));
+        assertThrows(ProductoNotFoundException.class, () -> controller.agregar(USER_CORREO, agregarItemDTO()));
     }
 
     @Test
     void carrito_existente_retornaOk() {
-        when(ordenService.obtenerCarrito("user@test.com")).thenReturn(responseDTO("PENDIENTE"));
+        when(ordenService.obtenerCarrito(USER_CORREO)).thenReturn(responseDTO(PENDIENTE));
 
-        ResponseEntity<OrdenResponseDTO> res = controller.carrito("user@test.com");
+        ResponseEntity<OrdenResponseDTO> res = controller.carrito(USER_CORREO);
 
         assertEquals(200, res.getStatusCode().value());
-        assertEquals("PENDIENTE", res.getBody().getEstado());
-        verify(ordenService).obtenerCarrito("user@test.com");
+        assertEquals(PENDIENTE, res.getBody().getEstado());
+        verify(ordenService).obtenerCarrito(USER_CORREO);
     }
 
     @Test
     void carrito_sinCarrito_propagaExcepcion() {
         when(ordenService.obtenerCarrito(any())).thenThrow(new OrdenNotFoundException("no hay carrito"));
 
-        assertThrows(OrdenNotFoundException.class, () -> controller.carrito("user@test.com"));
+        assertThrows(OrdenNotFoundException.class, () -> controller.carrito(USER_CORREO));
     }
 
     @Test
     void eliminarItem_exitoso_retornaOk() {
-        when(ordenService.eliminarItem("user@test.com", 1L)).thenReturn(responseDTO("PENDIENTE"));
+        when(ordenService.eliminarItem(USER_CORREO, 1L)).thenReturn(responseDTO(PENDIENTE));
 
-        ResponseEntity<OrdenResponseDTO> res = controller.eliminarItem("user@test.com", 1L);
+        ResponseEntity<OrdenResponseDTO> res = controller.eliminarItem(USER_CORREO, 1L);
 
         assertEquals(200, res.getStatusCode().value());
-        verify(ordenService).eliminarItem("user@test.com", 1L);
+        verify(ordenService).eliminarItem(USER_CORREO, 1L);
     }
 
     @Test
     void eliminarItem_sinCarrito_propagaExcepcion() {
         when(ordenService.eliminarItem(any(), any())).thenThrow(new OrdenNotFoundException("sin carrito"));
 
-        assertThrows(OrdenNotFoundException.class, () -> controller.eliminarItem("user@test.com", 1L));
+        assertThrows(OrdenNotFoundException.class, () -> controller.eliminarItem(USER_CORREO, 1L));
     }
 
     @Test
     void eliminarItem_itemNoExistente_propagaExcepcion() {
         when(ordenService.eliminarItem(any(), any())).thenThrow(new ItemNotFoundException("item no existe"));
 
-        assertThrows(ItemNotFoundException.class, () -> controller.eliminarItem("user@test.com", 99L));
+        assertThrows(ItemNotFoundException.class, () -> controller.eliminarItem(USER_CORREO, 99L));
     }
 
     @Test
     void confirmar_exitoso_retornaOk() {
         ConfirmarOrdenDTO dto = confirmarDTO();
-        when(ordenService.confirmarOrden("user@test.com", dto)).thenReturn(responseDTO("PAGADA"));
+        when(ordenService.confirmarOrden(USER_CORREO, dto)).thenReturn(responseDTO(PAGADA));
 
-        ResponseEntity<OrdenResponseDTO> res = controller.confirmar("user@test.com", dto);
+        ResponseEntity<OrdenResponseDTO> res = controller.confirmar(USER_CORREO, dto);
 
         assertEquals(200, res.getStatusCode().value());
-        assertEquals("PAGADA", res.getBody().getEstado());
-        verify(ordenService).confirmarOrden("user@test.com", dto);
+        assertEquals(PAGADA, res.getBody().getEstado());
+        verify(ordenService).confirmarOrden(USER_CORREO, dto);
     }
 
     @Test
     void confirmar_carritoVacio_propagaExcepcion() {
         when(ordenService.confirmarOrden(any(), any())).thenThrow(new CarritoVacioException("carrito vacío"));
 
-        assertThrows(CarritoVacioException.class, () -> controller.confirmar("user@test.com", confirmarDTO()));
+        assertThrows(CarritoVacioException.class, () -> controller.confirmar(USER_CORREO, confirmarDTO()));
     }
 
     @Test
     void confirmar_metodoPagoInvalido_propagaExcepcion() {
         when(ordenService.confirmarOrden(any(), any())).thenThrow(new MetodoPagoInvalidoException("método inválido"));
 
-        assertThrows(MetodoPagoInvalidoException.class, () -> controller.confirmar("user@test.com", confirmarDTO()));
+        assertThrows(MetodoPagoInvalidoException.class, () -> controller.confirmar(USER_CORREO, confirmarDTO()));
     }
 
     @Test
     void confirmar_stockInsuficiente_propagaExcepcion() {
         when(ordenService.confirmarOrden(any(), any())).thenThrow(new StockInsuficienteException("sin stock"));
 
-        assertThrows(StockInsuficienteException.class, () -> controller.confirmar("user@test.com", confirmarDTO()));
+        assertThrows(StockInsuficienteException.class, () -> controller.confirmar(USER_CORREO, confirmarDTO()));
     }
 
     @Test
     void confirmar_pagoStripe_propagaExcepcion() {
         when(ordenService.confirmarOrden(any(), any())).thenThrow(new PagoStripeException("stripe error"));
 
-        assertThrows(PagoStripeException.class, () -> controller.confirmar("user@test.com", confirmarDTO()));
+        assertThrows(PagoStripeException.class, () -> controller.confirmar(USER_CORREO, confirmarDTO()));
     }
 
     @Test
     void confirmar_sinCarrito_propagaExcepcion() {
         when(ordenService.confirmarOrden(any(), any())).thenThrow(new OrdenNotFoundException("sin carrito"));
 
-        assertThrows(OrdenNotFoundException.class, () -> controller.confirmar("user@test.com", confirmarDTO()));
+        assertThrows(OrdenNotFoundException.class, () -> controller.confirmar(USER_CORREO, confirmarDTO()));
     }
 
     @Test
     void historial_conOrdenes_retornaOk() {
-        when(ordenService.historial("user@test.com")).thenReturn(List.of(responseDTO("PAGADA")));
+        when(ordenService.historial(USER_CORREO)).thenReturn(List.of(responseDTO(PAGADA)));
 
-        ResponseEntity<List<OrdenResponseDTO>> res = controller.historial("user@test.com");
+        ResponseEntity<List<OrdenResponseDTO>> res = controller.historial(USER_CORREO);
 
         assertEquals(200, res.getStatusCode().value());
         assertEquals(1, res.getBody().size());
-        verify(ordenService).historial("user@test.com");
+        verify(ordenService).historial(USER_CORREO);
     }
 
     @Test
     void historial_sinOrdenes_retornaOkVacio() {
-        when(ordenService.historial("user@test.com")).thenReturn(List.of());
+        when(ordenService.historial(USER_CORREO)).thenReturn(List.of());
 
-        ResponseEntity<List<OrdenResponseDTO>> res = controller.historial("user@test.com");
+        ResponseEntity<List<OrdenResponseDTO>> res = controller.historial(USER_CORREO);
 
         assertEquals(200, res.getStatusCode().value());
         assertTrue(res.getBody().isEmpty());
@@ -195,42 +198,42 @@ class OrdenControllerTest {
 
     @Test
     void cancelar_exitoso_retornaOk() {
-        when(ordenService.cancelarOrden("user@test.com")).thenReturn(responseDTO("CANCELADA"));
+        when(ordenService.cancelarOrden(USER_CORREO)).thenReturn(responseDTO("CANCELADA"));
 
-        ResponseEntity<OrdenResponseDTO> res = controller.cancelar("user@test.com");
+        ResponseEntity<OrdenResponseDTO> res = controller.cancelar(USER_CORREO);
 
         assertEquals(200, res.getStatusCode().value());
         assertEquals("CANCELADA", res.getBody().getEstado());
-        verify(ordenService).cancelarOrden("user@test.com");
+        verify(ordenService).cancelarOrden(USER_CORREO);
     }
 
     @Test
     void cancelar_sinCarrito_propagaExcepcion() {
         when(ordenService.cancelarOrden(any())).thenThrow(new OrdenNotFoundException("sin carrito"));
 
-        assertThrows(OrdenNotFoundException.class, () -> controller.cancelar("user@test.com"));
+        assertThrows(OrdenNotFoundException.class, () -> controller.cancelar(USER_CORREO));
     }
 
     @Test
     void historialLiviano_conOrdenes_retornaOk() {
         OrdenHistorialDTO dto = new OrdenHistorialDTO();
         dto.setId(1L);
-        dto.setEstado("PAGADA");
-        when(ordenService.historialLiviano("user@test.com")).thenReturn(List.of(dto));
+        dto.setEstado(PAGADA);
+        when(ordenService.historialLiviano(USER_CORREO)).thenReturn(List.of(dto));
 
-        ResponseEntity<List<OrdenHistorialDTO>> res = controller.historialLiviano("user@test.com");
+        ResponseEntity<List<OrdenHistorialDTO>> res = controller.historialLiviano(USER_CORREO);
 
         assertEquals(200, res.getStatusCode().value());
         assertEquals(1, res.getBody().size());
-        assertEquals("PAGADA", res.getBody().get(0).getEstado());
-        verify(ordenService).historialLiviano("user@test.com");
+        assertEquals(PAGADA, res.getBody().get(0).getEstado());
+        verify(ordenService).historialLiviano(USER_CORREO);
     }
 
     @Test
     void historialLiviano_sinOrdenes_retornaOkVacio() {
-        when(ordenService.historialLiviano("user@test.com")).thenReturn(List.of());
+        when(ordenService.historialLiviano(USER_CORREO)).thenReturn(List.of());
 
-        ResponseEntity<List<OrdenHistorialDTO>> res = controller.historialLiviano("user@test.com");
+        ResponseEntity<List<OrdenHistorialDTO>> res = controller.historialLiviano(USER_CORREO);
 
         assertEquals(200, res.getStatusCode().value());
         assertTrue(res.getBody().isEmpty());

@@ -47,11 +47,15 @@ class NotificacionControllerTest {
 
     @Mock
     private Authentication authentication;
+    private static final String USER_CORREO = "user@test.com";
+private static final String INFO = "INFO";
+private static final String TOTAL = "total";
+private static final String ERROR = "error";
 
     @BeforeEach
     void setUpSecurityContext() {
 lenient().when(securityContext.getAuthentication()).thenReturn(authentication);
-lenient().when(authentication.getName()).thenReturn("user@test.com");
+lenient().when(authentication.getName()).thenReturn(USER_CORREO);
         SecurityContextHolder.setContext(securityContext);
     }
 
@@ -67,12 +71,12 @@ lenient().when(authentication.getName()).thenReturn("user@test.com");
     }
 
     private NotificacionDTO notificacionLeida() {
-        return new NotificacionDTO(1L, "INFO", "Titulo", "Mensaje",
+        return new NotificacionDTO(1L, INFO, "Titulo", "Mensaje",
                 "PUSH", "ENVIADO", true, LocalDateTime.now(), 1L);
     }
 
     private NotificacionDTO notificacionNoLeida() {
-        return new NotificacionDTO(2L, "INFO", "Titulo2", "Mensaje2",
+        return new NotificacionDTO(2L, INFO, "Titulo2", "Mensaje2",
                 "PUSH", "ENVIADO", false, LocalDateTime.now(), 1L);
     }
 
@@ -80,7 +84,7 @@ lenient().when(authentication.getName()).thenReturn("user@test.com");
 
     @Test
     void listarMisNotificaciones_retorna200ConPagina() {
-        when(usuarioService.obtenerPorCorreo("user@test.com")).thenReturn(usuarioMock(1L));
+        when(usuarioService.obtenerPorCorreo(USER_CORREO)).thenReturn(usuarioMock(1L));
         when(notificacionService.listarPorUsuarioPaginado(eq(1L), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(notificacionLeida())));
 
@@ -94,7 +98,7 @@ lenient().when(authentication.getName()).thenReturn("user@test.com");
 
     @Test
     void listarMisNotificaciones_paginaVacia_retorna200() {
-        when(usuarioService.obtenerPorCorreo("user@test.com")).thenReturn(usuarioMock(1L));
+        when(usuarioService.obtenerPorCorreo(USER_CORREO)).thenReturn(usuarioMock(1L));
         when(notificacionService.listarPorUsuarioPaginado(eq(1L), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of()));
 
@@ -106,7 +110,7 @@ lenient().when(authentication.getName()).thenReturn("user@test.com");
 
     @Test
     void listarMisNotificaciones_paginacionPersonalizada_respetaParametros() {
-        when(usuarioService.obtenerPorCorreo("user@test.com")).thenReturn(usuarioMock(1L));
+        when(usuarioService.obtenerPorCorreo(USER_CORREO)).thenReturn(usuarioMock(1L));
         when(notificacionService.listarPorUsuarioPaginado(eq(1L), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of()));
 
@@ -140,7 +144,7 @@ lenient().when(authentication.getName()).thenReturn("user@test.com");
 
     @Test
     void marcarTodasLeidas_retorna204() {
-        when(usuarioService.obtenerPorCorreo("user@test.com")).thenReturn(usuarioMock(1L));
+        when(usuarioService.obtenerPorCorreo(USER_CORREO)).thenReturn(usuarioMock(1L));
         doNothing().when(notificacionService).marcarTodasLeidas(1L);
 
         ResponseEntity<Void> res = controller.marcarTodasLeidas();
@@ -152,8 +156,8 @@ lenient().when(authentication.getName()).thenReturn("user@test.com");
 
     @Test
     void marcarTodasLeidas_serviceLanzaExcepcion_propaga() {
-        when(usuarioService.obtenerPorCorreo("user@test.com")).thenReturn(usuarioMock(1L));
-        doThrow(new RuntimeException("error")).when(notificacionService).marcarTodasLeidas(1L);
+        when(usuarioService.obtenerPorCorreo(USER_CORREO)).thenReturn(usuarioMock(1L));
+        doThrow(new RuntimeException(ERROR)).when(notificacionService).marcarTodasLeidas(1L);
 
         assertThrows(RuntimeException.class, () -> controller.marcarTodasLeidas());
     }
@@ -163,7 +167,7 @@ lenient().when(authentication.getName()).thenReturn("user@test.com");
     @Test
     void enviarIndividual_retorna204() {
         NotificacionRequestDTO dto = new NotificacionRequestDTO();
-        dto.setTipo("INFO");
+        dto.setTipo(INFO);
         dto.setTitulo("Test");
         dto.setMensaje("Mensaje test");
         dto.setUsuarioId(1L);
@@ -178,7 +182,7 @@ lenient().when(authentication.getName()).thenReturn("user@test.com");
 
     @Test
     void enviarIndividual_serviceLanzaExcepcion_propaga() {
-        doThrow(new RuntimeException("error")).when(notificacionService).enviarNotificacion(any());
+        doThrow(new RuntimeException(ERROR)).when(notificacionService).enviarNotificacion(any());
 
         assertThrows(RuntimeException.class,
                 () -> controller.enviarIndividual(new NotificacionRequestDTO()));
@@ -189,7 +193,7 @@ lenient().when(authentication.getName()).thenReturn("user@test.com");
     @Test
     void enviarMasiva_retorna204() {
         NotificacionMasivaRequestDTO dto = new NotificacionMasivaRequestDTO();
-        dto.setTipo("INFO");
+        dto.setTipo(INFO);
         dto.setTitulo("Masiva");
         dto.setMensaje("Mensaje masivo");
         dto.setUsuarioIds(List.of(1L, 2L, 3L));
@@ -204,7 +208,7 @@ lenient().when(authentication.getName()).thenReturn("user@test.com");
 
     @Test
     void enviarMasiva_serviceLanzaExcepcion_propaga() {
-        doThrow(new RuntimeException("error")).when(notificacionService).enviarMasiva(any());
+        doThrow(new RuntimeException(ERROR)).when(notificacionService).enviarMasiva(any());
 
         assertThrows(RuntimeException.class,
                 () -> controller.enviarMasiva(new NotificacionMasivaRequestDTO()));
@@ -245,7 +249,7 @@ lenient().when(authentication.getName()).thenReturn("user@test.com");
 
     @Test
     void buscarPorFecha_retorna200ConPagina() {
-        when(usuarioService.obtenerPorCorreo("user@test.com")).thenReturn(usuarioMock(1L));
+        when(usuarioService.obtenerPorCorreo(USER_CORREO)).thenReturn(usuarioMock(1L));
         when(notificacionService.listarPorFecha(eq(1L), any(LocalDateTime.class),
                 any(LocalDateTime.class), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(notificacionLeida())));
@@ -260,7 +264,7 @@ lenient().when(authentication.getName()).thenReturn("user@test.com");
 
     @Test
     void buscarPorFecha_paginaVacia_retorna200() {
-        when(usuarioService.obtenerPorCorreo("user@test.com")).thenReturn(usuarioMock(1L));
+        when(usuarioService.obtenerPorCorreo(USER_CORREO)).thenReturn(usuarioMock(1L));
         when(notificacionService.listarPorFecha(eq(1L), any(LocalDateTime.class),
                 any(LocalDateTime.class), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of()));
@@ -274,7 +278,7 @@ lenient().when(authentication.getName()).thenReturn("user@test.com");
 
     @Test
     void buscarPorFecha_paginacionPersonalizada_respetaParametros() {
-        when(usuarioService.obtenerPorCorreo("user@test.com")).thenReturn(usuarioMock(1L));
+        when(usuarioService.obtenerPorCorreo(USER_CORREO)).thenReturn(usuarioMock(1L));
         when(notificacionService.listarPorFecha(any(), any(), any(), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of()));
 
@@ -288,56 +292,56 @@ lenient().when(authentication.getName()).thenReturn("user@test.com");
 
     @Test
     void contarSinLeer_retorna200ConTotal() {
-        when(usuarioService.obtenerPorCorreo("user@test.com")).thenReturn(usuarioMock(1L));
+        when(usuarioService.obtenerPorCorreo(USER_CORREO)).thenReturn(usuarioMock(1L));
         when(notificacionService.listarPorUsuario(1L))
                 .thenReturn(List.of(notificacionLeida(), notificacionNoLeida()));
 
         ResponseEntity<Map<String, Long>> res = controller.contarSinLeer();
 
         assertEquals(200, res.getStatusCode().value());
-        assertEquals(1L, res.getBody().get("total"));
+        assertEquals(1L, res.getBody().get(TOTAL));
         verify(notificacionService).listarPorUsuario(1L);
     }
 
     @Test
     void contarSinLeer_todasLeidas_retorna0() {
-        when(usuarioService.obtenerPorCorreo("user@test.com")).thenReturn(usuarioMock(1L));
+        when(usuarioService.obtenerPorCorreo(USER_CORREO)).thenReturn(usuarioMock(1L));
         when(notificacionService.listarPorUsuario(1L))
                 .thenReturn(List.of(notificacionLeida(), notificacionLeida()));
 
         ResponseEntity<Map<String, Long>> res = controller.contarSinLeer();
 
         assertEquals(200, res.getStatusCode().value());
-        assertEquals(0L, res.getBody().get("total"));
+        assertEquals(0L, res.getBody().get(TOTAL));
     }
 
     @Test
     void contarSinLeer_listaVacia_retorna0() {
-        when(usuarioService.obtenerPorCorreo("user@test.com")).thenReturn(usuarioMock(1L));
+        when(usuarioService.obtenerPorCorreo(USER_CORREO)).thenReturn(usuarioMock(1L));
         when(notificacionService.listarPorUsuario(1L)).thenReturn(List.of());
 
         ResponseEntity<Map<String, Long>> res = controller.contarSinLeer();
 
         assertEquals(200, res.getStatusCode().value());
-        assertEquals(0L, res.getBody().get("total"));
+        assertEquals(0L, res.getBody().get(TOTAL));
     }
 
     @Test
     void contarSinLeer_todasSinLeer_retornaTodas() {
-        when(usuarioService.obtenerPorCorreo("user@test.com")).thenReturn(usuarioMock(1L));
+        when(usuarioService.obtenerPorCorreo(USER_CORREO)).thenReturn(usuarioMock(1L));
         when(notificacionService.listarPorUsuario(1L))
                 .thenReturn(List.of(notificacionNoLeida(), notificacionNoLeida(), notificacionNoLeida()));
 
         ResponseEntity<Map<String, Long>> res = controller.contarSinLeer();
 
         assertEquals(200, res.getStatusCode().value());
-        assertEquals(3L, res.getBody().get("total"));
+        assertEquals(3L, res.getBody().get(TOTAL));
     }
 
     @Test
     void contarSinLeer_serviceLanzaExcepcion_propaga() {
-        when(usuarioService.obtenerPorCorreo("user@test.com")).thenReturn(usuarioMock(1L));
-        when(notificacionService.listarPorUsuario(1L)).thenThrow(new RuntimeException("error"));
+        when(usuarioService.obtenerPorCorreo(USER_CORREO)).thenReturn(usuarioMock(1L));
+        when(notificacionService.listarPorUsuario(1L)).thenThrow(new RuntimeException(ERROR));
 
         assertThrows(RuntimeException.class, () -> controller.contarSinLeer());
     }

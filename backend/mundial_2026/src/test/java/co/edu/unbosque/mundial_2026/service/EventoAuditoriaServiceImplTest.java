@@ -44,6 +44,7 @@ class EventoAuditoriaServiceImplTest {
 
     private EventoAuditoria evento;
     private Pageable pageable;
+    private static final String USUARIO_REGISTRADO = "USUARIO_REGISTRADO";
 
     @BeforeEach
     void setUp() {
@@ -51,7 +52,7 @@ class EventoAuditoriaServiceImplTest {
         usuario.setId(1L);
 
         evento = new EventoAuditoria(
-                "USUARIO_REGISTRADO",
+                USUARIO_REGISTRADO,
                 "Descripcion del evento",
                 LocalDateTime.now(),
                 "corr-001",
@@ -108,7 +109,7 @@ class EventoAuditoriaServiceImplTest {
             Page<EventoAuditoriaDTO> resultado = auditoriaService.obtenerTodos(pageable);
 
             assertEquals(1, resultado.getTotalElements());
-            assertEquals("USUARIO_REGISTRADO", resultado.getContent().get(0).getTipo());
+            assertEquals(USUARIO_REGISTRADO, resultado.getContent().get(0).getTipo());
             assertEquals(1L, resultado.getContent().get(0).getUsuarioId());
         }
 
@@ -146,12 +147,12 @@ class EventoAuditoriaServiceImplTest {
         @Test
         void retornaEventosDelTipo() {
             Page<EventoAuditoria> page = new PageImpl<>(List.of(evento), pageable, 1);
-            when(repository.findByTipo("USUARIO_REGISTRADO", pageable)).thenReturn(page);
+            when(repository.findByTipo(USUARIO_REGISTRADO, pageable)).thenReturn(page);
 
-            Page<EventoAuditoriaDTO> resultado = auditoriaService.buscarPorTipo("USUARIO_REGISTRADO", pageable);
+            Page<EventoAuditoriaDTO> resultado = auditoriaService.buscarPorTipo(USUARIO_REGISTRADO, pageable);
 
             assertEquals(1, resultado.getTotalElements());
-            assertEquals("USUARIO_REGISTRADO", resultado.getContent().get(0).getTipo());
+            assertEquals(USUARIO_REGISTRADO, resultado.getContent().get(0).getTipo());
         }
     }
 
@@ -213,12 +214,12 @@ void cuandoTodosLosFiltrosTienenValor_pasaStringsDeFecha() {
     LocalDateTime fin = LocalDateTime.of(2026, 12, 31, 23, 59);
 
     Page<EventoAuditoria> page = new PageImpl<>(List.of(evento), pageable, 1);
-    when(repository.buscarConFiltros(1L, "USUARIO_REGISTRADO",
+    when(repository.buscarConFiltros(1L, USUARIO_REGISTRADO,
             inicio.toString(), fin.toString(), pageable))
             .thenReturn(page);
 
     Page<EventoAuditoriaDTO> resultado = auditoriaService.buscarConFiltros(
-            1L, "USUARIO_REGISTRADO", inicio, fin, pageable);
+            1L, USUARIO_REGISTRADO, inicio, fin, pageable);
 
     assertEquals(1, resultado.getTotalElements());
 }
@@ -226,11 +227,11 @@ void cuandoTodosLosFiltrosTienenValor_pasaStringsDeFecha() {
 @Test
 void cuandoFechasNull_pasaNullAlRepositorio() {
     Page<EventoAuditoria> page = new PageImpl<>(List.of(evento), pageable, 1);
-    when(repository.buscarConFiltros(1L, "USUARIO_REGISTRADO", null, null, pageable))
+    when(repository.buscarConFiltros(1L, USUARIO_REGISTRADO, null, null, pageable))
             .thenReturn(page);
 
     Page<EventoAuditoriaDTO> resultado = auditoriaService.buscarConFiltros(
-            1L, "USUARIO_REGISTRADO", null, null, pageable);
+            1L, USUARIO_REGISTRADO, null, null, pageable);
 
     assertEquals(1, resultado.getTotalElements());
 }

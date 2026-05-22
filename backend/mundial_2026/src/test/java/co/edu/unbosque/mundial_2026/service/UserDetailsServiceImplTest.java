@@ -33,16 +33,18 @@ class UserDetailsServiceImplTest {
     private UserDetailsServiceImpl userDetailsService;
 
     private Usuario usuario;
-
+private static final String CORREO_TEST = "test@test.com";
+private static final String ROLE_USUARIO = "ROLE_USUARIO";
+private static final String CORREO_NOPE = "nope@test.com";
     @BeforeEach
     void setUp() {
         Rol rol = new Rol();
         rol.setId(1L);
-        rol.setNombre("ROLE_USUARIO");
+        rol.setNombre(ROLE_USUARIO);
 
         usuario = new Usuario();
         usuario.setId(1L);
-        usuario.setCorreoUsuario("test@test.com");
+        usuario.setCorreoUsuario(CORREO_TEST);
         usuario.setContrasena("hashedPass");
         usuario.setRol(rol);
         usuario.setActivo(true);
@@ -54,36 +56,36 @@ class UserDetailsServiceImplTest {
 
         @Test
         void cuandoUsuarioExisteYActivo_retornaUserDetails() {
-            when(usuarioRepository.findByCorreoUsuarioConRol("test@test.com"))
+            when(usuarioRepository.findByCorreoUsuarioConRol(CORREO_TEST))
                     .thenReturn(Optional.of(usuario));
 
-            UserDetails resultado = userDetailsService.loadUserByUsername("test@test.com");
+            UserDetails resultado = userDetailsService.loadUserByUsername(CORREO_TEST);
 
             assertNotNull(resultado);
-            assertEquals("test@test.com", resultado.getUsername());
+            assertEquals(CORREO_TEST, resultado.getUsername());
             assertEquals("hashedPass", resultado.getPassword());
             assertEquals(1, resultado.getAuthorities().size());
-            assertTrue(resultado.getAuthorities().stream()
-                    .anyMatch(a -> a.getAuthority().equals("ROLE_USUARIO")));
+         assertTrue(resultado.getAuthorities().stream()
+        .anyMatch(a -> ROLE_USUARIO.equals(a.getAuthority())));
         }
 
         @Test
         void cuandoUsuarioNoExiste_lanzaUsernameNotFoundException() {
-            when(usuarioRepository.findByCorreoUsuarioConRol("nope@test.com"))
+            when(usuarioRepository.findByCorreoUsuarioConRol(CORREO_NOPE))
                     .thenReturn(Optional.empty());
 
             assertThrows(UsernameNotFoundException.class,
-                    () -> userDetailsService.loadUserByUsername("nope@test.com"));
+                    () -> userDetailsService.loadUserByUsername(CORREO_NOPE));
         }
 
         @Test
         void cuandoUsuarioInactivo_lanzaUsernameNotFoundException() {
             usuario.setActivo(false);
-            when(usuarioRepository.findByCorreoUsuarioConRol("test@test.com"))
+            when(usuarioRepository.findByCorreoUsuarioConRol(CORREO_TEST))
                     .thenReturn(Optional.of(usuario));
 
             assertThrows(UsernameNotFoundException.class,
-                    () -> userDetailsService.loadUserByUsername("test@test.com"));
+                    () -> userDetailsService.loadUserByUsername(CORREO_TEST));
         }
 
         @Test
@@ -92,13 +94,13 @@ class UserDetailsServiceImplTest {
             rolAdmin.setNombre("ROLE_ADMIN");
             usuario.setRol(rolAdmin);
 
-            when(usuarioRepository.findByCorreoUsuarioConRol("test@test.com"))
+            when(usuarioRepository.findByCorreoUsuarioConRol(CORREO_TEST))
                     .thenReturn(Optional.of(usuario));
 
-            UserDetails resultado = userDetailsService.loadUserByUsername("test@test.com");
+            UserDetails resultado = userDetailsService.loadUserByUsername(CORREO_TEST);
 
             assertTrue(resultado.getAuthorities().stream()
-                    .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN")));
+        .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority())));
         }
     }
 }

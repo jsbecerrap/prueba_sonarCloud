@@ -29,7 +29,8 @@ class ReporteServiceImplTest {
     @Mock private EntradaRepository entradaRepository;
     @Mock private PronosticoRepository pronosticoRepository;
     @Mock private ParticipacionRepository participacionRepository;
-
+private static final String COLOMBIA = "Colombia";
+private static final String BRAZIL = "Brazil";
     @InjectMocks private ReporteServiceImpl service;
 
     private Usuario crearUsuario(Long id) {
@@ -131,15 +132,15 @@ class ReporteServiceImplTest {
 
     @Test
     void obtenerPartidosMasApostados_conDatos_retornaLista() {
-        List<Object[]> filas = filas(1L, "Colombia", "Brazil", "Grupo A", 200);
+        List<Object[]> filas = filas(1L, COLOMBIA, BRAZIL, "Grupo A", 200);
         when(pronosticoRepository.findPartidosMasApostados(any(Pageable.class))).thenReturn(filas);
 
         List<PartidoMasApostadoDTO> resultado = service.obtenerPartidosMasApostados();
 
         assertNotNull(resultado);
         assertEquals(1, resultado.size());
-        assertEquals("Colombia", resultado.get(0).getLocal());
-        assertEquals("Brazil", resultado.get(0).getVisitante());
+        assertEquals(COLOMBIA, resultado.get(0).getLocal());
+        assertEquals(BRAZIL, resultado.get(0).getVisitante());
         assertEquals(200, resultado.get(0).getTotalPronosticos());
     }
 
@@ -203,14 +204,14 @@ class ReporteServiceImplTest {
 
     @Test
     void obtenerEntradasPorPartido_conDatos_retornaLista() {
-        List<Object[]> filas = filas(1L, "Colombia", "Brazil", "Grupo A", "MetLife Stadium", 300, 9000000.0);
+        List<Object[]> filas = filas(1L, COLOMBIA, BRAZIL, "Grupo A", "MetLife Stadium", 300, 9000000.0);
         when(entradaRepository.findEntradasPorPartido()).thenReturn(filas);
 
         List<EntradaPorPartidoDTO> resultado = service.obtenerEntradasPorPartido();
 
         assertNotNull(resultado);
         assertEquals(1, resultado.size());
-        assertEquals("Colombia", resultado.get(0).getLocal());
+        assertEquals(COLOMBIA, resultado.get(0).getLocal());
         assertEquals("MetLife Stadium", resultado.get(0).getEstadio());
         assertEquals(300, resultado.get(0).getCantidadVendida());
         assertEquals(9000000.0, resultado.get(0).getIngresoTotal());

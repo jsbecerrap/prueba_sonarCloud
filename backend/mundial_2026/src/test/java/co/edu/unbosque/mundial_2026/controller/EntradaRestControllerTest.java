@@ -27,6 +27,9 @@ class EntradaRestControllerTest {
 
     @Mock private EntradaService entradaService;
     @InjectMocks private EntradaRestController controller;
+    private static final String USER_CORREO = "user@test.com";
+private static final String PAGADA = "PAGADA";
+private static final String PM_TEST = "pm_test";
 
     private EntradaResponseDTO responseDTO(String estado) {
         EntradaResponseDTO dto = new EntradaResponseDTO();
@@ -62,13 +65,13 @@ class EntradaRestControllerTest {
 
     @Test
     void obtener_entradaExistente_retornaOk() {
-        when(entradaService.obtenerEntrada(1L)).thenReturn(responseDTO("PAGADA"));
+        when(entradaService.obtenerEntrada(1L)).thenReturn(responseDTO(PAGADA));
 
         ResponseEntity<EntradaResponseDTO> res = controller.obtener(1L);
 
         assertEquals(200, res.getStatusCode().value());
         assertNotNull(res.getBody());
-        assertEquals("PAGADA", res.getBody().getEstado());
+        assertEquals(PAGADA, res.getBody().getEstado());
     }
 
     @Test
@@ -84,13 +87,13 @@ class EntradaRestControllerTest {
         dto.setPartidoId(1L);
         dto.setCantidad(2);
         dto.setCategoria("BARRA");
-        when(entradaService.reservarEntrada("user@test.com", dto)).thenReturn(responseDTO("RESERVADA"));
+        when(entradaService.reservarEntrada(USER_CORREO, dto)).thenReturn(responseDTO("RESERVADA"));
 
-        ResponseEntity<EntradaResponseDTO> res = controller.reservar("user@test.com", dto);
+        ResponseEntity<EntradaResponseDTO> res = controller.reservar(USER_CORREO, dto);
 
         assertEquals(200, res.getStatusCode().value());
         assertEquals("RESERVADA", res.getBody().getEstado());
-        verify(entradaService).reservarEntrada("user@test.com", dto);
+        verify(entradaService).reservarEntrada(USER_CORREO, dto);
     }
 
     @Test
@@ -100,7 +103,7 @@ class EntradaRestControllerTest {
         dto.setCantidad(2);
         when(entradaService.reservarEntrada(any(), any())).thenThrow(new CupoNoDisponibleException("sin cupo"));
 
-        assertThrows(CupoNoDisponibleException.class, () -> controller.reservar("user@test.com", dto));
+        assertThrows(CupoNoDisponibleException.class, () -> controller.reservar(USER_CORREO, dto));
     }
 
     @Test
@@ -110,69 +113,69 @@ class EntradaRestControllerTest {
         dto.setCantidad(5);
         when(entradaService.reservarEntrada(any(), any())).thenThrow(new LimiteSuperadoException("limite"));
 
-        assertThrows(LimiteSuperadoException.class, () -> controller.reservar("user@test.com", dto));
+        assertThrows(LimiteSuperadoException.class, () -> controller.reservar(USER_CORREO, dto));
     }
 
     @Test
     void pagar_exitoso_retornaOk() {
-        when(entradaService.confirmarPago(1L, "pm_test")).thenReturn(responseDTO("PAGADA"));
+        when(entradaService.confirmarPago(1L, PM_TEST)).thenReturn(responseDTO(PAGADA));
 
-        ResponseEntity<EntradaResponseDTO> res = controller.pagar(1L, "pm_test");
+        ResponseEntity<EntradaResponseDTO> res = controller.pagar(1L, PM_TEST);
 
         assertEquals(200, res.getStatusCode().value());
-        assertEquals("PAGADA", res.getBody().getEstado());
-        verify(entradaService).confirmarPago(1L, "pm_test");
+        assertEquals(PAGADA, res.getBody().getEstado());
+        verify(entradaService).confirmarPago(1L, PM_TEST);
     }
 
     @Test
     void pagar_estadoInvalido_propagaExcepcion() {
         when(entradaService.confirmarPago(any(), any())).thenThrow(new EstadoInvalidoException("no reservada"));
 
-        assertThrows(EstadoInvalidoException.class, () -> controller.pagar(1L, "pm_test"));
+        assertThrows(EstadoInvalidoException.class, () -> controller.pagar(1L, PM_TEST));
     }
 
     @Test
     void pagar_errorStripe_propagaExcepcion() {
         when(entradaService.confirmarPago(any(), any())).thenThrow(new PagoStripeException("stripe error"));
 
-        assertThrows(PagoStripeException.class, () -> controller.pagar(1L, "pm_test"));
+        assertThrows(PagoStripeException.class, () -> controller.pagar(1L, PM_TEST));
     }
 
     @Test
     void cancelar_exitosa_retornaOk() {
-        when(entradaService.cancelarReserva("user@test.com", 1L)).thenReturn(responseDTO("CANCELADA"));
+        when(entradaService.cancelarReserva(USER_CORREO, 1L)).thenReturn(responseDTO("CANCELADA"));
 
-        ResponseEntity<EntradaResponseDTO> res = controller.cancelar("user@test.com", 1L);
+        ResponseEntity<EntradaResponseDTO> res = controller.cancelar(USER_CORREO, 1L);
 
         assertEquals(200, res.getStatusCode().value());
         assertEquals("CANCELADA", res.getBody().getEstado());
-        verify(entradaService).cancelarReserva("user@test.com", 1L);
+        verify(entradaService).cancelarReserva(USER_CORREO, 1L);
     }
 
     @Test
     void cancelar_entradaNoPertenece_propagaExcepcion() {
         when(entradaService.cancelarReserva(any(), any())).thenThrow(new EstadoInvalidoException("no pertenece"));
 
-        assertThrows(EstadoInvalidoException.class, () -> controller.cancelar("user@test.com", 1L));
+        assertThrows(EstadoInvalidoException.class, () -> controller.cancelar(USER_CORREO, 1L));
     }
 
     @Test
     void cancelar_entradaNoEncontrada_propagaExcepcion() {
         when(entradaService.cancelarReserva(any(), any())).thenThrow(new EntradaNotFoundException("no encontrada"));
 
-        assertThrows(EntradaNotFoundException.class, () -> controller.cancelar("user@test.com", 1L));
+        assertThrows(EntradaNotFoundException.class, () -> controller.cancelar(USER_CORREO, 1L));
     }
 
     @Test
     void transferir_exitosa_retornaOk() {
         TransferenciaRequestDTO dto = new TransferenciaRequestDTO();
         dto.setCorreoDestino("destino@test.com");
-        when(entradaService.transferirEntrada(1L, dto, "user@test.com")).thenReturn(responseDTO("PAGADA"));
+        when(entradaService.transferirEntrada(1L, dto, USER_CORREO)).thenReturn(responseDTO(PAGADA));
 
-        ResponseEntity<EntradaResponseDTO> res = controller.transferir("user@test.com", 1L, dto);
+        ResponseEntity<EntradaResponseDTO> res = controller.transferir(USER_CORREO, 1L, dto);
 
         assertEquals(200, res.getStatusCode().value());
-        verify(entradaService).transferirEntrada(1L, dto, "user@test.com");
+        verify(entradaService).transferirEntrada(1L, dto, USER_CORREO);
     }
 
     @Test
@@ -182,7 +185,7 @@ class EntradaRestControllerTest {
         when(entradaService.transferirEntrada(any(), any(), any()))
                 .thenThrow(new EstadoInvalidoException("no pagada"));
 
-        assertThrows(EstadoInvalidoException.class, () -> controller.transferir("user@test.com", 1L, dto));
+        assertThrows(EstadoInvalidoException.class, () -> controller.transferir(USER_CORREO, 1L, dto));
     }
 
     @Test
@@ -192,18 +195,18 @@ class EntradaRestControllerTest {
         when(entradaService.transferirEntrada(any(), any(), any()))
                 .thenThrow(new LimiteSuperadoException("limite diario"));
 
-        assertThrows(LimiteSuperadoException.class, () -> controller.transferir("user@test.com", 1L, dto));
+        assertThrows(LimiteSuperadoException.class, () -> controller.transferir(USER_CORREO, 1L, dto));
     }
 
     @Test
     void reembolsar_exitoso_retornaOk() {
-        when(entradaService.reembolsarEntrada("user@test.com", 1L)).thenReturn(responseDTO("REEMBOLSADA"));
+        when(entradaService.reembolsarEntrada(USER_CORREO, 1L)).thenReturn(responseDTO("REEMBOLSADA"));
 
-        ResponseEntity<EntradaResponseDTO> res = controller.reembolsar("user@test.com", 1L);
+        ResponseEntity<EntradaResponseDTO> res = controller.reembolsar(USER_CORREO, 1L);
 
         assertEquals(200, res.getStatusCode().value());
         assertEquals("REEMBOLSADA", res.getBody().getEstado());
-        verify(entradaService).reembolsarEntrada("user@test.com", 1L);
+        verify(entradaService).reembolsarEntrada(USER_CORREO, 1L);
     }
 
     @Test
@@ -211,7 +214,7 @@ class EntradaRestControllerTest {
         when(entradaService.reembolsarEntrada(any(), any()))
                 .thenThrow(new EstadoInvalidoException("no pagada"));
 
-        assertThrows(EstadoInvalidoException.class, () -> controller.reembolsar("user@test.com", 1L));
+        assertThrows(EstadoInvalidoException.class, () -> controller.reembolsar(USER_CORREO, 1L));
     }
 
     @Test
@@ -219,7 +222,7 @@ class EntradaRestControllerTest {
         when(entradaService.reembolsarEntrada(any(), any()))
                 .thenThrow(new PagoStripeException("stripe error"));
 
-        assertThrows(PagoStripeException.class, () -> controller.reembolsar("user@test.com", 1L));
+        assertThrows(PagoStripeException.class, () -> controller.reembolsar(USER_CORREO, 1L));
     }
 
     @Test
@@ -227,15 +230,15 @@ class EntradaRestControllerTest {
         when(entradaService.reembolsarEntrada(any(), any()))
                 .thenThrow(new EstadoInvalidoException("no pertenece"));
 
-        assertThrows(EstadoInvalidoException.class, () -> controller.reembolsar("user@test.com", 1L));
+        assertThrows(EstadoInvalidoException.class, () -> controller.reembolsar(USER_CORREO, 1L));
     }
 
     @Test
     void listar_retornaOkConEntradas() {
-        when(entradaService.listarEntradasUsuario("user@test.com"))
-                .thenReturn(List.of(responseDTO("PAGADA"), responseDTO("RESERVADA")));
+        when(entradaService.listarEntradasUsuario(USER_CORREO))
+                .thenReturn(List.of(responseDTO(PAGADA), responseDTO("RESERVADA")));
 
-        ResponseEntity<List<EntradaResponseDTO>> res = controller.listar("user@test.com");
+        ResponseEntity<List<EntradaResponseDTO>> res = controller.listar(USER_CORREO);
 
         assertEquals(200, res.getStatusCode().value());
         assertEquals(2, res.getBody().size());
@@ -243,9 +246,9 @@ class EntradaRestControllerTest {
 
     @Test
     void listar_sinEntradas_retornaOkVacio() {
-        when(entradaService.listarEntradasUsuario("user@test.com")).thenReturn(List.of());
+        when(entradaService.listarEntradasUsuario(USER_CORREO)).thenReturn(List.of());
 
-        ResponseEntity<List<EntradaResponseDTO>> res = controller.listar("user@test.com");
+        ResponseEntity<List<EntradaResponseDTO>> res = controller.listar(USER_CORREO);
 
         assertEquals(200, res.getStatusCode().value());
         assertTrue(res.getBody().isEmpty());

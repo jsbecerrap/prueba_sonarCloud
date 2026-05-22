@@ -81,20 +81,25 @@ class ApuestaServiceImplTest {
     private Apuesta apuesta;
     private Partido partido;
     private Participacion participacion;
-
+    private static final String CORREO_TEST = "test@test.com";
+private static final String LOCAL = "LOCAL";
+private static final String CERRADA = "CERRADA";
+private static final String ABIERTA = "ABIERTA";
+private static final String POLLA_TEST = "Polla Test";
+private static final String CODIGO = "CODE-001";
     @BeforeEach
     void setUp() {
         usuario = new Usuario();
         usuario.setId(1L);
-        usuario.setCorreoUsuario("test@test.com");
+        usuario.setCorreoUsuario(CORREO_TEST);
         usuario.setNombre("Juan");
         usuario.setApellido("Perez");
 
         apuesta = new Apuesta();
         apuesta.setId(10L);
-        apuesta.setNombre("Polla Test");
-        apuesta.setEstado("ABIERTA");
-        apuesta.setCodigoInvitacion("CODE-001");
+        apuesta.setNombre(POLLA_TEST);
+        apuesta.setEstado(ABIERTA);
+        apuesta.setCodigoInvitacion(CODIGO);
         apuesta.setFechaCierre(LocalDateTime.now().plusDays(10));
         apuesta.setCreadaPor(usuario);
 
@@ -133,7 +138,7 @@ class ApuestaServiceImplTest {
 
             assertNotNull(resultado);
             assertEquals("Mi Polla", resultado.getNombre());
-            assertEquals("ABIERTA", resultado.getEstado());
+            assertEquals(ABIERTA, resultado.getEstado());
             verify(participacionRepository).save(any(Participacion.class));
             verify(auditoriaService).registrar(eq("APUESTA_CREADA"), anyString(), eq(1L), anyString(), eq("Apuesta"));
         }
@@ -177,7 +182,7 @@ class ApuestaServiceImplTest {
             dto.setUsuarioId(1L);
             dto.setApuestaId(10L);
             dto.setPartidoId(100L);
-            dto.setResultadoPronosticado("LOCAL");
+            dto.setResultadoPronosticado(LOCAL);
             dto.setGolesLocalPronosticados(2);
             dto.setGolesVisitantePronosticados(1);
 
@@ -195,7 +200,7 @@ class ApuestaServiceImplTest {
             PronosticoDTO resultado = apuestaService.registrarPronostico(dto);
 
             assertNotNull(resultado);
-            assertEquals("LOCAL", resultado.getResultadoPronosticado());
+            assertEquals(LOCAL, resultado.getResultadoPronosticado());
             verify(auditoriaService).registrar(eq("PRONOSTICO_REGISTRADO"), anyString(), eq(1L), anyString(),
                     eq("Pronostico"));
         }
@@ -214,7 +219,7 @@ class ApuestaServiceImplTest {
 
         @Test
         void cuandoApuestaCerrada_lanzaApuestaCerradaException() {
-            apuesta.setEstado("CERRADA");
+            apuesta.setEstado(CERRADA);
 
             PronosticoRequestDTO dto = new PronosticoRequestDTO();
             dto.setUsuarioId(1L);
@@ -268,16 +273,16 @@ class ApuestaServiceImplTest {
         @Test
         void cuandoCodigoValidoYUsuarioNoEsta_seUne() {
             when(usuarioService.obtenerEntidadPorId(1L)).thenReturn(usuario);
-            when(apuestaRepository.findByCodigoInvitacion("CODE-001")).thenReturn(Optional.of(apuesta));
+            when(apuestaRepository.findByCodigoInvitacion(CODIGO)).thenReturn(Optional.of(apuesta));
             when(participacionRepository.findByUsuarioIdAndApuestaId(1L, 10L))
                     .thenReturn(Optional.empty());
 
-            ApuestaDTO resultado = apuestaService.unirseApuesta("CODE-001", 1L);
+            ApuestaDTO resultado = apuestaService.unirseApuesta(CODIGO, 1L);
 
             assertNotNull(resultado);
-            assertEquals("Polla Test", resultado.getNombre());
+            assertEquals(POLLA_TEST, resultado.getNombre());
             verify(participacionRepository).save(any(Participacion.class));
-           verify(notificacionService).notificarApuestaUnirse(usuario, usuario, "Polla Test");
+           verify(notificacionService).notificarApuestaUnirse(usuario, usuario, POLLA_TEST);
             verify(auditoriaService).registrar(eq("APUESTA_UNIRSE"), anyString(), eq(1L), anyString(), eq("Apuesta"));
         }
 
@@ -293,12 +298,12 @@ class ApuestaServiceImplTest {
         @Test
         void cuandoUsuarioYaEstaEnLaApuesta_lanzaUsuarioYaEnApuestaException() {
             when(usuarioService.obtenerEntidadPorId(1L)).thenReturn(usuario);
-            when(apuestaRepository.findByCodigoInvitacion("CODE-001")).thenReturn(Optional.of(apuesta));
+            when(apuestaRepository.findByCodigoInvitacion(CODIGO)).thenReturn(Optional.of(apuesta));
             when(participacionRepository.findByUsuarioIdAndApuestaId(1L, 10L))
                     .thenReturn(Optional.of(participacion));
 
             assertThrows(UsuarioYaEnApuestaException.class,
-                    () -> apuestaService.unirseApuesta("CODE-001", 1L));
+                    () -> apuestaService.unirseApuesta(CODIGO, 1L));
         }
     }
 
@@ -318,7 +323,7 @@ class ApuestaServiceImplTest {
             when(pronosticoRepository.findById(500L)).thenReturn(Optional.of(pronostico));
             when(pronosticoRepository.save(any(Pronostico.class))).thenReturn(pronostico);
 
-            PronosticoDTO resultado = apuestaService.editarPronostico(500L, dto, "test@test.com");
+            PronosticoDTO resultado = apuestaService.editarPronostico(500L, dto, CORREO_TEST);
 
             assertNotNull(resultado);
             assertEquals(0, pronostico.getGolesLocalPronosticados());
@@ -338,9 +343,9 @@ class ApuestaServiceImplTest {
             when(pronosticoRepository.findById(500L)).thenReturn(Optional.of(pronostico));
             when(pronosticoRepository.save(any(Pronostico.class))).thenReturn(pronostico);
 
-            apuestaService.editarPronostico(500L, dto, "test@test.com");
+            apuestaService.editarPronostico(500L, dto, CORREO_TEST);
 
-            assertEquals("LOCAL", pronostico.getResultadoPronosticado());
+            assertEquals(LOCAL, pronostico.getResultadoPronosticado());
         }
 
         @Test
@@ -349,7 +354,7 @@ class ApuestaServiceImplTest {
             when(pronosticoRepository.findById(999L)).thenReturn(Optional.empty());
 
             assertThrows(PronosticoNotFoundException.class,
-                    () -> apuestaService.editarPronostico(999L, dto, "test@test.com"));
+                    () -> apuestaService.editarPronostico(999L, dto, CORREO_TEST));
         }
 
         @Test
@@ -367,14 +372,14 @@ class ApuestaServiceImplTest {
         @Test
         void cuandoApuestaCerrada_lanzaApuestaCerradaException() {
             Pronostico pronostico = construirPronostico();
-            apuesta.setEstado("CERRADA");
+            apuesta.setEstado(CERRADA);
 
             PronosticoRequestDTO dto = new PronosticoRequestDTO();
 
             when(pronosticoRepository.findById(500L)).thenReturn(Optional.of(pronostico));
 
             assertThrows(ApuestaCerradaException.class,
-                    () -> apuestaService.editarPronostico(500L, dto, "test@test.com"));
+                    () -> apuestaService.editarPronostico(500L, dto, CORREO_TEST));
         }
     }
 
@@ -387,7 +392,7 @@ class ApuestaServiceImplTest {
             Pronostico pronostico = construirPronostico();
             when(pronosticoRepository.findById(500L)).thenReturn(Optional.of(pronostico));
 
-            apuestaService.eliminarPronostico(500L, "test@test.com");
+            apuestaService.eliminarPronostico(500L, CORREO_TEST);
 
             verify(pronosticoRepository).delete(pronostico);
             verify(auditoriaService).registrar(eq("PRONOSTICO_ELIMINADO"), anyString(), eq(1L), anyString(),
@@ -399,7 +404,7 @@ class ApuestaServiceImplTest {
             when(pronosticoRepository.findById(999L)).thenReturn(Optional.empty());
 
             assertThrows(PronosticoNotFoundException.class,
-                    () -> apuestaService.eliminarPronostico(999L, "test@test.com"));
+                    () -> apuestaService.eliminarPronostico(999L, CORREO_TEST));
         }
 
         @Test
@@ -414,11 +419,11 @@ class ApuestaServiceImplTest {
         @Test
         void cuandoApuestaCerrada_lanzaApuestaCerradaException() {
             Pronostico pronostico = construirPronostico();
-            apuesta.setEstado("CERRADA");
+            apuesta.setEstado(CERRADA);
             when(pronosticoRepository.findById(500L)).thenReturn(Optional.of(pronostico));
 
             assertThrows(ApuestaCerradaException.class,
-                    () -> apuestaService.eliminarPronostico(500L, "test@test.com"));
+                    () -> apuestaService.eliminarPronostico(500L, CORREO_TEST));
         }
     }
 
@@ -461,7 +466,7 @@ class ApuestaServiceImplTest {
 
         @Test
         void cuandoAciertaResultadoExacto_otorga6Puntos() {
-            apuesta.setEstado("CERRADA");
+            apuesta.setEstado(CERRADA);
             partido.setGolesLocal(2);
             partido.setGolesVisitante(1);
             partido.setFecha(LocalDateTime.now().minusDays(1));
@@ -471,7 +476,7 @@ class ApuestaServiceImplTest {
             pronostico.setApuesta(apuesta);
             pronostico.setUsuario(usuario);
             pronostico.setPartido(partido);
-            pronostico.setResultadoPronosticado("LOCAL");
+            pronostico.setResultadoPronosticado(LOCAL);
             pronostico.setGolesLocalPronosticados(2);
             pronostico.setGolesVisitantePronosticados(1);
             pronostico.setPuntosObtenidos(0);
@@ -496,7 +501,7 @@ class ApuestaServiceImplTest {
 
         @Test
         void cuandoSoloAciertaResultado_otorga2Puntos() {
-            apuesta.setEstado("CERRADA");
+            apuesta.setEstado(CERRADA);
             partido.setGolesLocal(3);
             partido.setGolesVisitante(0);
             partido.setFecha(LocalDateTime.now().minusDays(1));
@@ -506,7 +511,7 @@ class ApuestaServiceImplTest {
             pronostico.setApuesta(apuesta);
             pronostico.setUsuario(usuario);
             pronostico.setPartido(partido);
-            pronostico.setResultadoPronosticado("LOCAL");
+            pronostico.setResultadoPronosticado(LOCAL);
             pronostico.setGolesLocalPronosticados(1);
             pronostico.setGolesVisitantePronosticados(0);
             pronostico.setPuntosObtenidos(0);
@@ -526,7 +531,7 @@ class ApuestaServiceImplTest {
 
         @Test
         void cuandoSoloAciertaTotalGoles_otorga1Punto() {
-            apuesta.setEstado("CERRADA");
+            apuesta.setEstado(CERRADA);
             partido.setGolesLocal(2);
             partido.setGolesVisitante(2);
             partido.setFecha(LocalDateTime.now().minusDays(1));
@@ -536,7 +541,7 @@ class ApuestaServiceImplTest {
             pronostico.setApuesta(apuesta);
             pronostico.setUsuario(usuario);
             pronostico.setPartido(partido);
-            pronostico.setResultadoPronosticado("LOCAL");
+            pronostico.setResultadoPronosticado(LOCAL);
             pronostico.setGolesLocalPronosticados(3);
             pronostico.setGolesVisitantePronosticados(1);
             pronostico.setPuntosObtenidos(0);
@@ -556,7 +561,7 @@ class ApuestaServiceImplTest {
 
         @Test
         void cuandoPartidoVisitanteGana_resultadoEsVisitante() {
-            apuesta.setEstado("CERRADA");
+            apuesta.setEstado(CERRADA);
             partido.setGolesLocal(0);
             partido.setGolesVisitante(2);
             partido.setFecha(LocalDateTime.now().minusDays(1));
@@ -586,7 +591,7 @@ class ApuestaServiceImplTest {
 
         @Test
         void cuandoPartidoEmpate_resultadoEsEmpate() {
-            apuesta.setEstado("CERRADA");
+            apuesta.setEstado(CERRADA);
             partido.setGolesLocal(1);
             partido.setGolesVisitante(1);
             partido.setFecha(LocalDateTime.now().minusDays(1));
@@ -616,7 +621,7 @@ class ApuestaServiceImplTest {
 
         @Test
         void cuandoPartidoSinGoles_omitePronostico() {
-            apuesta.setEstado("CERRADA");
+            apuesta.setEstado(CERRADA);
             partido.setGolesLocal(null);
             partido.setGolesVisitante(null);
             partido.setFecha(LocalDateTime.now().minusDays(1));
@@ -626,7 +631,7 @@ class ApuestaServiceImplTest {
             pronostico.setApuesta(apuesta);
             pronostico.setUsuario(usuario);
             pronostico.setPartido(partido);
-            pronostico.setResultadoPronosticado("LOCAL");
+            pronostico.setResultadoPronosticado(LOCAL);
             pronostico.setGolesLocalPronosticados(2);
             pronostico.setGolesVisitantePronosticados(1);
             pronostico.setPuntosObtenidos(0);
@@ -645,7 +650,7 @@ class ApuestaServiceImplTest {
 
         @Test
         void cuandoParticipacionNoExiste_lanzaParticipacionNotFoundException() {
-            apuesta.setEstado("CERRADA");
+            apuesta.setEstado(CERRADA);
             partido.setGolesLocal(2);
             partido.setGolesVisitante(1);
             partido.setFecha(LocalDateTime.now().minusDays(1));
@@ -655,7 +660,7 @@ class ApuestaServiceImplTest {
             pronostico.setApuesta(apuesta);
             pronostico.setUsuario(usuario);
             pronostico.setPartido(partido);
-            pronostico.setResultadoPronosticado("LOCAL");
+            pronostico.setResultadoPronosticado(LOCAL);
             pronostico.setGolesLocalPronosticados(2);
             pronostico.setGolesVisitantePronosticados(1);
             pronostico.setPuntosObtenidos(0);
@@ -682,8 +687,8 @@ class ApuestaServiceImplTest {
 
             ApuestaDTO resultado = apuestaService.cerrarApuesta(10L);
 
-            assertEquals("CERRADA", resultado.getEstado());
-            assertEquals("CERRADA", apuesta.getEstado());
+            assertEquals(CERRADA, resultado.getEstado());
+            assertEquals(CERRADA, apuesta.getEstado());
         }
 
         @Test
@@ -695,7 +700,7 @@ class ApuestaServiceImplTest {
 
         @Test
         void cuandoYaCerrada_lanzaApuestaCerradaException() {
-            apuesta.setEstado("CERRADA");
+            apuesta.setEstado(CERRADA);
             when(apuestaRepository.findById(10L)).thenReturn(Optional.of(apuesta));
 
             assertThrows(ApuestaCerradaException.class, () -> apuestaService.cerrarApuesta(10L));
@@ -713,7 +718,7 @@ class ApuestaServiceImplTest {
             ApuestaDTO resultado = apuestaService.obtenerApuesta(10L);
 
             assertEquals(10L, resultado.getId());
-            assertEquals("Polla Test", resultado.getNombre());
+            assertEquals(POLLA_TEST, resultado.getNombre());
         }
 
         @Test
@@ -749,7 +754,7 @@ class ApuestaServiceImplTest {
             List<ApuestaDTO> resultado = apuestaService.listarApuestasPorUsuario(1L);
 
             assertEquals(1, resultado.size());
-            assertEquals("Polla Test", resultado.get(0).getNombre());
+            assertEquals(POLLA_TEST, resultado.get(0).getNombre());
         }
 
         @Test
@@ -792,9 +797,9 @@ class ApuestaServiceImplTest {
 
         @Test
         void cuandoHayApuestasCerradasSinCalcular_lasCalcula() {
-            apuesta.setEstado("CERRADA");
+            apuesta.setEstado(CERRADA);
 
-            when(apuestaRepository.findByEstadoAndPuntosCalculadosFalse("CERRADA"))
+            when(apuestaRepository.findByEstadoAndPuntosCalculadosFalse(CERRADA))
                     .thenReturn(List.of(apuesta));
             when(apuestaRepository.findById(10L)).thenReturn(Optional.of(apuesta));
             when(participacionRepository.findByApuestaId(10L)).thenReturn(Collections.emptyList());
@@ -809,7 +814,7 @@ class ApuestaServiceImplTest {
 
         @Test
         void cuandoNoHayApuestas_noHaceNada() {
-            when(apuestaRepository.findByEstadoAndPuntosCalculadosFalse("CERRADA"))
+            when(apuestaRepository.findByEstadoAndPuntosCalculadosFalse(CERRADA))
                     .thenReturn(Collections.emptyList());
 
             apuestaService.calcularPuntosAutomatico();
@@ -824,19 +829,19 @@ class ApuestaServiceImplTest {
 
         @Test
         void cuandoHayVencidas_lasCierra() {
-            when(apuestaRepository.findByEstadoAndFechaCierreBefore(eq("ABIERTA"), any(LocalDateTime.class)))
+            when(apuestaRepository.findByEstadoAndFechaCierreBefore(eq(ABIERTA), any(LocalDateTime.class)))
                     .thenReturn(List.of(apuesta));
             when(apuestaRepository.findById(10L)).thenReturn(Optional.of(apuesta));
             when(apuestaRepository.save(any(Apuesta.class))).thenReturn(apuesta);
 
             apuestaService.cerrarApuestasVencidas();
 
-            assertEquals("CERRADA", apuesta.getEstado());
+            assertEquals(CERRADA, apuesta.getEstado());
         }
 
         @Test
         void cuandoNoHayVencidas_noHaceNada() {
-            when(apuestaRepository.findByEstadoAndFechaCierreBefore(eq("ABIERTA"), any(LocalDateTime.class)))
+            when(apuestaRepository.findByEstadoAndFechaCierreBefore(eq(ABIERTA), any(LocalDateTime.class)))
                     .thenReturn(Collections.emptyList());
 
             apuestaService.cerrarApuestasVencidas();
@@ -882,7 +887,7 @@ class ApuestaServiceImplTest {
             pronostico.setApuesta(apuesta);
             pronostico.setUsuario(usuario);
             pronostico.setPartido(partido);
-            pronostico.setResultadoPronosticado("LOCAL");
+            pronostico.setResultadoPronosticado(LOCAL);
             pronostico.setGolesLocalPronosticados(2);
             pronostico.setGolesVisitantePronosticados(1);
             pronostico.setPuntosObtenidos(0);
@@ -955,7 +960,7 @@ class ApuestaServiceImplTest {
             pronostico.setApuesta(apuesta);
             pronostico.setUsuario(usuario);
             pronostico.setPartido(partido);
-            pronostico.setResultadoPronosticado("LOCAL");
+            pronostico.setResultadoPronosticado(LOCAL);
             pronostico.setGolesLocalPronosticados(2);
             pronostico.setGolesVisitantePronosticados(1);
             pronostico.setPuntosObtenidos(0);
@@ -981,7 +986,7 @@ class ApuestaServiceImplTest {
             List<ApuestaDTO> resultado = apuestaService.listarTodas();
 
             assertEquals(1, resultado.size());
-            assertEquals("Polla Test", resultado.get(0).getNombre());
+            assertEquals(POLLA_TEST, resultado.get(0).getNombre());
         }
 
         @Test
@@ -1033,7 +1038,7 @@ class ApuestaServiceImplTest {
                     apuestaService.listarApuestasPorUsuarioCompleto(1L);
 
             assertEquals(1, resultado.size());
-            assertEquals("Polla Test", resultado.get(0).getNombre());
+            assertEquals(POLLA_TEST, resultado.get(0).getNombre());
         }
 
         @Test
@@ -1056,7 +1061,7 @@ class ApuestaServiceImplTest {
         p.setApuesta(apuesta);
         p.setUsuario(usuario);
         p.setPartido(partido);
-        p.setResultadoPronosticado("LOCAL");
+        p.setResultadoPronosticado(LOCAL);
         p.setGolesLocalPronosticados(2);
         p.setGolesVisitantePronosticados(1);
         p.setPuntosObtenidos(0);

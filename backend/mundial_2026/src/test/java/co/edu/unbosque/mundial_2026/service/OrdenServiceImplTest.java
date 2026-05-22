@@ -36,6 +36,9 @@ class OrdenServiceImplTest {
     @Mock private EventoAuditoriaService auditoriaService;
     @Mock private NotificacionService notificacionService;
 
+    private static final String PENDIENTE = "PENDIENTE";
+private static final String PAGADA = "PAGADA";
+private static final String CORREO_USER1 = "user1@test.com";
     private OrdenServiceImpl service;
 
     @BeforeEach
@@ -119,19 +122,19 @@ class OrdenServiceImplTest {
         Usuario usuario = crearUsuario(1L);
         Producto producto = crearProducto(1L, true);
         VarianteProducto variante = crearVariante(1L, producto, 10);
-        Orden ordenNueva = crearOrden(1L, "PENDIENTE", usuario);
+        Orden ordenNueva = crearOrden(1L, PENDIENTE, usuario);
         ItemOrden item = crearItem(1L, ordenNueva, producto, variante, 2);
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
         when(varianteRepository.findByIdWithProductoYCategoria(1L)).thenReturn(Optional.of(variante));
-        when(ordenRepository.findByUsuarioIdAndEstado(1L, "PENDIENTE")).thenReturn(Optional.empty());
+        when(ordenRepository.findByUsuarioIdAndEstado(1L, PENDIENTE)).thenReturn(Optional.empty());
         when(ordenRepository.save(any(Orden.class))).thenReturn(ordenNueva);
         when(itemOrdenRepository.findByOrdenIdAndProductoIdAndVarianteId(1L, 1L, 1L)).thenReturn(Optional.empty());
         when(itemOrdenRepository.save(any(ItemOrden.class))).thenReturn(item);
         when(itemOrdenRepository.findByOrdenIdConDetalles(1L)).thenReturn(List.of(item));
         doNothing().when(auditoriaService).registrar(any(), any(), any(), any(), any());
 
-        OrdenResponseDTO resultado = service.agregarItem("user1@test.com", crearAgregarItemDTO(1L, 1L, 2));
+        OrdenResponseDTO resultado = service.agregarItem(CORREO_USER1, crearAgregarItemDTO(1L, 1L, 2));
 
         assertNotNull(resultado);
         verify(itemOrdenRepository).save(any(ItemOrden.class));
@@ -142,18 +145,18 @@ class OrdenServiceImplTest {
         Usuario usuario = crearUsuario(1L);
         Producto producto = crearProducto(1L, true);
         VarianteProducto variante = crearVariante(1L, producto, 10);
-        Orden orden = crearOrden(1L, "PENDIENTE", usuario);
+        Orden orden = crearOrden(1L, PENDIENTE, usuario);
         ItemOrden itemExistente = crearItem(1L, orden, producto, variante, 1);
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
         when(varianteRepository.findByIdWithProductoYCategoria(1L)).thenReturn(Optional.of(variante));
-        when(ordenRepository.findByUsuarioIdAndEstado(1L, "PENDIENTE")).thenReturn(Optional.of(orden));
+        when(ordenRepository.findByUsuarioIdAndEstado(1L, PENDIENTE)).thenReturn(Optional.of(orden));
         when(itemOrdenRepository.findByOrdenIdAndProductoIdAndVarianteId(1L, 1L, 1L)).thenReturn(Optional.of(itemExistente));
         when(itemOrdenRepository.save(any(ItemOrden.class))).thenReturn(itemExistente);
         when(itemOrdenRepository.findByOrdenIdConDetalles(1L)).thenReturn(List.of(itemExistente));
         doNothing().when(auditoriaService).registrar(any(), any(), any(), any(), any());
 
-        service.agregarItem("user1@test.com", crearAgregarItemDTO(1L, 1L, 2));
+        service.agregarItem(CORREO_USER1, crearAgregarItemDTO(1L, 1L, 2));
 
         assertEquals(3, itemExistente.getCantidad());
     }
@@ -162,11 +165,11 @@ class OrdenServiceImplTest {
     void agregarItem_varianteNoEncontrada_lanzaExcepcion() {
         Usuario usuario = crearUsuario(1L);
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
         when(varianteRepository.findByIdWithProductoYCategoria(99L)).thenReturn(Optional.empty());
 
         assertThrows(ProductoNotFoundException.class,
-                () -> service.agregarItem("user1@test.com", crearAgregarItemDTO(1L, 99L, 1)));
+                () -> service.agregarItem(CORREO_USER1, crearAgregarItemDTO(1L, 99L, 1)));
     }
 
     @Test
@@ -175,11 +178,11 @@ class OrdenServiceImplTest {
         Producto producto = crearProducto(2L, true);
         VarianteProducto variante = crearVariante(1L, producto, 10);
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
         when(varianteRepository.findByIdWithProductoYCategoria(1L)).thenReturn(Optional.of(variante));
 
         assertThrows(ProductoNotFoundException.class,
-                () -> service.agregarItem("user1@test.com", crearAgregarItemDTO(1L, 1L, 1)));
+                () -> service.agregarItem(CORREO_USER1, crearAgregarItemDTO(1L, 1L, 1)));
     }
 
     @Test
@@ -188,11 +191,11 @@ class OrdenServiceImplTest {
         Producto producto = crearProducto(1L, true);
         VarianteProducto variante = crearVariante(1L, producto, 1);
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
         when(varianteRepository.findByIdWithProductoYCategoria(1L)).thenReturn(Optional.of(variante));
 
         assertThrows(StockInsuficienteException.class,
-                () -> service.agregarItem("user1@test.com", crearAgregarItemDTO(1L, 1L, 5)));
+                () -> service.agregarItem(CORREO_USER1, crearAgregarItemDTO(1L, 1L, 5)));
     }
 
     @Test
@@ -201,11 +204,11 @@ class OrdenServiceImplTest {
         Producto producto = crearProducto(1L, false);
         VarianteProducto variante = crearVariante(1L, producto, 10);
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
         when(varianteRepository.findByIdWithProductoYCategoria(1L)).thenReturn(Optional.of(variante));
 
         assertThrows(ProductoNotFoundException.class,
-                () -> service.agregarItem("user1@test.com", crearAgregarItemDTO(1L, 1L, 1)));
+                () -> service.agregarItem(CORREO_USER1, crearAgregarItemDTO(1L, 1L, 1)));
     }
 
     @Test
@@ -214,19 +217,19 @@ class OrdenServiceImplTest {
         Producto producto = crearProducto(1L, true);
         VarianteProducto variante = crearVariante(1L, producto, 10);
         variante.setEspecificacion(null);
-        Orden ordenNueva = crearOrden(1L, "PENDIENTE", usuario);
+        Orden ordenNueva = crearOrden(1L, PENDIENTE, usuario);
         ItemOrden item = crearItem(1L, ordenNueva, producto, variante, 1);
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
         when(varianteRepository.findByIdWithProductoYCategoria(1L)).thenReturn(Optional.of(variante));
-        when(ordenRepository.findByUsuarioIdAndEstado(1L, "PENDIENTE")).thenReturn(Optional.empty());
+        when(ordenRepository.findByUsuarioIdAndEstado(1L, PENDIENTE)).thenReturn(Optional.empty());
         when(ordenRepository.save(any(Orden.class))).thenReturn(ordenNueva);
         when(itemOrdenRepository.findByOrdenIdAndProductoIdAndVarianteId(1L, 1L, 1L)).thenReturn(Optional.empty());
         when(itemOrdenRepository.save(any(ItemOrden.class))).thenReturn(item);
         when(itemOrdenRepository.findByOrdenIdConDetalles(1L)).thenReturn(List.of(item));
         doNothing().when(auditoriaService).registrar(any(), any(), any(), any(), any());
 
-        OrdenResponseDTO resultado = service.agregarItem("user1@test.com", crearAgregarItemDTO(1L, 1L, 1));
+        OrdenResponseDTO resultado = service.agregarItem(CORREO_USER1, crearAgregarItemDTO(1L, 1L, 1));
 
         assertNotNull(resultado);
     }
@@ -236,17 +239,17 @@ class OrdenServiceImplTest {
         Usuario usuario = crearUsuario(1L);
         Producto producto = crearProducto(1L, true);
         VarianteProducto variante = crearVariante(1L, producto, 10);
-        Orden orden = crearOrden(1L, "PENDIENTE", usuario);
+        Orden orden = crearOrden(1L, PENDIENTE, usuario);
         ItemOrden item = crearItem(1L, orden, producto, variante, 2);
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
-        when(ordenRepository.findByUsuarioIdAndEstado(1L, "PENDIENTE")).thenReturn(Optional.of(orden));
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
+        when(ordenRepository.findByUsuarioIdAndEstado(1L, PENDIENTE)).thenReturn(Optional.of(orden));
         when(itemOrdenRepository.findByOrdenIdConDetalles(1L)).thenReturn(List.of(item));
 
-        OrdenResponseDTO resultado = service.obtenerCarrito("user1@test.com");
+        OrdenResponseDTO resultado = service.obtenerCarrito(CORREO_USER1);
 
         assertNotNull(resultado);
-        assertEquals("PENDIENTE", resultado.getEstado());
+        assertEquals(PENDIENTE, resultado.getEstado());
         assertEquals(1, resultado.getItems().size());
     }
 
@@ -254,25 +257,25 @@ class OrdenServiceImplTest {
     void obtenerCarrito_sinCarrito_lanzaExcepcion() {
         Usuario usuario = crearUsuario(1L);
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
-        when(ordenRepository.findByUsuarioIdAndEstado(1L, "PENDIENTE")).thenReturn(Optional.empty());
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
+        when(ordenRepository.findByUsuarioIdAndEstado(1L, PENDIENTE)).thenReturn(Optional.empty());
 
-        assertThrows(OrdenNotFoundException.class, () -> service.obtenerCarrito("user1@test.com"));
+        assertThrows(OrdenNotFoundException.class, () -> service.obtenerCarrito(CORREO_USER1));
     }
 
     @Test
     void obtenerCarrito_conMetodoPago_mapeaLabelCorrectamente() {
         Usuario usuario = crearUsuario(1L);
-        Orden orden = crearOrden(1L, "PENDIENTE", usuario);
+        Orden orden = crearOrden(1L, PENDIENTE, usuario);
         MetodoPago metodoPago = new MetodoPago();
         metodoPago.setLabel("Visa *4242");
         orden.setMetodoPago(metodoPago);
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
-        when(ordenRepository.findByUsuarioIdAndEstado(1L, "PENDIENTE")).thenReturn(Optional.of(orden));
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
+        when(ordenRepository.findByUsuarioIdAndEstado(1L, PENDIENTE)).thenReturn(Optional.of(orden));
         when(itemOrdenRepository.findByOrdenIdConDetalles(1L)).thenReturn(List.of());
 
-        OrdenResponseDTO resultado = service.obtenerCarrito("user1@test.com");
+        OrdenResponseDTO resultado = service.obtenerCarrito(CORREO_USER1);
 
         assertEquals("Visa *4242", resultado.getMetodoPagoLabel());
     }
@@ -282,18 +285,18 @@ class OrdenServiceImplTest {
         Usuario usuario = crearUsuario(1L);
         Producto producto = crearProducto(1L, true);
         VarianteProducto variante = crearVariante(1L, producto, 10);
-        Orden orden = crearOrden(1L, "PENDIENTE", usuario);
+        Orden orden = crearOrden(1L, PENDIENTE, usuario);
         orden.setTotal(150.0);
         ItemOrden itemAEliminar = crearItem(1L, orden, producto, variante, 2);
         ItemOrden itemRestante = crearItem(2L, orden, producto, variante, 1);
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
-        when(ordenRepository.findByUsuarioIdAndEstado(1L, "PENDIENTE")).thenReturn(Optional.of(orden));
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
+        when(ordenRepository.findByUsuarioIdAndEstado(1L, PENDIENTE)).thenReturn(Optional.of(orden));
         when(itemOrdenRepository.findById(1L)).thenReturn(Optional.of(itemAEliminar));
         when(itemOrdenRepository.findByOrdenIdConDetalles(1L)).thenReturn(List.of(itemRestante));
         when(ordenRepository.save(any(Orden.class))).thenReturn(orden);
 
-        OrdenResponseDTO resultado = service.eliminarItem("user1@test.com", 1L);
+        OrdenResponseDTO resultado = service.eliminarItem(CORREO_USER1, 1L);
 
         assertNotNull(resultado);
         verify(itemOrdenRepository).delete(itemAEliminar);
@@ -305,16 +308,16 @@ class OrdenServiceImplTest {
         Usuario usuario = crearUsuario(1L);
         Producto producto = crearProducto(1L, true);
         VarianteProducto variante = crearVariante(1L, producto, 10);
-        Orden orden = crearOrden(1L, "PENDIENTE", usuario);
+        Orden orden = crearOrden(1L, PENDIENTE, usuario);
         orden.setTotal(50.0);
         ItemOrden item = crearItem(1L, orden, producto, variante, 1);
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
-        when(ordenRepository.findByUsuarioIdAndEstado(1L, "PENDIENTE")).thenReturn(Optional.of(orden));
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
+        when(ordenRepository.findByUsuarioIdAndEstado(1L, PENDIENTE)).thenReturn(Optional.of(orden));
         when(itemOrdenRepository.findById(1L)).thenReturn(Optional.of(item));
         when(itemOrdenRepository.findByOrdenIdConDetalles(1L)).thenReturn(List.of());
 
-        service.eliminarItem("user1@test.com", 1L);
+        service.eliminarItem(CORREO_USER1, 1L);
 
         verify(ordenRepository).delete(orden);
         verify(ordenRepository, never()).save(any());
@@ -324,22 +327,22 @@ class OrdenServiceImplTest {
     void eliminarItem_sinCarrito_lanzaExcepcion() {
         Usuario usuario = crearUsuario(1L);
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
-        when(ordenRepository.findByUsuarioIdAndEstado(1L, "PENDIENTE")).thenReturn(Optional.empty());
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
+        when(ordenRepository.findByUsuarioIdAndEstado(1L, PENDIENTE)).thenReturn(Optional.empty());
 
-        assertThrows(OrdenNotFoundException.class, () -> service.eliminarItem("user1@test.com", 1L));
+        assertThrows(OrdenNotFoundException.class, () -> service.eliminarItem(CORREO_USER1, 1L));
     }
 
     @Test
     void eliminarItem_itemNoExistente_lanzaExcepcion() {
         Usuario usuario = crearUsuario(1L);
-        Orden orden = crearOrden(1L, "PENDIENTE", usuario);
+        Orden orden = crearOrden(1L, PENDIENTE, usuario);
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
-        when(ordenRepository.findByUsuarioIdAndEstado(1L, "PENDIENTE")).thenReturn(Optional.of(orden));
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
+        when(ordenRepository.findByUsuarioIdAndEstado(1L, PENDIENTE)).thenReturn(Optional.of(orden));
         when(itemOrdenRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThrows(ItemNotFoundException.class, () -> service.eliminarItem("user1@test.com", 99L));
+        assertThrows(ItemNotFoundException.class, () -> service.eliminarItem(CORREO_USER1, 99L));
     }
 
     @Test
@@ -348,24 +351,24 @@ class OrdenServiceImplTest {
         ConfirmarOrdenDTO dto = new ConfirmarOrdenDTO();
         dto.setMetodoPagoId(1L);
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
-        when(ordenRepository.findByUsuarioIdAndEstado(1L, "PENDIENTE")).thenReturn(Optional.empty());
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
+        when(ordenRepository.findByUsuarioIdAndEstado(1L, PENDIENTE)).thenReturn(Optional.empty());
 
-        assertThrows(OrdenNotFoundException.class, () -> service.confirmarOrden("user1@test.com", dto));
+        assertThrows(OrdenNotFoundException.class, () -> service.confirmarOrden(CORREO_USER1, dto));
     }
 
     @Test
     void confirmarOrden_carritoVacio_lanzaExcepcion() {
         Usuario usuario = crearUsuario(1L);
-        Orden orden = crearOrden(1L, "PENDIENTE", usuario);
+        Orden orden = crearOrden(1L, PENDIENTE, usuario);
         ConfirmarOrdenDTO dto = new ConfirmarOrdenDTO();
         dto.setMetodoPagoId(1L);
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
-        when(ordenRepository.findByUsuarioIdAndEstado(1L, "PENDIENTE")).thenReturn(Optional.of(orden));
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
+        when(ordenRepository.findByUsuarioIdAndEstado(1L, PENDIENTE)).thenReturn(Optional.of(orden));
         when(itemOrdenRepository.findByOrdenId(1L)).thenReturn(List.of());
 
-        assertThrows(CarritoVacioException.class, () -> service.confirmarOrden("user1@test.com", dto));
+        assertThrows(CarritoVacioException.class, () -> service.confirmarOrden(CORREO_USER1, dto));
     }
 
     @Test
@@ -374,7 +377,7 @@ class OrdenServiceImplTest {
         Usuario otroUsuario = crearUsuario(2L);
         Producto producto = crearProducto(1L, true);
         VarianteProducto variante = crearVariante(1L, producto, 10);
-        Orden orden = crearOrden(1L, "PENDIENTE", usuario);
+        Orden orden = crearOrden(1L, PENDIENTE, usuario);
         ItemOrden item = crearItem(1L, orden, producto, variante, 1);
         MetodoPago metodoPago = new MetodoPago();
         metodoPago.setId(1L);
@@ -382,12 +385,12 @@ class OrdenServiceImplTest {
         ConfirmarOrdenDTO dto = new ConfirmarOrdenDTO();
         dto.setMetodoPagoId(1L);
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
-        when(ordenRepository.findByUsuarioIdAndEstado(1L, "PENDIENTE")).thenReturn(Optional.of(orden));
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
+        when(ordenRepository.findByUsuarioIdAndEstado(1L, PENDIENTE)).thenReturn(Optional.of(orden));
         when(itemOrdenRepository.findByOrdenId(1L)).thenReturn(List.of(item));
         when(metodoPagoService.obtenerEntidadPorId(1L)).thenReturn(metodoPago);
 
-        assertThrows(MetodoPagoInvalidoException.class, () -> service.confirmarOrden("user1@test.com", dto));
+        assertThrows(MetodoPagoInvalidoException.class, () -> service.confirmarOrden(CORREO_USER1, dto));
     }
 
     @Test
@@ -395,7 +398,7 @@ class OrdenServiceImplTest {
         Usuario usuario = crearUsuario(1L);
         Producto producto = crearProducto(1L, true);
         VarianteProducto variante = crearVariante(1L, producto, 1);
-        Orden orden = crearOrden(1L, "PENDIENTE", usuario);
+        Orden orden = crearOrden(1L, PENDIENTE, usuario);
         ItemOrden item = crearItem(1L, orden, producto, variante, 5);
         MetodoPago metodoPago = new MetodoPago();
         metodoPago.setId(1L);
@@ -403,12 +406,12 @@ class OrdenServiceImplTest {
         ConfirmarOrdenDTO dto = new ConfirmarOrdenDTO();
         dto.setMetodoPagoId(1L);
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
-        when(ordenRepository.findByUsuarioIdAndEstado(1L, "PENDIENTE")).thenReturn(Optional.of(orden));
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
+        when(ordenRepository.findByUsuarioIdAndEstado(1L, PENDIENTE)).thenReturn(Optional.of(orden));
         when(itemOrdenRepository.findByOrdenId(1L)).thenReturn(List.of(item));
         when(metodoPagoService.obtenerEntidadPorId(1L)).thenReturn(metodoPago);
 
-        assertThrows(StockInsuficienteException.class, () -> service.confirmarOrden("user1@test.com", dto));
+        assertThrows(StockInsuficienteException.class, () -> service.confirmarOrden(CORREO_USER1, dto));
     }
 
     @Test
@@ -417,7 +420,7 @@ class OrdenServiceImplTest {
         Producto producto = crearProducto(1L, true);
         VarianteProducto variante = crearVariante(1L, producto, 1);
         variante.setEspecificacion(null);
-        Orden orden = crearOrden(1L, "PENDIENTE", usuario);
+        Orden orden = crearOrden(1L, PENDIENTE, usuario);
         ItemOrden item = crearItem(1L, orden, producto, variante, 5);
         MetodoPago metodoPago = new MetodoPago();
         metodoPago.setId(1L);
@@ -425,12 +428,12 @@ class OrdenServiceImplTest {
         ConfirmarOrdenDTO dto = new ConfirmarOrdenDTO();
         dto.setMetodoPagoId(1L);
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
-        when(ordenRepository.findByUsuarioIdAndEstado(1L, "PENDIENTE")).thenReturn(Optional.of(orden));
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
+        when(ordenRepository.findByUsuarioIdAndEstado(1L, PENDIENTE)).thenReturn(Optional.of(orden));
         when(itemOrdenRepository.findByOrdenId(1L)).thenReturn(List.of(item));
         when(metodoPagoService.obtenerEntidadPorId(1L)).thenReturn(metodoPago);
 
-        assertThrows(StockInsuficienteException.class, () -> service.confirmarOrden("user1@test.com", dto));
+        assertThrows(StockInsuficienteException.class, () -> service.confirmarOrden(CORREO_USER1, dto));
     }
 
     @Test
@@ -438,28 +441,28 @@ class OrdenServiceImplTest {
         Usuario usuario = crearUsuario(1L);
         Producto producto = crearProducto(1L, true);
         VarianteProducto variante = crearVariante(1L, producto, 10);
-        Orden orden = crearOrden(1L, "PAGADA", usuario);
+        Orden orden = crearOrden(1L, PAGADA, usuario);
         ItemOrden item = crearItem(1L, orden, producto, variante, 1);
         orden.getItems().add(item);
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
-        when(ordenRepository.findByUsuarioIdAndEstadoNot(1L, "PENDIENTE")).thenReturn(List.of(orden));
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
+        when(ordenRepository.findByUsuarioIdAndEstadoNot(1L, PENDIENTE)).thenReturn(List.of(orden));
 
-        List<OrdenResponseDTO> resultado = service.historial("user1@test.com");
+        List<OrdenResponseDTO> resultado = service.historial(CORREO_USER1);
 
         assertNotNull(resultado);
         assertEquals(1, resultado.size());
-        assertEquals("PAGADA", resultado.get(0).getEstado());
+        assertEquals(PAGADA, resultado.get(0).getEstado());
     }
 
     @Test
     void historial_sinOrdenes_retornaListaVacia() {
         Usuario usuario = crearUsuario(1L);
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
-        when(ordenRepository.findByUsuarioIdAndEstadoNot(1L, "PENDIENTE")).thenReturn(List.of());
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
+        when(ordenRepository.findByUsuarioIdAndEstadoNot(1L, PENDIENTE)).thenReturn(List.of());
 
-        List<OrdenResponseDTO> resultado = service.historial("user1@test.com");
+        List<OrdenResponseDTO> resultado = service.historial(CORREO_USER1);
 
         assertNotNull(resultado);
         assertTrue(resultado.isEmpty());
@@ -470,15 +473,15 @@ class OrdenServiceImplTest {
         Usuario usuario = crearUsuario(1L);
         Producto producto = crearProducto(1L, true);
         VarianteProducto variante = crearVariante(1L, producto, 10);
-        Orden orden = crearOrden(1L, "PENDIENTE", usuario);
+        Orden orden = crearOrden(1L, PENDIENTE, usuario);
         ItemOrden item = crearItem(1L, orden, producto, variante, 2);
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
-        when(ordenRepository.findByUsuarioIdAndEstado(1L, "PENDIENTE")).thenReturn(Optional.of(orden));
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
+        when(ordenRepository.findByUsuarioIdAndEstado(1L, PENDIENTE)).thenReturn(Optional.of(orden));
         when(itemOrdenRepository.findByOrdenIdConDetalles(1L)).thenReturn(List.of(item));
         doNothing().when(auditoriaService).registrar(any(), any(), any(), any(), any());
 
-        OrdenResponseDTO resultado = service.cancelarOrden("user1@test.com");
+        OrdenResponseDTO resultado = service.cancelarOrden(CORREO_USER1);
 
         assertNotNull(resultado);
         verify(itemOrdenRepository).deleteAll(anyList());
@@ -489,10 +492,10 @@ class OrdenServiceImplTest {
     void cancelarOrden_sinCarritoActivo_lanzaExcepcion() {
         Usuario usuario = crearUsuario(1L);
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
-        when(ordenRepository.findByUsuarioIdAndEstado(1L, "PENDIENTE")).thenReturn(Optional.empty());
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
+        when(ordenRepository.findByUsuarioIdAndEstado(1L, PENDIENTE)).thenReturn(Optional.empty());
 
-        assertThrows(OrdenNotFoundException.class, () -> service.cancelarOrden("user1@test.com"));
+        assertThrows(OrdenNotFoundException.class, () -> service.cancelarOrden(CORREO_USER1));
     }
 
     @Test
@@ -500,17 +503,17 @@ class OrdenServiceImplTest {
         Usuario usuario = crearUsuario(1L);
         Producto producto = crearProducto(1L, true);
         VarianteProducto variante = crearVariante(1L, producto, 10);
-        Orden orden = crearOrden(1L, "PAGADA", usuario);
+        Orden orden = crearOrden(1L, PAGADA, usuario);
         MetodoPago metodoPago = new MetodoPago();
         metodoPago.setLabel("Visa *1234");
         orden.setMetodoPago(metodoPago);
         ItemOrden item = crearItem(1L, orden, producto, variante, 1);
         orden.getItems().add(item);
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
         when(ordenRepository.findHistorialByUsuarioIdAndEstadoIn(eq(1L), anyList())).thenReturn(List.of(orden));
 
-        List<OrdenHistorialDTO> resultado = service.historialLiviano("user1@test.com");
+        List<OrdenHistorialDTO> resultado = service.historialLiviano(CORREO_USER1);
 
         assertNotNull(resultado);
         assertEquals(1, resultado.size());
@@ -521,13 +524,13 @@ class OrdenServiceImplTest {
     @Test
     void historialLiviano_ordenSinMetodoPago_labelNull() {
         Usuario usuario = crearUsuario(1L);
-        Orden orden = crearOrden(1L, "PAGADA", usuario);
+        Orden orden = crearOrden(1L, PAGADA, usuario);
         orden.setMetodoPago(null);
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
         when(ordenRepository.findHistorialByUsuarioIdAndEstadoIn(eq(1L), anyList())).thenReturn(List.of(orden));
 
-        List<OrdenHistorialDTO> resultado = service.historialLiviano("user1@test.com");
+        List<OrdenHistorialDTO> resultado = service.historialLiviano(CORREO_USER1);
 
         assertNotNull(resultado);
         assertNull(resultado.get(0).getMetodoPagoLabel());
@@ -537,10 +540,10 @@ class OrdenServiceImplTest {
     void historialLiviano_sinOrdenes_retornaListaVacia() {
         Usuario usuario = crearUsuario(1L);
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
         when(ordenRepository.findHistorialByUsuarioIdAndEstadoIn(eq(1L), anyList())).thenReturn(List.of());
 
-        List<OrdenHistorialDTO> resultado = service.historialLiviano("user1@test.com");
+        List<OrdenHistorialDTO> resultado = service.historialLiviano(CORREO_USER1);
 
         assertNotNull(resultado);
         assertTrue(resultado.isEmpty());
@@ -551,12 +554,12 @@ class OrdenServiceImplTest {
         Usuario usuario = crearUsuario(1L);
         Producto producto = crearProducto(1L, true);
         VarianteProducto variante = crearVariante(1L, producto, 10);
-        Orden orden = crearOrden(1L, "PENDIENTE", usuario);
+        Orden orden = crearOrden(1L, PENDIENTE, usuario);
         orden.setNotificadoAbandonado(false);
         ItemOrden item = crearItem(1L, orden, producto, variante, 1);
 
         when(ordenRepository.findByEstadoAndFechaCreacionBeforeAndNotificadoAbandonadoFalse(
-                eq("PENDIENTE"), any(LocalDateTime.class))).thenReturn(List.of(orden));
+                eq(PENDIENTE), any(LocalDateTime.class))).thenReturn(List.of(orden));
         when(itemOrdenRepository.findByOrdenId(1L)).thenReturn(List.of(item));
         doNothing().when(notificacionService).notificarCarritoAbandonado(usuario);
         when(ordenRepository.save(any(Orden.class))).thenReturn(orden);
@@ -570,10 +573,10 @@ class OrdenServiceImplTest {
 
     @Test
     void notificarCarritosAbandonados_ordenSinItems_noNotifica() {
-        Orden orden = crearOrden(1L, "PENDIENTE", crearUsuario(1L));
+        Orden orden = crearOrden(1L, PENDIENTE, crearUsuario(1L));
 
         when(ordenRepository.findByEstadoAndFechaCreacionBeforeAndNotificadoAbandonadoFalse(
-                eq("PENDIENTE"), any(LocalDateTime.class))).thenReturn(List.of(orden));
+                eq(PENDIENTE), any(LocalDateTime.class))).thenReturn(List.of(orden));
         when(itemOrdenRepository.findByOrdenId(1L)).thenReturn(List.of());
 
         service.notificarCarritosAbandonados();
@@ -584,7 +587,7 @@ class OrdenServiceImplTest {
     @Test
     void notificarCarritosAbandonados_sinOrdenes_noHaceNada() {
         when(ordenRepository.findByEstadoAndFechaCreacionBeforeAndNotificadoAbandonadoFalse(
-                eq("PENDIENTE"), any(LocalDateTime.class))).thenReturn(List.of());
+                eq(PENDIENTE), any(LocalDateTime.class))).thenReturn(List.of());
 
         service.notificarCarritosAbandonados();
 

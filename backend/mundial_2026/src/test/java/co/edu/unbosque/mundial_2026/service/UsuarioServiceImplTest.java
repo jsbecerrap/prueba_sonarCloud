@@ -80,17 +80,27 @@ class UsuarioServiceImplTest {
 
     private Usuario usuario;
     private Rol rolUsuario;
+    private static final String CORREO_TEST = "test@test.com";
+private static final String CORREO_NOPE = "nope@test.com";
+private static final String CORREO_NUEVO = "nuevo@test.com";
+private static final String CORREO_ADMIN = "admin@test.com";
+private static final String PASS_123 = "Pass123!";
+private static final String HASHED = "hashed";
+private static final String ROLE_USUARIO = "ROLE_USUARIO";
+private static final String AZTECA = "Azteca";
+private static final String ROLE_ADMIN = "ROLE_ADMIN";
+private static final String BOGOTA = "Bogota";
 
     @BeforeEach
     void setUp() {
         rolUsuario = new Rol();
         rolUsuario.setId(1L);
-        rolUsuario.setNombre("ROLE_USUARIO");
+        rolUsuario.setNombre(ROLE_USUARIO);
 
         usuario = new Usuario();
         usuario.setId(1L);
-        usuario.setCorreoUsuario("test@test.com");
-        usuario.setContrasena("hashed");
+        usuario.setCorreoUsuario(CORREO_TEST);
+        usuario.setContrasena(HASHED);
         usuario.setNombre("Juan");
         usuario.setApellido("Perez");
         usuario.setRol(rolUsuario);
@@ -108,7 +118,7 @@ class UsuarioServiceImplTest {
             List<UsuarioResponseDTO> resultado = usuarioService.listarTodos();
 
             assertEquals(1, resultado.size());
-            assertEquals("test@test.com", resultado.get(0).getCorreoUsuario());
+            assertEquals(CORREO_TEST, resultado.get(0).getCorreoUsuario());
         }
 
         @Test
@@ -128,14 +138,14 @@ class UsuarioServiceImplTest {
         @Test
         void cuandoDatosValidos_registraYRetornaDTO() {
             UsuarioRequestDTO dto = new UsuarioRequestDTO();
-            dto.setCorreoUsuario("nuevo@test.com");
-            dto.setContrasena("Pass123!");
+            dto.setCorreoUsuario(CORREO_NUEVO);
+            dto.setContrasena(PASS_123);
             dto.setNombre("Ana");
             dto.setApellido("Lopez");
 
-            when(repository.findByCorreoUsuario("nuevo@test.com")).thenReturn(Optional.empty());
-            when(rolRepository.findByNombre("ROLE_USUARIO")).thenReturn(Optional.of(rolUsuario));
-            when(passwordEncoder.encode("Pass123!")).thenReturn("hashedPass");
+            when(repository.findByCorreoUsuario(CORREO_NUEVO)).thenReturn(Optional.empty());
+            when(rolRepository.findByNombre(ROLE_USUARIO)).thenReturn(Optional.of(rolUsuario));
+            when(passwordEncoder.encode(PASS_123)).thenReturn("hashedPass");
             when(repository.save(any(Usuario.class))).thenAnswer(inv -> {
                 Usuario u = inv.getArgument(0);
                 u.setId(2L);
@@ -145,7 +155,7 @@ class UsuarioServiceImplTest {
             UsuarioResponseDTO resultado = usuarioService.registrarUsuario(dto);
 
             assertNotNull(resultado);
-            assertEquals("nuevo@test.com", resultado.getCorreoUsuario());
+            assertEquals(CORREO_NUEVO, resultado.getCorreoUsuario());
             verify(repository).save(any(Usuario.class));
             verify(auditoriaService).registrar(eq("USUARIO_REGISTRADO"), anyString(), eq(2L), anyString(), eq("Usuario"));
         }
@@ -153,9 +163,9 @@ class UsuarioServiceImplTest {
         @Test
         void cuandoCorreoYaExiste_lanzaCorreoEnUsoException() {
             UsuarioRequestDTO dto = new UsuarioRequestDTO();
-            dto.setCorreoUsuario("test@test.com");
+            dto.setCorreoUsuario(CORREO_TEST);
 
-            when(repository.findByCorreoUsuario("test@test.com")).thenReturn(Optional.of(usuario));
+            when(repository.findByCorreoUsuario(CORREO_TEST)).thenReturn(Optional.of(usuario));
 
             assertThrows(CorreoEnUsoException.class, () -> usuarioService.registrarUsuario(dto));
             verify(repository, never()).save(any());
@@ -164,11 +174,11 @@ class UsuarioServiceImplTest {
         @Test
         void cuandoRolNoExiste_lanzaRolNotFoundException() {
             UsuarioRequestDTO dto = new UsuarioRequestDTO();
-            dto.setCorreoUsuario("nuevo@test.com");
-            dto.setContrasena("Pass123!");
+            dto.setCorreoUsuario(CORREO_NUEVO);
+            dto.setContrasena(PASS_123);
 
-            when(repository.findByCorreoUsuario("nuevo@test.com")).thenReturn(Optional.empty());
-            when(rolRepository.findByNombre("ROLE_USUARIO")).thenReturn(Optional.empty());
+            when(repository.findByCorreoUsuario(CORREO_NUEVO)).thenReturn(Optional.empty());
+            when(rolRepository.findByNombre(ROLE_USUARIO)).thenReturn(Optional.empty());
 
             assertThrows(RolNotFoundException.class, () -> usuarioService.registrarUsuario(dto));
         }
@@ -185,7 +195,7 @@ class UsuarioServiceImplTest {
             UsuarioResponseDTO resultado = usuarioService.obtenerUsuario(1L);
 
             assertEquals(1L, resultado.getId());
-            assertEquals("test@test.com", resultado.getCorreoUsuario());
+            assertEquals(CORREO_TEST, resultado.getCorreoUsuario());
         }
 
         @Test
@@ -202,18 +212,18 @@ class UsuarioServiceImplTest {
 
         @Test
         void cuandoExiste_retornaDTO() {
-            when(repository.findByCorreoUsuario("test@test.com")).thenReturn(Optional.of(usuario));
+            when(repository.findByCorreoUsuario(CORREO_TEST)).thenReturn(Optional.of(usuario));
 
-            UsuarioResponseDTO resultado = usuarioService.obtenerPorCorreo("test@test.com");
+            UsuarioResponseDTO resultado = usuarioService.obtenerPorCorreo(CORREO_TEST);
 
-            assertEquals("test@test.com", resultado.getCorreoUsuario());
+            assertEquals(CORREO_TEST, resultado.getCorreoUsuario());
         }
 
         @Test
         void cuandoNoExiste_lanzaUsuarioNotFoundException() {
-            when(repository.findByCorreoUsuario("nope@test.com")).thenReturn(Optional.empty());
+            when(repository.findByCorreoUsuario(CORREO_NOPE )).thenReturn(Optional.empty());
 
-            assertThrows(UsuarioNotFoundException.class, () -> usuarioService.obtenerPorCorreo("nope@test.com"));
+            assertThrows(UsuarioNotFoundException.class, () -> usuarioService.obtenerPorCorreo(CORREO_NOPE ));
         }
     }
 
@@ -224,16 +234,16 @@ class UsuarioServiceImplTest {
         @Test
         void cuandoRolEspecificado_usaEseRol() {
             UsuarioRequestDTO dto = new UsuarioRequestDTO();
-            dto.setCorreoUsuario("admin@test.com");
-            dto.setContrasena("Pass123!");
-            dto.setRol("ROLE_ADMIN");
+            dto.setCorreoUsuario(CORREO_ADMIN);
+            dto.setContrasena(PASS_123);
+            dto.setRol(ROLE_ADMIN);
 
             Rol rolAdmin = new Rol();
-            rolAdmin.setNombre("ROLE_ADMIN");
+            rolAdmin.setNombre(ROLE_ADMIN);
 
-            when(repository.findByCorreoUsuario("admin@test.com")).thenReturn(Optional.empty());
-            when(rolRepository.findByNombre("ROLE_ADMIN")).thenReturn(Optional.of(rolAdmin));
-            when(passwordEncoder.encode("Pass123!")).thenReturn("hashed");
+            when(repository.findByCorreoUsuario(CORREO_ADMIN)).thenReturn(Optional.empty());
+            when(rolRepository.findByNombre(ROLE_ADMIN)).thenReturn(Optional.of(rolAdmin));
+            when(passwordEncoder.encode(PASS_123)).thenReturn(HASHED);
             when(repository.save(any(Usuario.class))).thenAnswer(inv -> {
                 Usuario u = inv.getArgument(0);
                 u.setId(3L);
@@ -243,19 +253,19 @@ class UsuarioServiceImplTest {
             UsuarioResponseDTO resultado = usuarioService.registrarUsuarioComoAdmin(dto);
 
             assertNotNull(resultado);
-            assertEquals("ROLE_ADMIN", resultado.getRol());
+            assertEquals(ROLE_ADMIN, resultado.getRol());
         }
 
         @Test
         void cuandoRolNullOBlanco_usaRoleUsuarioPorDefecto() {
             UsuarioRequestDTO dto = new UsuarioRequestDTO();
-            dto.setCorreoUsuario("admin@test.com");
-            dto.setContrasena("Pass123!");
+            dto.setCorreoUsuario(CORREO_ADMIN);
+            dto.setContrasena(PASS_123);
             dto.setRol(null);
 
-            when(repository.findByCorreoUsuario("admin@test.com")).thenReturn(Optional.empty());
-            when(rolRepository.findByNombre("ROLE_USUARIO")).thenReturn(Optional.of(rolUsuario));
-            when(passwordEncoder.encode("Pass123!")).thenReturn("hashed");
+            when(repository.findByCorreoUsuario(CORREO_ADMIN)).thenReturn(Optional.empty());
+            when(rolRepository.findByNombre(ROLE_USUARIO)).thenReturn(Optional.of(rolUsuario));
+            when(passwordEncoder.encode(PASS_123)).thenReturn(HASHED);
             when(repository.save(any(Usuario.class))).thenAnswer(inv -> {
                 Usuario u = inv.getArgument(0);
                 u.setId(4L);
@@ -264,19 +274,19 @@ class UsuarioServiceImplTest {
 
             UsuarioResponseDTO resultado = usuarioService.registrarUsuarioComoAdmin(dto);
 
-            assertEquals("ROLE_USUARIO", resultado.getRol());
+            assertEquals(ROLE_USUARIO, resultado.getRol());
         }
 
         @Test
         void cuandoRolBlanco_usaRoleUsuarioPorDefecto() {
             UsuarioRequestDTO dto = new UsuarioRequestDTO();
-            dto.setCorreoUsuario("admin@test.com");
-            dto.setContrasena("Pass123!");
+            dto.setCorreoUsuario(CORREO_ADMIN);
+            dto.setContrasena(PASS_123);
             dto.setRol("   ");
 
-            when(repository.findByCorreoUsuario("admin@test.com")).thenReturn(Optional.empty());
-            when(rolRepository.findByNombre("ROLE_USUARIO")).thenReturn(Optional.of(rolUsuario));
-            when(passwordEncoder.encode("Pass123!")).thenReturn("hashed");
+            when(repository.findByCorreoUsuario(CORREO_ADMIN)).thenReturn(Optional.empty());
+            when(rolRepository.findByNombre(ROLE_USUARIO)).thenReturn(Optional.of(rolUsuario));
+            when(passwordEncoder.encode(PASS_123)).thenReturn(HASHED);
             when(repository.save(any(Usuario.class))).thenAnswer(inv -> {
                 Usuario u = inv.getArgument(0);
                 u.setId(5L);
@@ -285,15 +295,15 @@ class UsuarioServiceImplTest {
 
             UsuarioResponseDTO resultado = usuarioService.registrarUsuarioComoAdmin(dto);
 
-            assertEquals("ROLE_USUARIO", resultado.getRol());
+            assertEquals(ROLE_USUARIO, resultado.getRol());
         }
 
         @Test
         void cuandoCorreoYaExiste_lanzaCorreoEnUsoException() {
             UsuarioRequestDTO dto = new UsuarioRequestDTO();
-            dto.setCorreoUsuario("test@test.com");
+            dto.setCorreoUsuario(CORREO_TEST);
 
-            when(repository.findByCorreoUsuario("test@test.com")).thenReturn(Optional.of(usuario));
+            when(repository.findByCorreoUsuario(CORREO_TEST)).thenReturn(Optional.of(usuario));
 
             assertThrows(CorreoEnUsoException.class, () -> usuarioService.registrarUsuarioComoAdmin(dto));
         }
@@ -301,11 +311,11 @@ class UsuarioServiceImplTest {
         @Test
         void cuandoRolNoExiste_lanzaRolNotFoundException() {
             UsuarioRequestDTO dto = new UsuarioRequestDTO();
-            dto.setCorreoUsuario("nuevo@test.com");
-            dto.setContrasena("Pass123!");
+            dto.setCorreoUsuario(CORREO_NUEVO);
+            dto.setContrasena(PASS_123);
             dto.setRol("ROLE_INEXISTENTE");
 
-            when(repository.findByCorreoUsuario("nuevo@test.com")).thenReturn(Optional.empty());
+            when(repository.findByCorreoUsuario(CORREO_NUEVO)).thenReturn(Optional.empty());
             when(rolRepository.findByNombre("ROLE_INEXISTENTE")).thenReturn(Optional.empty());
 
             assertThrows(RolNotFoundException.class, () -> usuarioService.registrarUsuarioComoAdmin(dto));
@@ -345,17 +355,17 @@ class UsuarioServiceImplTest {
             UsuarioActualizarRequestDTO dto = new UsuarioActualizarRequestDTO();
             dto.setNombre("NuevoNombre");
             dto.setApellido("NuevoApellido");
-            dto.setCorreoNuevo("nuevo@test.com");
-            dto.setContrasenaActual("Pass123!");
+            dto.setCorreoNuevo(CORREO_NUEVO);
+            dto.setContrasenaActual(PASS_123);
             dto.setContrasenaNueva("NewPass456!");
 
-            when(repository.findByCorreoUsuario("test@test.com")).thenReturn(Optional.of(usuario));
-            when(repository.findByCorreoUsuario("nuevo@test.com")).thenReturn(Optional.empty());
-            when(passwordEncoder.matches("Pass123!", "hashed")).thenReturn(true);
+            when(repository.findByCorreoUsuario(CORREO_TEST)).thenReturn(Optional.of(usuario));
+            when(repository.findByCorreoUsuario(CORREO_NUEVO)).thenReturn(Optional.empty());
+            when(passwordEncoder.matches(PASS_123, HASHED)).thenReturn(true);
             when(passwordEncoder.encode("NewPass456!")).thenReturn("newHashed");
             when(repository.save(any(Usuario.class))).thenReturn(usuario);
 
-            Map<String, Object> resultado = usuarioService.actualizarPerfil("test@test.com", dto);
+            Map<String, Object> resultado = usuarioService.actualizarPerfil(CORREO_TEST, dto);
 
             assertNotNull(resultado.get("usuario"));
             assertEquals(true, resultado.get("correocambio"));
@@ -367,10 +377,10 @@ class UsuarioServiceImplTest {
             UsuarioActualizarRequestDTO dto = new UsuarioActualizarRequestDTO();
             dto.setNombre("OtroNombre");
 
-            when(repository.findByCorreoUsuario("test@test.com")).thenReturn(Optional.of(usuario));
+            when(repository.findByCorreoUsuario(CORREO_TEST)).thenReturn(Optional.of(usuario));
             when(repository.save(any(Usuario.class))).thenReturn(usuario);
 
-            Map<String, Object> resultado = usuarioService.actualizarPerfil("test@test.com", dto);
+            Map<String, Object> resultado = usuarioService.actualizarPerfil(CORREO_TEST, dto);
 
             assertEquals(false, resultado.get("correocambio"));
             assertEquals("OtroNombre", usuario.getNombre());
@@ -381,10 +391,10 @@ class UsuarioServiceImplTest {
             UsuarioActualizarRequestDTO dto = new UsuarioActualizarRequestDTO();
             dto.setApellido("OtroApellido");
 
-            when(repository.findByCorreoUsuario("test@test.com")).thenReturn(Optional.of(usuario));
+            when(repository.findByCorreoUsuario(CORREO_TEST)).thenReturn(Optional.of(usuario));
             when(repository.save(any(Usuario.class))).thenReturn(usuario);
 
-            usuarioService.actualizarPerfil("test@test.com", dto);
+            usuarioService.actualizarPerfil(CORREO_TEST, dto);
 
             assertEquals("OtroApellido", usuario.getApellido());
         }
@@ -397,10 +407,10 @@ class UsuarioServiceImplTest {
             dto.setCorreoNuevo(null);
             dto.setContrasenaNueva("");
 
-            when(repository.findByCorreoUsuario("test@test.com")).thenReturn(Optional.of(usuario));
+            when(repository.findByCorreoUsuario(CORREO_TEST)).thenReturn(Optional.of(usuario));
             when(repository.save(any(Usuario.class))).thenReturn(usuario);
 
-            Map<String, Object> resultado = usuarioService.actualizarPerfil("test@test.com", dto);
+            Map<String, Object> resultado = usuarioService.actualizarPerfil(CORREO_TEST, dto);
 
             assertEquals("Juan", usuario.getNombre());
             assertEquals("Perez", usuario.getApellido());
@@ -411,10 +421,10 @@ class UsuarioServiceImplTest {
         void cuandoUsuarioNoExiste_lanzaUsuarioNotFoundException() {
             UsuarioActualizarRequestDTO dto = new UsuarioActualizarRequestDTO();
 
-            when(repository.findByCorreoUsuario("nope@test.com")).thenReturn(Optional.empty());
+            when(repository.findByCorreoUsuario(CORREO_NOPE )).thenReturn(Optional.empty());
 
             assertThrows(UsuarioNotFoundException.class,
-                    () -> usuarioService.actualizarPerfil("nope@test.com", dto));
+                    () -> usuarioService.actualizarPerfil(CORREO_NOPE , dto));
         }
 
         @Test
@@ -423,10 +433,10 @@ class UsuarioServiceImplTest {
             dto.setContrasenaNueva("NewPass!");
             dto.setContrasenaActual(null);
 
-            when(repository.findByCorreoUsuario("test@test.com")).thenReturn(Optional.of(usuario));
+            when(repository.findByCorreoUsuario(CORREO_TEST)).thenReturn(Optional.of(usuario));
 
             assertThrows(ContrasenaIncorrectaException.class,
-                    () -> usuarioService.actualizarPerfil("test@test.com", dto));
+                    () -> usuarioService.actualizarPerfil(CORREO_TEST, dto));
         }
 
         @Test
@@ -435,28 +445,28 @@ class UsuarioServiceImplTest {
             dto.setContrasenaNueva("NewPass!");
             dto.setContrasenaActual("WrongPass");
 
-            when(repository.findByCorreoUsuario("test@test.com")).thenReturn(Optional.of(usuario));
-            when(passwordEncoder.matches("WrongPass", "hashed")).thenReturn(false);
+            when(repository.findByCorreoUsuario(CORREO_TEST)).thenReturn(Optional.of(usuario));
+            when(passwordEncoder.matches("WrongPass", HASHED)).thenReturn(false);
 
             assertThrows(ContrasenaIncorrectaException.class,
-                    () -> usuarioService.actualizarPerfil("test@test.com", dto));
+                    () -> usuarioService.actualizarPerfil(CORREO_TEST, dto));
         }
 
         @Test
         void cuandoCambiaCorreoYNuevoYaExiste_lanzaCorreoEnUsoException() {
             UsuarioActualizarRequestDTO dto = new UsuarioActualizarRequestDTO();
             dto.setCorreoNuevo("ocupado@test.com");
-            dto.setContrasenaActual("Pass123!");
+            dto.setContrasenaActual(PASS_123);
 
             Usuario otro = new Usuario();
             otro.setCorreoUsuario("ocupado@test.com");
 
-            when(repository.findByCorreoUsuario("test@test.com")).thenReturn(Optional.of(usuario));
-            when(passwordEncoder.matches("Pass123!", "hashed")).thenReturn(true);
+            when(repository.findByCorreoUsuario(CORREO_TEST)).thenReturn(Optional.of(usuario));
+            when(passwordEncoder.matches(PASS_123, HASHED)).thenReturn(true);
             when(repository.findByCorreoUsuario("ocupado@test.com")).thenReturn(Optional.of(otro));
 
             assertThrows(CorreoEnUsoException.class,
-                    () -> usuarioService.actualizarPerfil("test@test.com", dto));
+                    () -> usuarioService.actualizarPerfil(CORREO_TEST, dto));
         }
     }
 
@@ -471,9 +481,9 @@ class UsuarioServiceImplTest {
             sel.setNombre("Colombia");
             usuario.setSeleccionesU(List.of(sel));
 
-            when(repository.findByCorreoUsuario("test@test.com")).thenReturn(Optional.of(usuario));
+            when(repository.findByCorreoUsuario(CORREO_TEST)).thenReturn(Optional.of(usuario));
 
-            List<PreferenciaDTO> resultado = usuarioService.seleccionesUsuario("test@test.com");
+            List<PreferenciaDTO> resultado = usuarioService.seleccionesUsuario(CORREO_TEST);
 
             assertEquals(1, resultado.size());
             assertEquals("Colombia", resultado.get(0).getNombre());
@@ -481,10 +491,10 @@ class UsuarioServiceImplTest {
 
         @Test
         void cuandoNoExiste_lanzaUsuarioNotFoundException() {
-            when(repository.findByCorreoUsuario("nope@test.com")).thenReturn(Optional.empty());
+            when(repository.findByCorreoUsuario(CORREO_NOPE )).thenReturn(Optional.empty());
 
             assertThrows(UsuarioNotFoundException.class,
-                    () -> usuarioService.seleccionesUsuario("nope@test.com"));
+                    () -> usuarioService.seleccionesUsuario(CORREO_NOPE ));
         }
     }
 
@@ -494,9 +504,9 @@ class UsuarioServiceImplTest {
 
         @Test
         void agregaTodasLasSelecciones() {
-            when(repository.findIdByCorreo("test@test.com")).thenReturn(1L);
+            when(repository.findIdByCorreo(CORREO_TEST)).thenReturn(1L);
 
-            usuarioService.agregarSeleccion("test@test.com", Arrays.asList(10L, 11L, 12L));
+            usuarioService.agregarSeleccion(CORREO_TEST, Arrays.asList(10L, 11L, 12L));
 
             verify(repository).insertarSeleccion(1L, 10L);
             verify(repository).insertarSeleccion(1L, 11L);
@@ -505,9 +515,9 @@ class UsuarioServiceImplTest {
 
         @Test
         void cuandoListaVacia_noLlamaInsertar() {
-            when(repository.findIdByCorreo("test@test.com")).thenReturn(1L);
+            when(repository.findIdByCorreo(CORREO_TEST)).thenReturn(1L);
 
-            usuarioService.agregarSeleccion("test@test.com", Collections.emptyList());
+            usuarioService.agregarSeleccion(CORREO_TEST, Collections.emptyList());
 
             verify(repository, never()).insertarSeleccion(anyLong(), anyLong());
         }
@@ -519,9 +529,9 @@ class UsuarioServiceImplTest {
 
         @Test
         void eliminaLaSeleccion() {
-            when(repository.findIdByCorreo("test@test.com")).thenReturn(1L);
+            when(repository.findIdByCorreo(CORREO_TEST)).thenReturn(1L);
 
-            usuarioService.eliminarSeleccion("test@test.com", 10L);
+            usuarioService.eliminarSeleccion(CORREO_TEST, 10L);
 
             verify(repository).eliminarSeleccion(1L, 10L);
         }
@@ -535,23 +545,23 @@ class UsuarioServiceImplTest {
         void cuandoExiste_retornaEstadios() {
             EstadioFavorito est = new EstadioFavorito();
             est.setId(20L);
-            est.setNombre("Azteca");
+            est.setNombre(AZTECA);
             usuario.setPreferenciasu(List.of(est));
 
-            when(repository.findByCorreoUsuario("test@test.com")).thenReturn(Optional.of(usuario));
+            when(repository.findByCorreoUsuario(CORREO_TEST)).thenReturn(Optional.of(usuario));
 
-            List<PreferenciaDTO> resultado = usuarioService.estadiosUsuario("test@test.com");
+            List<PreferenciaDTO> resultado = usuarioService.estadiosUsuario(CORREO_TEST);
 
             assertEquals(1, resultado.size());
-            assertEquals("Azteca", resultado.get(0).getNombre());
+            assertEquals(AZTECA, resultado.get(0).getNombre());
         }
 
         @Test
         void cuandoNoExiste_lanzaUsuarioNotFoundException() {
-            when(repository.findByCorreoUsuario("nope@test.com")).thenReturn(Optional.empty());
+            when(repository.findByCorreoUsuario(CORREO_NOPE )).thenReturn(Optional.empty());
 
             assertThrows(UsuarioNotFoundException.class,
-                    () -> usuarioService.estadiosUsuario("nope@test.com"));
+                    () -> usuarioService.estadiosUsuario(CORREO_NOPE ));
         }
     }
 
@@ -561,9 +571,9 @@ class UsuarioServiceImplTest {
 
         @Test
         void agregarEstadio_agregaTodos() {
-            when(repository.findIdByCorreo("test@test.com")).thenReturn(1L);
+            when(repository.findIdByCorreo(CORREO_TEST)).thenReturn(1L);
 
-            usuarioService.agregarEstadio("test@test.com", Arrays.asList(20L, 21L));
+            usuarioService.agregarEstadio(CORREO_TEST, Arrays.asList(20L, 21L));
 
             verify(repository).insertarEstadio(1L, 20L);
             verify(repository).insertarEstadio(1L, 21L);
@@ -571,9 +581,9 @@ class UsuarioServiceImplTest {
 
         @Test
         void eliminarEstadio_eliminaUno() {
-            when(repository.findIdByCorreo("test@test.com")).thenReturn(1L);
+            when(repository.findIdByCorreo(CORREO_TEST)).thenReturn(1L);
 
-            usuarioService.eliminarEstadio("test@test.com", 20L);
+            usuarioService.eliminarEstadio(CORREO_TEST, 20L);
 
             verify(repository).eliminarEstadio(1L, 20L);
         }
@@ -585,9 +595,9 @@ class UsuarioServiceImplTest {
 
         @Test
         void agregarCiudad_agregaTodas() {
-            when(repository.findIdByCorreo("test@test.com")).thenReturn(1L);
+            when(repository.findIdByCorreo(CORREO_TEST)).thenReturn(1L);
 
-            usuarioService.agregarCiudad("test@test.com", Arrays.asList(30L, 31L));
+            usuarioService.agregarCiudad(CORREO_TEST, Arrays.asList(30L, 31L));
 
             verify(repository).insertarCiudad(1L, 30L);
             verify(repository).insertarCiudad(1L, 31L);
@@ -595,9 +605,9 @@ class UsuarioServiceImplTest {
 
         @Test
         void eliminarCiudad_eliminaUna() {
-            when(repository.findIdByCorreo("test@test.com")).thenReturn(1L);
+            when(repository.findIdByCorreo(CORREO_TEST)).thenReturn(1L);
 
-            usuarioService.eliminarCiudad("test@test.com", 30L);
+            usuarioService.eliminarCiudad(CORREO_TEST, 30L);
 
             verify(repository).eliminarCiudad(1L, 30L);
         }
@@ -611,23 +621,23 @@ class UsuarioServiceImplTest {
         void cuandoExiste_retornaCiudades() {
             CiudadFavorita c = new CiudadFavorita();
             c.setId(30L);
-            c.setNombre("Bogota");
+            c.setNombre(BOGOTA );
             usuario.setCiudadFavoritas(List.of(c));
 
-            when(repository.findByCorreoUsuario("test@test.com")).thenReturn(Optional.of(usuario));
+            when(repository.findByCorreoUsuario(CORREO_TEST)).thenReturn(Optional.of(usuario));
 
-            List<PreferenciaDTO> resultado = usuarioService.ciudadesUsuario("test@test.com");
+            List<PreferenciaDTO> resultado = usuarioService.ciudadesUsuario(CORREO_TEST);
 
             assertEquals(1, resultado.size());
-            assertEquals("Bogota", resultado.get(0).getNombre());
+            assertEquals(BOGOTA , resultado.get(0).getNombre());
         }
 
         @Test
         void cuandoNoExiste_lanzaUsuarioNotFoundException() {
-            when(repository.findByCorreoUsuario("nope@test.com")).thenReturn(Optional.empty());
+            when(repository.findByCorreoUsuario(CORREO_NOPE )).thenReturn(Optional.empty());
 
             assertThrows(UsuarioNotFoundException.class,
-                    () -> usuarioService.ciudadesUsuario("nope@test.com"));
+                    () -> usuarioService.ciudadesUsuario(CORREO_NOPE ));
         }
     }
 
@@ -639,26 +649,26 @@ class UsuarioServiceImplTest {
         void listarEstadios_retornaTodos() {
             EstadioFavorito e = new EstadioFavorito();
             e.setId(1L);
-            e.setNombre("Azteca");
+            e.setNombre(AZTECA);
             when(estadioRepository.findAll()).thenReturn(List.of(e));
 
             List<PreferenciaDTO> resultado = usuarioService.listarEstadios();
 
             assertEquals(1, resultado.size());
-            assertEquals("Azteca", resultado.get(0).getNombre());
+            assertEquals(AZTECA, resultado.get(0).getNombre());
         }
 
         @Test
         void listarCiudades_retornaTodas() {
             CiudadFavorita c = new CiudadFavorita();
             c.setId(1L);
-            c.setNombre("Bogota");
+            c.setNombre(BOGOTA );
             when(ciudadRepository.findAll()).thenReturn(List.of(c));
 
             List<PreferenciaDTO> resultado = usuarioService.listarCiudades();
 
             assertEquals(1, resultado.size());
-            assertEquals("Bogota", resultado.get(0).getNombre());
+            assertEquals(BOGOTA , resultado.get(0).getNombre());
         }
     }
 
@@ -684,19 +694,19 @@ class UsuarioServiceImplTest {
 
         @Test
         void obtenerEntidadPorCorreo_cuandoExiste_retornaUsuario() {
-            when(repository.findByCorreoUsuario("test@test.com")).thenReturn(Optional.of(usuario));
+            when(repository.findByCorreoUsuario(CORREO_TEST)).thenReturn(Optional.of(usuario));
 
-            Usuario resultado = usuarioService.obtenerEntidadPorCorreo("test@test.com");
+            Usuario resultado = usuarioService.obtenerEntidadPorCorreo(CORREO_TEST);
 
-            assertEquals("test@test.com", resultado.getCorreoUsuario());
+            assertEquals(CORREO_TEST, resultado.getCorreoUsuario());
         }
 
         @Test
         void obtenerEntidadPorCorreo_cuandoNoExiste_lanzaUsuarioNotFoundException() {
-            when(repository.findByCorreoUsuario("nope@test.com")).thenReturn(Optional.empty());
+            when(repository.findByCorreoUsuario(CORREO_NOPE )).thenReturn(Optional.empty());
 
             assertThrows(UsuarioNotFoundException.class,
-                    () -> usuarioService.obtenerEntidadPorCorreo("nope@test.com"));
+                    () -> usuarioService.obtenerEntidadPorCorreo(CORREO_NOPE ));
         }
     }
 
@@ -708,9 +718,9 @@ class UsuarioServiceImplTest {
         void cuandoEsPrimerToken_notificaRegistro() {
             usuario.setFcmtoken(null);
 
-            when(repository.findByCorreoUsuario("test@test.com")).thenReturn(Optional.of(usuario));
+            when(repository.findByCorreoUsuario(CORREO_TEST)).thenReturn(Optional.of(usuario));
 
-            usuarioService.actualizarFcmToken("test@test.com", "newToken123");
+            usuarioService.actualizarFcmToken(CORREO_TEST, "newToken123");
 
             assertEquals("newToken123", usuario.getFcmtoken());
             verify(repository).save(usuario);
@@ -721,9 +731,9 @@ class UsuarioServiceImplTest {
         void cuandoTokenAnteriorBlanco_notificaRegistro() {
             usuario.setFcmtoken("   ");
 
-            when(repository.findByCorreoUsuario("test@test.com")).thenReturn(Optional.of(usuario));
+            when(repository.findByCorreoUsuario(CORREO_TEST)).thenReturn(Optional.of(usuario));
 
-            usuarioService.actualizarFcmToken("test@test.com", "newToken123");
+            usuarioService.actualizarFcmToken(CORREO_TEST, "newToken123");
 
             verify(notificacionService).notificarRegistro(usuario);
         }
@@ -732,9 +742,9 @@ class UsuarioServiceImplTest {
         void cuandoYaTeniaToken_noNotifica() {
             usuario.setFcmtoken("tokenViejo");
 
-            when(repository.findByCorreoUsuario("test@test.com")).thenReturn(Optional.of(usuario));
+            when(repository.findByCorreoUsuario(CORREO_TEST)).thenReturn(Optional.of(usuario));
 
-            usuarioService.actualizarFcmToken("test@test.com", "tokenNuevo");
+            usuarioService.actualizarFcmToken(CORREO_TEST, "tokenNuevo");
 
             assertEquals("tokenNuevo", usuario.getFcmtoken());
             verify(notificacionService, never()).notificarRegistro(any());
@@ -742,10 +752,10 @@ class UsuarioServiceImplTest {
 
         @Test
         void cuandoUsuarioNoExiste_lanzaUsuarioNotFoundException() {
-            when(repository.findByCorreoUsuario("nope@test.com")).thenReturn(Optional.empty());
+            when(repository.findByCorreoUsuario(CORREO_NOPE )).thenReturn(Optional.empty());
 
             assertThrows(UsuarioNotFoundException.class,
-                    () -> usuarioService.actualizarFcmToken("nope@test.com", "token"));
+                    () -> usuarioService.actualizarFcmToken(CORREO_NOPE , "token"));
             verify(repository, never()).save(any());
         }
     }

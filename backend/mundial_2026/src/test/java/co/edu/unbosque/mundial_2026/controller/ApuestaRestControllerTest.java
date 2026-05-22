@@ -31,6 +31,7 @@ class ApuestaRestControllerTest {
 
     @InjectMocks
     private ApuestaRestController controller;
+    private static final String USER_CORREO = "user@test.com";
 
     private ApuestaRequestDTO apuestaRequestValido() {
         ApuestaRequestDTO dto = new ApuestaRequestDTO();
@@ -345,11 +346,11 @@ class ApuestaRestControllerTest {
     void editarPronostico_valido_retorna200() {
         when(apuestaService.editarPronostico(anyLong(), any(), any())).thenReturn(new PronosticoDTO());
 
-        ResponseEntity<PronosticoDTO> res = controller.editarPronostico(1L, pronosticoRequestValido(), "user@test.com");
+        ResponseEntity<PronosticoDTO> res = controller.editarPronostico(1L, pronosticoRequestValido(), USER_CORREO);
 
         assertEquals(200, res.getStatusCode().value());
         assertNotNull(res.getBody());
-        verify(apuestaService).editarPronostico(eq(1L), any(), eq("user@test.com"));
+        verify(apuestaService).editarPronostico(eq(1L), any(), eq(USER_CORREO));
     }
 
     @Test
@@ -358,7 +359,7 @@ class ApuestaRestControllerTest {
                 .thenThrow(new RuntimeException("no autorizado"));
 
         assertThrows(RuntimeException.class,
-                () -> controller.editarPronostico(1L, pronosticoRequestValido(), "user@test.com"));
+                () -> controller.editarPronostico(1L, pronosticoRequestValido(), USER_CORREO));
     }
 
   
@@ -367,11 +368,11 @@ class ApuestaRestControllerTest {
     void eliminarPronostico_retorna204() {
         doNothing().when(apuestaService).eliminarPronostico(anyLong(), any());
 
-        ResponseEntity<Void> res = controller.eliminarPronostico(1L, "user@test.com");
+        ResponseEntity<Void> res = controller.eliminarPronostico(1L, USER_CORREO);
 
         assertEquals(204, res.getStatusCode().value());
         assertNull(res.getBody());
-        verify(apuestaService).eliminarPronostico(1L, "user@test.com");
+        verify(apuestaService).eliminarPronostico(1L, USER_CORREO);
     }
 
     @Test
@@ -380,7 +381,7 @@ class ApuestaRestControllerTest {
                 .eliminarPronostico(anyLong(), anyString());
 
         assertThrows(RuntimeException.class,
-                () -> controller.eliminarPronostico(99L, "user@test.com"));
+                () -> controller.eliminarPronostico(99L, USER_CORREO));
     }
 
 

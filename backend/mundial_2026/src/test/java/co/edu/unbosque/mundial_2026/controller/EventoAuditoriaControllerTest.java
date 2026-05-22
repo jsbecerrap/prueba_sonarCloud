@@ -27,8 +27,12 @@ class EventoAuditoriaControllerTest {
     @Mock private EventoAuditoriaService eventoService;
     @InjectMocks private EventoAuditoriaController controller;
 
+private static final String USUARIO = "USUARIO";
+private static final String LOGIN = "LOGIN";
+private static final String CORR_1 = "corr-1";
+private static final String COMPRA = "COMPRA";
     private EventoAuditoriaDTO crearDTO(Long id, String tipo) {
-        return new EventoAuditoriaDTO(id, tipo, "desc", LocalDateTime.now(), "corr-1", "USUARIO", 1L);
+        return new EventoAuditoriaDTO(id, tipo, "desc", LocalDateTime.now(), CORR_1, USUARIO, 1L);
     }
 
     private Page<EventoAuditoriaDTO> paginaConUno(EventoAuditoriaDTO dto) {
@@ -41,7 +45,7 @@ class EventoAuditoriaControllerTest {
 
     @Test
     void obtenerTodos_retornaOkConPagina() {
-        when(eventoService.obtenerTodos(any(Pageable.class))).thenReturn(paginaConUno(crearDTO(1L, "LOGIN")));
+        when(eventoService.obtenerTodos(any(Pageable.class))).thenReturn(paginaConUno(crearDTO(1L, LOGIN)));
 
         ResponseEntity<Page<EventoAuditoriaDTO>> res = controller.obtenerTodos(0, 50);
 
@@ -94,14 +98,14 @@ class EventoAuditoriaControllerTest {
     void buscar_conTodosLosFiltros_retornaOk() {
         LocalDateTime inicio = LocalDateTime.now().minusDays(7);
         LocalDateTime fin = LocalDateTime.now();
-        when(eventoService.buscarConFiltros(eq(1L), eq("LOGIN"), eq(inicio), eq(fin), any(Pageable.class)))
-                .thenReturn(paginaConUno(crearDTO(1L, "LOGIN")));
+        when(eventoService.buscarConFiltros(eq(1L), eq(LOGIN), eq(inicio), eq(fin), any(Pageable.class)))
+                .thenReturn(paginaConUno(crearDTO(1L, LOGIN)));
 
-        ResponseEntity<Page<EventoAuditoriaDTO>> res = controller.buscar(1L, "LOGIN", inicio, fin, 0, 50);
+        ResponseEntity<Page<EventoAuditoriaDTO>> res = controller.buscar(1L, LOGIN, inicio, fin, 0, 50);
 
         assertEquals(200, res.getStatusCode().value());
         assertEquals(1, res.getBody().getTotalElements());
-        verify(eventoService).buscarConFiltros(eq(1L), eq("LOGIN"), eq(inicio), eq(fin), any(Pageable.class));
+        verify(eventoService).buscarConFiltros(eq(1L), eq(LOGIN), eq(inicio), eq(fin), any(Pageable.class));
     }
 
     @Test
@@ -118,7 +122,7 @@ class EventoAuditoriaControllerTest {
     @Test
     void buscar_soloFiltroUsuario_retornaOk() {
         when(eventoService.buscarConFiltros(eq(1L), isNull(), isNull(), isNull(), any(Pageable.class)))
-                .thenReturn(paginaConUno(crearDTO(1L, "COMPRA")));
+                .thenReturn(paginaConUno(crearDTO(1L, COMPRA)));
 
         ResponseEntity<Page<EventoAuditoriaDTO>> res = controller.buscar(1L, null, null, null, 0, 50);
 
@@ -138,7 +142,7 @@ class EventoAuditoriaControllerTest {
     @Test
     void buscarPorUsuario_retornaOkConPagina() {
         when(eventoService.buscarPorUsuario(eq(1L), any(Pageable.class)))
-                .thenReturn(paginaConUno(crearDTO(1L, "LOGIN")));
+                .thenReturn(paginaConUno(crearDTO(1L, LOGIN)));
 
         ResponseEntity<Page<EventoAuditoriaDTO>> res = controller.buscarPorUsuario(1L, 0, 50);
 
@@ -168,14 +172,14 @@ class EventoAuditoriaControllerTest {
 
     @Test
     void buscarPorTipo_retornaOkConPagina() {
-        when(eventoService.buscarPorTipo(eq("LOGIN"), any(Pageable.class)))
-                .thenReturn(paginaConUno(crearDTO(1L, "LOGIN")));
+        when(eventoService.buscarPorTipo(eq(LOGIN), any(Pageable.class)))
+                .thenReturn(paginaConUno(crearDTO(1L, LOGIN)));
 
-        ResponseEntity<Page<EventoAuditoriaDTO>> res = controller.buscarPorTipo("LOGIN", 0, 50);
+        ResponseEntity<Page<EventoAuditoriaDTO>> res = controller.buscarPorTipo(LOGIN, 0, 50);
 
         assertEquals(200, res.getStatusCode().value());
         assertEquals(1, res.getBody().getTotalElements());
-        verify(eventoService).buscarPorTipo(eq("LOGIN"), any(Pageable.class));
+        verify(eventoService).buscarPorTipo(eq(LOGIN), any(Pageable.class));
     }
 
     @Test
@@ -190,23 +194,23 @@ class EventoAuditoriaControllerTest {
 
     @Test
     void buscarPorTipo_paginacionPersonalizada_respetaParametros() {
-        when(eventoService.buscarPorTipo(eq("COMPRA"), any(Pageable.class))).thenReturn(paginaVacia());
+        when(eventoService.buscarPorTipo(eq(COMPRA), any(Pageable.class))).thenReturn(paginaVacia());
 
-        controller.buscarPorTipo("COMPRA", 1, 20);
+        controller.buscarPorTipo(COMPRA, 1, 20);
 
-        verify(eventoService).buscarPorTipo(eq("COMPRA"), argThat(p -> p.getPageNumber() == 1 && p.getPageSize() == 20));
+        verify(eventoService).buscarPorTipo(eq(COMPRA), argThat(p -> p.getPageNumber() == 1 && p.getPageSize() == 20));
     }
 
     @Test
     void buscarPorCorrelacion_retornaOkConPagina() {
-        when(eventoService.buscarPorCorrelacion(eq("corr-1"), any(Pageable.class)))
-                .thenReturn(paginaConUno(crearDTO(1L, "COMPRA")));
+        when(eventoService.buscarPorCorrelacion(eq(CORR_1), any(Pageable.class)))
+                .thenReturn(paginaConUno(crearDTO(1L, COMPRA)));
 
-        ResponseEntity<Page<EventoAuditoriaDTO>> res = controller.buscarPorCorrelacion("corr-1", 0, 50);
+        ResponseEntity<Page<EventoAuditoriaDTO>> res = controller.buscarPorCorrelacion(CORR_1, 0, 50);
 
         assertEquals(200, res.getStatusCode().value());
         assertEquals(1, res.getBody().getTotalElements());
-        verify(eventoService).buscarPorCorrelacion(eq("corr-1"), any(Pageable.class));
+        verify(eventoService).buscarPorCorrelacion(eq(CORR_1), any(Pageable.class));
     }
 
     @Test
@@ -224,7 +228,7 @@ class EventoAuditoriaControllerTest {
         LocalDateTime inicio = LocalDateTime.now().minusDays(1);
         LocalDateTime fin = LocalDateTime.now();
         when(eventoService.buscarPorFecha(eq(inicio), eq(fin), any(Pageable.class)))
-                .thenReturn(paginaConUno(crearDTO(1L, "LOGIN")));
+                .thenReturn(paginaConUno(crearDTO(1L, LOGIN)));
 
         ResponseEntity<Page<EventoAuditoriaDTO>> res = controller.buscarPorFecha(inicio, fin, 0, 50);
 
@@ -258,14 +262,14 @@ class EventoAuditoriaControllerTest {
 
     @Test
     void buscarPorEntidad_retornaOkConPagina() {
-        when(eventoService.buscarPorEntidad(eq("USUARIO"), any(Pageable.class)))
+        when(eventoService.buscarPorEntidad(eq(USUARIO), any(Pageable.class)))
                 .thenReturn(paginaConUno(crearDTO(1L, "REGISTRO")));
 
-        ResponseEntity<Page<EventoAuditoriaDTO>> res = controller.buscarPorEntidad("USUARIO", 0, 50);
+        ResponseEntity<Page<EventoAuditoriaDTO>> res = controller.buscarPorEntidad(USUARIO, 0, 50);
 
         assertEquals(200, res.getStatusCode().value());
         assertEquals(1, res.getBody().getTotalElements());
-        verify(eventoService).buscarPorEntidad(eq("USUARIO"), any(Pageable.class));
+        verify(eventoService).buscarPorEntidad(eq(USUARIO), any(Pageable.class));
     }
 
     @Test

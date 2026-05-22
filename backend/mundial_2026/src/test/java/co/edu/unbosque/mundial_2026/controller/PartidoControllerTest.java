@@ -30,13 +30,15 @@ class PartidoControllerTest {
     @Mock private PartidoService partidoService;
     @InjectMocks private PartidoController controller;
 
+    private static final String USER_CORREO = "user@test.com";
+private static final String FECHA_PARTIDO = "2026-06-11";
     @Mock private SecurityContext securityContext;
     @Mock private Authentication authentication;
 
     @BeforeEach
     void setUpSecurityContext() {
    lenient().when(securityContext.getAuthentication()).thenReturn(authentication);
-lenient().when(authentication.getName()).thenReturn("user@test.com");
+lenient().when(authentication.getName()).thenReturn(USER_CORREO);
         SecurityContextHolder.setContext(securityContext);
     }
 
@@ -181,13 +183,13 @@ lenient().when(authentication.getName()).thenReturn("user@test.com");
 
     @Test
     void obtenerPartidosPorFecha_retornaOkConLista() {
-        when(partidoService.obtenerPartidosPorFecha("2026-06-11")).thenReturn(List.of(partidoDTO(1L)));
+        when(partidoService.obtenerPartidosPorFecha(FECHA_PARTIDO)).thenReturn(List.of(partidoDTO(1L)));
 
-        ResponseEntity<List<PartidoDTO>> res = controller.obtenerPartidosPorFecha("2026-06-11");
+        ResponseEntity<List<PartidoDTO>> res = controller.obtenerPartidosPorFecha(FECHA_PARTIDO);
 
         assertEquals(200, res.getStatusCode().value());
         assertEquals(1, res.getBody().size());
-        verify(partidoService).obtenerPartidosPorFecha("2026-06-11");
+        verify(partidoService).obtenerPartidosPorFecha(FECHA_PARTIDO);
     }
 
     @Test
@@ -223,19 +225,19 @@ lenient().when(authentication.getName()).thenReturn("user@test.com");
 
     @Test
     void obtenerPartidosPorSeleccionesFav_retornaOkConLista() {
-        when(partidoService.obtenerPartidosPorSeleccionesFav("user@test.com"))
+        when(partidoService.obtenerPartidosPorSeleccionesFav(USER_CORREO))
                 .thenReturn(List.of(partidoDTO(1L)));
 
         ResponseEntity<List<PartidoDTO>> res = controller.obtenerPartidosPorSeleccionesFav();
 
         assertEquals(200, res.getStatusCode().value());
         assertEquals(1, res.getBody().size());
-        verify(partidoService).obtenerPartidosPorSeleccionesFav("user@test.com");
+        verify(partidoService).obtenerPartidosPorSeleccionesFav(USER_CORREO);
     }
 
     @Test
     void obtenerPartidosPorSeleccionesFav_listaVacia_retornaOkVacio() {
-        when(partidoService.obtenerPartidosPorSeleccionesFav("user@test.com")).thenReturn(List.of());
+        when(partidoService.obtenerPartidosPorSeleccionesFav(USER_CORREO)).thenReturn(List.of());
 
         ResponseEntity<List<PartidoDTO>> res = controller.obtenerPartidosPorSeleccionesFav();
 
@@ -245,19 +247,19 @@ lenient().when(authentication.getName()).thenReturn("user@test.com");
 
     @Test
     void obtenerPartidosPorEstadiosFav_retornaOkConLista() {
-        when(partidoService.obtenerPartidosPorEstadiosFav("user@test.com"))
+        when(partidoService.obtenerPartidosPorEstadiosFav(USER_CORREO))
                 .thenReturn(List.of(partidoDTO(1L)));
 
         ResponseEntity<List<PartidoDTO>> res = controller.obtenerPartidosPorEstadiosFav();
 
         assertEquals(200, res.getStatusCode().value());
         assertEquals(1, res.getBody().size());
-        verify(partidoService).obtenerPartidosPorEstadiosFav("user@test.com");
+        verify(partidoService).obtenerPartidosPorEstadiosFav(USER_CORREO);
     }
 
     @Test
     void obtenerPartidosPorEstadiosFav_listaVacia_retornaOkVacio() {
-        when(partidoService.obtenerPartidosPorEstadiosFav("user@test.com")).thenReturn(List.of());
+        when(partidoService.obtenerPartidosPorEstadiosFav(USER_CORREO)).thenReturn(List.of());
 
         ResponseEntity<List<PartidoDTO>> res = controller.obtenerPartidosPorEstadiosFav();
 
@@ -267,19 +269,19 @@ lenient().when(authentication.getName()).thenReturn("user@test.com");
 
     @Test
     void obtenerPartidosPorCiudadesFav_retornaOkConLista() {
-        when(partidoService.obtenerPartidosPorCiudadesFav("user@test.com"))
+        when(partidoService.obtenerPartidosPorCiudadesFav(USER_CORREO))
                 .thenReturn(List.of(partidoDTO(1L)));
 
         ResponseEntity<List<PartidoDTO>> res = controller.obtenerPartidosPorCiudadesFav();
 
         assertEquals(200, res.getStatusCode().value());
         assertEquals(1, res.getBody().size());
-        verify(partidoService).obtenerPartidosPorCiudadesFav("user@test.com");
+        verify(partidoService).obtenerPartidosPorCiudadesFav(USER_CORREO);
     }
 
     @Test
     void obtenerPartidosPorCiudadesFav_listaVacia_retornaOkVacio() {
-        when(partidoService.obtenerPartidosPorCiudadesFav("user@test.com")).thenReturn(List.of());
+        when(partidoService.obtenerPartidosPorCiudadesFav(USER_CORREO)).thenReturn(List.of());
 
         ResponseEntity<List<PartidoDTO>> res = controller.obtenerPartidosPorCiudadesFav();
 
@@ -289,20 +291,20 @@ lenient().when(authentication.getName()).thenReturn("user@test.com");
 
     @Test
     void sincronizarPorFechaYLiga_retornaOkConConteo() {
-        when(partidoService.sincronizarPorFechaYLiga("2026-06-11", 1, 2026)).thenReturn(10);
+        when(partidoService.sincronizarPorFechaYLiga(FECHA_PARTIDO, 1, 2026)).thenReturn(10);
 
-        ResponseEntity<Integer> res = controller.sincronizarPorFechaYLiga(1, 2026, "2026-06-11");
+        ResponseEntity<Integer> res = controller.sincronizarPorFechaYLiga(1, 2026, FECHA_PARTIDO);
 
         assertEquals(200, res.getStatusCode().value());
         assertEquals(10, res.getBody());
-        verify(partidoService).sincronizarPorFechaYLiga("2026-06-11", 1, 2026);
+        verify(partidoService).sincronizarPorFechaYLiga(FECHA_PARTIDO, 1, 2026);
     }
 
     @Test
     void sincronizarPorFechaYLiga_sinPartidos_retornaCero() {
         when(partidoService.sincronizarPorFechaYLiga(any(), anyInt(), anyInt())).thenReturn(0);
 
-        ResponseEntity<Integer> res = controller.sincronizarPorFechaYLiga(1, 2026, "2026-06-11");
+        ResponseEntity<Integer> res = controller.sincronizarPorFechaYLiga(1, 2026, FECHA_PARTIDO);
 
         assertEquals(200, res.getStatusCode().value());
         assertEquals(0, res.getBody());

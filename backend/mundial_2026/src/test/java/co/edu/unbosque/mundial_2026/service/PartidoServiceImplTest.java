@@ -58,7 +58,12 @@ import co.edu.unbosque.mundial_2026.repository.SeleccionRepository;
 @ExtendWith(MockitoExtension.class)
 @SuppressWarnings({ "rawtypes", "unchecked" })
 class PartidoServiceImplTest {
-
+private static final String CORREO_TEST = "test@test.com";
+private static final String BRASIL = "Brasil";
+private static final String ARGENTINA = "Argentina";
+private static final String ESTADIO_AZTECA = "Estadio Azteca";
+private static final String FECHA = "2026-06-11T20:00:00+00:00";
+private static final String CIUDAD_MEXICO = "Ciudad de Mexico";
     @Mock
     private RestClient footballClient;
 
@@ -93,13 +98,13 @@ class PartidoServiceImplTest {
     void setUp() {
         usuario = new Usuario();
         usuario.setId(1L);
-        usuario.setCorreoUsuario("test@test.com");
+        usuario.setCorreoUsuario(CORREO_TEST);
         usuario.setSeleccionesU(new ArrayList<>());
         usuario.setPreferenciasu(new ArrayList<>());
         usuario.setCiudadFavoritas(new ArrayList<>());
 
-        partidoDTO = construirPartidoDTO(1001L, "Brasil", "Argentina", "Estadio Azteca",
-                "2026-06-11T20:00:00+00:00", "FT", "Group A", 2, 1);
+        partidoDTO = construirPartidoDTO(1001L, BRASIL, ARGENTINA, ESTADIO_AZTECA,
+                FECHA, "FT", "Group A", 2, 1);
     }
 
     private PartidoDTO construirPartidoDTO(Long id, String local, String visitante,
@@ -345,8 +350,8 @@ class PartidoServiceImplTest {
 
         @Test
         void cuandoPartidoSinGoles_noEstableceMarcadores() {
-            PartidoDTO sinGoles = construirPartidoDTO(2001L, "Brasil", "Argentina",
-                    "Estadio Azteca", "2026-06-11T20:00:00+00:00", "NS", "Group A", null, null);
+            PartidoDTO sinGoles = construirPartidoDTO(2001L, BRASIL, ARGENTINA,
+                    ESTADIO_AZTECA, FECHA, "NS", "Group A", null, null);
             sinGoles.setGoles(null);
 
             PartidoResponseDTO response = new PartidoResponseDTO();
@@ -369,25 +374,25 @@ class PartidoServiceImplTest {
         void cuandoTieneSelecciones_retornaPartidos() {
             Seleccion sel = new Seleccion();
             sel.setId(10L);
-            sel.setNombre("Brasil");
+            sel.setNombre(BRASIL);
             usuario.setSeleccionesU(List.of(sel));
 
             PartidoResponseDTO response = new PartidoResponseDTO();
             response.setPartidos(List.of(partidoDTO));
 
-            when(usuarioService.obtenerEntidadPorCorreo("test@test.com")).thenReturn(usuario);
+            when(usuarioService.obtenerEntidadPorCorreo(CORREO_TEST)).thenReturn(usuario);
             prepararRestClient(response);
 
-            List<PartidoDTO> resultado = partidoService.obtenerPartidosPorSeleccionesFav("test@test.com");
+            List<PartidoDTO> resultado = partidoService.obtenerPartidosPorSeleccionesFav(CORREO_TEST);
 
             assertEquals(1, resultado.size());
         }
 
         @Test
         void cuandoNoTieneSelecciones_retornaListaVacia() {
-            when(usuarioService.obtenerEntidadPorCorreo("test@test.com")).thenReturn(usuario);
+            when(usuarioService.obtenerEntidadPorCorreo(CORREO_TEST)).thenReturn(usuario);
 
-            List<PartidoDTO> resultado = partidoService.obtenerPartidosPorSeleccionesFav("test@test.com");
+            List<PartidoDTO> resultado = partidoService.obtenerPartidosPorSeleccionesFav(CORREO_TEST);
 
             assertTrue(resultado.isEmpty());
         }
@@ -401,16 +406,16 @@ class PartidoServiceImplTest {
         void filtraPartidosPorEstadioFavorito() {
             EstadioFavorito est = new EstadioFavorito();
             est.setId(20L);
-            est.setNombre("Estadio Azteca");
+            est.setNombre(ESTADIO_AZTECA);
             usuario.setPreferenciasu(List.of(est));
 
             PartidoResponseDTO response = new PartidoResponseDTO();
             response.setPartidos(List.of(partidoDTO));
 
-            when(usuarioService.obtenerEntidadPorCorreo("test@test.com")).thenReturn(usuario);
+            when(usuarioService.obtenerEntidadPorCorreo(CORREO_TEST)).thenReturn(usuario);
             prepararRestClient(response);
 
-            List<PartidoDTO> resultado = partidoService.obtenerPartidosPorEstadiosFav("test@test.com");
+            List<PartidoDTO> resultado = partidoService.obtenerPartidosPorEstadiosFav(CORREO_TEST);
 
             assertEquals(1, resultado.size());
         }
@@ -425,10 +430,10 @@ class PartidoServiceImplTest {
             PartidoResponseDTO response = new PartidoResponseDTO();
             response.setPartidos(List.of(partidoDTO));
 
-            when(usuarioService.obtenerEntidadPorCorreo("test@test.com")).thenReturn(usuario);
+            when(usuarioService.obtenerEntidadPorCorreo(CORREO_TEST)).thenReturn(usuario);
             prepararRestClient(response);
 
-            List<PartidoDTO> resultado = partidoService.obtenerPartidosPorEstadiosFav("test@test.com");
+            List<PartidoDTO> resultado = partidoService.obtenerPartidosPorEstadiosFav(CORREO_TEST);
 
             assertTrue(resultado.isEmpty());
         }
@@ -442,16 +447,16 @@ class PartidoServiceImplTest {
         void filtraPartidosPorCiudadFavorita() {
             CiudadFavorita ciudad = new CiudadFavorita();
             ciudad.setId(30L);
-            ciudad.setNombre("Ciudad de Mexico");
+            ciudad.setNombre(CIUDAD_MEXICO);
             usuario.setCiudadFavoritas(List.of(ciudad));
 
             PartidoResponseDTO response = new PartidoResponseDTO();
             response.setPartidos(List.of(partidoDTO));
 
-            when(usuarioService.obtenerEntidadPorCorreo("test@test.com")).thenReturn(usuario);
+            when(usuarioService.obtenerEntidadPorCorreo(CORREO_TEST)).thenReturn(usuario);
             prepararRestClient(response);
 
-            List<PartidoDTO> resultado = partidoService.obtenerPartidosPorCiudadesFav("test@test.com");
+            List<PartidoDTO> resultado = partidoService.obtenerPartidosPorCiudadesFav(CORREO_TEST);
 
             assertEquals(1, resultado.size());
         }
@@ -466,10 +471,10 @@ class PartidoServiceImplTest {
             PartidoResponseDTO response = new PartidoResponseDTO();
             response.setPartidos(List.of(partidoDTO));
 
-            when(usuarioService.obtenerEntidadPorCorreo("test@test.com")).thenReturn(usuario);
+            when(usuarioService.obtenerEntidadPorCorreo(CORREO_TEST)).thenReturn(usuario);
             prepararRestClient(response);
 
-            List<PartidoDTO> resultado = partidoService.obtenerPartidosPorCiudadesFav("test@test.com");
+            List<PartidoDTO> resultado = partidoService.obtenerPartidosPorCiudadesFav(CORREO_TEST);
 
             assertTrue(resultado.isEmpty());
         }
@@ -482,9 +487,9 @@ class PartidoServiceImplTest {
         @Test
         void filtrarPorSeleccion_retornaPartidos() {
             Partido p = new Partido();
-            when(partidoRepository.findBySeleccion("Brasil")).thenReturn(List.of(p));
+            when(partidoRepository.findBySeleccion(BRASIL)).thenReturn(List.of(p));
 
-            List<Partido> resultado = partidoService.filtrarPorSeleccion("Brasil");
+            List<Partido> resultado = partidoService.filtrarPorSeleccion(BRASIL);
 
             assertEquals(1, resultado.size());
         }
@@ -502,10 +507,10 @@ class PartidoServiceImplTest {
         @Test
         void filtrarPorCiudad_cuandoEstadioMapeaACiudad_retornaPartido() {
             Partido p = new Partido();
-            p.setEstadio("Estadio Azteca");
+            p.setEstadio(ESTADIO_AZTECA);
             when(partidoRepository.findAll()).thenReturn(List.of(p));
 
-            List<Partido> resultado = partidoService.filtrarPorCiudad("Ciudad de Mexico");
+            List<Partido> resultado = partidoService.filtrarPorCiudad(CIUDAD_MEXICO);
 
             assertEquals(1, resultado.size());
         }
@@ -516,7 +521,7 @@ class PartidoServiceImplTest {
             p.setEstadio("EstadioInexistente");
             when(partidoRepository.findAll()).thenReturn(List.of(p));
 
-            List<Partido> resultado = partidoService.filtrarPorCiudad("Ciudad de Mexico");
+            List<Partido> resultado = partidoService.filtrarPorCiudad(CIUDAD_MEXICO);
 
             assertTrue(resultado.isEmpty());
         }
@@ -530,13 +535,13 @@ class PartidoServiceImplTest {
         void retornaTodasLasSelecciones() {
             Seleccion s = new Seleccion();
             s.setId(1L);
-            s.setNombre("Brasil");
+            s.setNombre(BRASIL);
             when(seleccionRepository.findAll()).thenReturn(List.of(s));
 
             List<PreferenciaDTO> resultado = partidoService.obtenerCatalogoSelecciones();
 
             assertEquals(1, resultado.size());
-            assertEquals("Brasil", resultado.get(0).getNombre());
+            assertEquals(BRASIL, resultado.get(0).getNombre());
         }
     }
 
@@ -612,9 +617,9 @@ class PartidoServiceImplTest {
         void retornaTodosConSusCapacidades() {
             Partido p = new Partido();
             p.setId(1L);
-            p.setSeleccionLocal("Brasil");
-            p.setSeleccionVisitante("Argentina");
-            p.setEstadio("Estadio Azteca");
+            p.setSeleccionLocal(BRASIL);
+            p.setSeleccionVisitante(ARGENTINA);
+            p.setEstadio(ESTADIO_AZTECA);
             p.setCapacidadDisponible(50000);
             p.setRonda("Group A");
 
@@ -623,7 +628,7 @@ class PartidoServiceImplTest {
             List<PartidoCapacidadDTO> resultado = partidoService.listarPartidosConCapacidad();
 
             assertEquals(1, resultado.size());
-            assertEquals("Ciudad de Mexico", resultado.get(0).getCiudad());
+            assertEquals(CIUDAD_MEXICO, resultado.get(0).getCiudad());
             assertEquals(50000, resultado.get(0).getCapacidadDisponible());
         }
 
@@ -631,7 +636,7 @@ class PartidoServiceImplTest {
         void cuandoCapacidadNull_usaValorPorDefecto60000() {
             Partido p = new Partido();
             p.setId(1L);
-            p.setEstadio("Estadio Azteca");
+            p.setEstadio(ESTADIO_AZTECA);
             p.setCapacidadDisponible(null);
 
             when(partidoRepository.findAll()).thenReturn(List.of(p));
@@ -679,8 +684,8 @@ class PartidoServiceImplTest {
         void cuandoExiste_actualizaGolesYRegistraAuditoria() {
             Partido p = new Partido();
             p.setId(1L);
-            p.setSeleccionLocal("Brasil");
-            p.setSeleccionVisitante("Argentina");
+            p.setSeleccionLocal(BRASIL);
+            p.setSeleccionVisitante(ARGENTINA);
             p.setGolesLocal(0);
             p.setGolesVisitante(0);
 

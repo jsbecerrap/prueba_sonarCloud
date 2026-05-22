@@ -25,6 +25,7 @@ class MetodoPagoControllerTest {
 
     @InjectMocks
     private MetodoPagoController controller;
+    private static final String USER_CORREO = "user@test.com";
 
     private MetodoPagoRequestDTO requestValido() {
         MetodoPagoRequestDTO dto = new MetodoPagoRequestDTO();
@@ -47,21 +48,21 @@ class MetodoPagoControllerTest {
 
     @Test
     void listar_retorna200ConLista() {
-        when(metodoPagoService.listarPorCorreo("user@test.com"))
+        when(metodoPagoService.listarPorCorreo(USER_CORREO))
                 .thenReturn(List.of(responseDTO()));
 
-        ResponseEntity<List<MetodoPagoResponseDTO>> res = controller.listar("user@test.com");
+        ResponseEntity<List<MetodoPagoResponseDTO>> res = controller.listar(USER_CORREO);
 
         assertEquals(200, res.getStatusCode().value());
         assertEquals(1, res.getBody().size());
-        verify(metodoPagoService).listarPorCorreo("user@test.com");
+        verify(metodoPagoService).listarPorCorreo(USER_CORREO);
     }
 
     @Test
     void listar_listaVacia_retorna200() {
-        when(metodoPagoService.listarPorCorreo("user@test.com")).thenReturn(List.of());
+        when(metodoPagoService.listarPorCorreo(USER_CORREO)).thenReturn(List.of());
 
-        ResponseEntity<List<MetodoPagoResponseDTO>> res = controller.listar("user@test.com");
+        ResponseEntity<List<MetodoPagoResponseDTO>> res = controller.listar(USER_CORREO);
 
         assertEquals(200, res.getStatusCode().value());
         assertTrue(res.getBody().isEmpty());
@@ -71,7 +72,7 @@ class MetodoPagoControllerTest {
     void listar_serviceLanzaExcepcion_propaga() {
         when(metodoPagoService.listarPorCorreo(any())).thenThrow(new RuntimeException("error"));
 
-        assertThrows(RuntimeException.class, () -> controller.listar("user@test.com"));
+        assertThrows(RuntimeException.class, () -> controller.listar(USER_CORREO));
     }
 
    
@@ -80,19 +81,19 @@ class MetodoPagoControllerTest {
     void agregar_valido_retorna200() {
       when(metodoPagoService.agregar(any(), any())).thenReturn(responseDTO());
 
-        ResponseEntity<MetodoPagoResponseDTO> res = controller.agregar("user@test.com", requestValido());
+        ResponseEntity<MetodoPagoResponseDTO> res = controller.agregar(USER_CORREO, requestValido());
 
         assertEquals(200, res.getStatusCode().value());
         assertNotNull(res.getBody());
         assertEquals("CARD", res.getBody().getType());
-        verify(metodoPagoService).agregar(eq("user@test.com"), any());
+        verify(metodoPagoService).agregar(eq(USER_CORREO), any());
     }
 
     @Test
     void agregar_serviceRetornaNull_retorna400() {
         when(metodoPagoService.agregar(any(), any())).thenReturn(null);
 
-        ResponseEntity<MetodoPagoResponseDTO> res = controller.agregar("user@test.com", requestValido());
+        ResponseEntity<MetodoPagoResponseDTO> res = controller.agregar(USER_CORREO, requestValido());
 
         assertEquals(400, res.getStatusCode().value());
         assertNull(res.getBody());
@@ -106,7 +107,7 @@ class MetodoPagoControllerTest {
         resp.setType("PSE");
         when(metodoPagoService.agregar(any(), any())).thenReturn(resp);
 
-        ResponseEntity<MetodoPagoResponseDTO> res = controller.agregar("user@test.com", dto);
+        ResponseEntity<MetodoPagoResponseDTO> res = controller.agregar(USER_CORREO, dto);
 
         assertEquals(200, res.getStatusCode().value());
         assertEquals("PSE", res.getBody().getType());
@@ -118,7 +119,7 @@ class MetodoPagoControllerTest {
         dto.setType("CASH");
         when(metodoPagoService.agregar(any(), any())).thenReturn(responseDTO());
 
-        ResponseEntity<MetodoPagoResponseDTO> res = controller.agregar("user@test.com", dto);
+        ResponseEntity<MetodoPagoResponseDTO> res = controller.agregar(USER_CORREO, dto);
 
         assertEquals(200, res.getStatusCode().value());
     }
@@ -129,7 +130,7 @@ class MetodoPagoControllerTest {
         dto.setType("TRANSFER");
         when(metodoPagoService.agregar(any(), any())).thenReturn(responseDTO());
 
-        ResponseEntity<MetodoPagoResponseDTO> res = controller.agregar("user@test.com", dto);
+        ResponseEntity<MetodoPagoResponseDTO> res = controller.agregar(USER_CORREO, dto);
 
         assertEquals(200, res.getStatusCode().value());
     }
@@ -139,20 +140,20 @@ class MetodoPagoControllerTest {
         when(metodoPagoService.agregar(any(), any())).thenThrow(new RuntimeException("error"));
 
         assertThrows(RuntimeException.class,
-                () -> controller.agregar("user@test.com", requestValido()));
+                () -> controller.agregar(USER_CORREO, requestValido()));
     }
 
    
 
     @Test
     void setDefault_retorna204() {
-        doNothing().when(metodoPagoService).setDefaultPorCorreo("user@test.com", 1L);
+        doNothing().when(metodoPagoService).setDefaultPorCorreo(USER_CORREO, 1L);
 
-        ResponseEntity<Void> res = controller.setDefault("user@test.com", 1L);
+        ResponseEntity<Void> res = controller.setDefault(USER_CORREO, 1L);
 
         assertEquals(204, res.getStatusCode().value());
         assertNull(res.getBody());
-        verify(metodoPagoService).setDefaultPorCorreo("user@test.com", 1L);
+        verify(metodoPagoService).setDefaultPorCorreo(USER_CORREO, 1L);
     }
 
     @Test
@@ -161,20 +162,20 @@ class MetodoPagoControllerTest {
                 .when(metodoPagoService).setDefaultPorCorreo(any(), eq(99L));
 
         assertThrows(RuntimeException.class,
-                () -> controller.setDefault("user@test.com", 99L));
+                () -> controller.setDefault(USER_CORREO, 99L));
     }
 
 
 
     @Test
     void eliminar_retorna204() {
-        doNothing().when(metodoPagoService).eliminar("user@test.com", 1L);
+        doNothing().when(metodoPagoService).eliminar(USER_CORREO, 1L);
 
-        ResponseEntity<Void> res = controller.eliminar("user@test.com", 1L);
+        ResponseEntity<Void> res = controller.eliminar(USER_CORREO, 1L);
 
         assertEquals(204, res.getStatusCode().value());
         assertNull(res.getBody());
-        verify(metodoPagoService).eliminar("user@test.com", 1L);
+        verify(metodoPagoService).eliminar(USER_CORREO, 1L);
     }
 
     @Test
@@ -183,7 +184,7 @@ class MetodoPagoControllerTest {
                 .when(metodoPagoService).eliminar(any(), eq(99L));
 
         assertThrows(RuntimeException.class,
-                () -> controller.eliminar("user@test.com", 99L));
+                () -> controller.eliminar(USER_CORREO, 99L));
     }
 
    
@@ -193,11 +194,11 @@ class MetodoPagoControllerTest {
        when(metodoPagoService.actualizar(any(), eq(1L), any())).thenReturn(responseDTO());
 
         ResponseEntity<MetodoPagoResponseDTO> res =
-                controller.actualizar("user@test.com", 1L, requestValido());
+                controller.actualizar(USER_CORREO, 1L, requestValido());
 
         assertEquals(200, res.getStatusCode().value());
         assertNotNull(res.getBody());
-        verify(metodoPagoService).actualizar(eq("user@test.com"), eq(1L), any());
+        verify(metodoPagoService).actualizar(eq(USER_CORREO), eq(1L), any());
     }
 
     @Test
@@ -207,7 +208,7 @@ class MetodoPagoControllerTest {
         when(metodoPagoService.actualizar(any(), eq(1L), any())).thenReturn(esperado);
 
         ResponseEntity<MetodoPagoResponseDTO> res =
-                controller.actualizar("user@test.com", 1L, requestValido());
+                controller.actualizar(USER_CORREO, 1L, requestValido());
 
         assertEquals("Visa Actualizada", res.getBody().getLabel());
     }
@@ -218,6 +219,6 @@ class MetodoPagoControllerTest {
                 .thenThrow(new RuntimeException("no encontrado"));
 
         assertThrows(RuntimeException.class,
-                () -> controller.actualizar("user@test.com", 99L, requestValido()));
+                () -> controller.actualizar(USER_CORREO, 99L, requestValido()));
     }
 }

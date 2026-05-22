@@ -27,6 +27,8 @@ class ProductoControllerTest {
     @Mock private ProductoService productoService;
     @InjectMocks private ProductoController controller;
 
+    private static final String CAMISETA_PRUEBA = "Camiseta Colombia";
+private static final String NO_ENCONTRADO = "no encontrado";
     private ProductoResponseDTO responseDTO(Long id, String nombre) {
         ProductoResponseDTO dto = new ProductoResponseDTO();
         dto.setId(id);
@@ -36,7 +38,7 @@ class ProductoControllerTest {
 
     private ProductoRequestDTO requestDTO() {
         ProductoRequestDTO dto = new ProductoRequestDTO();
-        dto.setNombre("Camiseta Colombia");
+        dto.setNombre(CAMISETA_PRUEBA);
         dto.setPrecio(80000.0);
         dto.setCategoriaId(1L);
         return dto;
@@ -51,14 +53,14 @@ class ProductoControllerTest {
     @Test
     void crear_exitoso_retorna201() {
         ProductoRequestDTO dto = requestDTO();
-        when(productoService.crear(dto)).thenReturn(responseDTO(1L, "Camiseta Colombia"));
+        when(productoService.crear(dto)).thenReturn(responseDTO(1L, CAMISETA_PRUEBA));
 
         ResponseEntity<ProductoResponseDTO> res = controller.crear(dto);
 
         assertEquals(201, res.getStatusCode().value());
         assertNotNull(res.getBody());
         assertEquals(1L, res.getBody().getId());
-        assertEquals("Camiseta Colombia", res.getBody().getNombre());
+        assertEquals(CAMISETA_PRUEBA, res.getBody().getNombre());
         verify(productoService).crear(dto);
     }
 
@@ -72,7 +74,7 @@ class ProductoControllerTest {
     @Test
     void actualizar_exitoso_retornaOk() {
         ProductoActualizarRequestDTO dto = actualizarDTO();
-        when(productoService.actualizar(1L, dto)).thenReturn(responseDTO(1L, "Camiseta Colombia"));
+        when(productoService.actualizar(1L, dto)).thenReturn(responseDTO(1L, CAMISETA_PRUEBA));
 
         ResponseEntity<ProductoResponseDTO> res = controller.actualizar(1L, dto);
 
@@ -84,7 +86,7 @@ class ProductoControllerTest {
 
     @Test
     void actualizar_productoNoExistente_propagaExcepcion() {
-        when(productoService.actualizar(eq(99L), any())).thenThrow(new ProductoNotFoundException("no encontrado"));
+        when(productoService.actualizar(eq(99L), any())).thenThrow(new ProductoNotFoundException(NO_ENCONTRADO));
 
         assertThrows(ProductoNotFoundException.class, () -> controller.actualizar(99L, actualizarDTO()));
     }
@@ -102,7 +104,7 @@ class ProductoControllerTest {
 
     @Test
     void eliminar_productoNoExistente_propagaExcepcion() {
-        doThrow(new ProductoNotFoundException("no encontrado")).when(productoService).eliminar(99L);
+        doThrow(new ProductoNotFoundException(NO_ENCONTRADO)).when(productoService).eliminar(99L);
 
         assertThrows(ProductoNotFoundException.class, () -> controller.eliminar(99L));
     }
@@ -120,7 +122,7 @@ class ProductoControllerTest {
 
     @Test
     void reactivar_productoNoExistente_propagaExcepcion() {
-        doThrow(new ProductoNotFoundException("no encontrado")).when(productoService).reactivar(99L);
+        doThrow(new ProductoNotFoundException(NO_ENCONTRADO)).when(productoService).reactivar(99L);
 
         assertThrows(ProductoNotFoundException.class, () -> controller.reactivar(99L));
     }
@@ -194,19 +196,19 @@ class ProductoControllerTest {
 
     @Test
     void obtenerPorId_existente_retornaOk() {
-        when(productoService.obtenerPorId(1L)).thenReturn(responseDTO(1L, "Camiseta Colombia"));
+        when(productoService.obtenerPorId(1L)).thenReturn(responseDTO(1L, CAMISETA_PRUEBA));
 
         ResponseEntity<ProductoResponseDTO> res = controller.obtenerPorId(1L);
 
         assertEquals(200, res.getStatusCode().value());
         assertEquals(1L, res.getBody().getId());
-        assertEquals("Camiseta Colombia", res.getBody().getNombre());
+        assertEquals(CAMISETA_PRUEBA, res.getBody().getNombre());
         verify(productoService).obtenerPorId(1L);
     }
 
     @Test
     void obtenerPorId_noExistente_propagaExcepcion() {
-        when(productoService.obtenerPorId(99L)).thenThrow(new ProductoNotFoundException("no encontrado"));
+        when(productoService.obtenerPorId(99L)).thenThrow(new ProductoNotFoundException(NO_ENCONTRADO));
 
         assertThrows(ProductoNotFoundException.class, () -> controller.obtenerPorId(99L));
     }
@@ -262,7 +264,7 @@ class ProductoControllerTest {
     void activarLote_productoNoExistente_propagaExcepcion() {
         ActivarLoteRequestDTO dto = new ActivarLoteRequestDTO();
         dto.setIds(List.of(99L));
-        doThrow(new ProductoNotFoundException("no encontrado")).when(productoService).activarLote(List.of(99L));
+        doThrow(new ProductoNotFoundException(NO_ENCONTRADO)).when(productoService).activarLote(List.of(99L));
 
         assertThrows(ProductoNotFoundException.class, () -> controller.activarLote(dto));
     }

@@ -48,7 +48,9 @@ class MetodoPagoServiceImplTest {
 
     @InjectMocks
     private MetodoPagoServiceImpl metodoPagoService;
-
+private static final String CORREO_TEST = "test@test.com";
+private static final String CARD = "CARD";
+private static final String PSE = "PSE";
     private Usuario usuario;
     private MetodoPago metodoPago;
 
@@ -56,14 +58,14 @@ class MetodoPagoServiceImplTest {
     void setUp() {
         usuario = new Usuario();
         usuario.setId(1L);
-        usuario.setCorreoUsuario("test@test.com");
+        usuario.setCorreoUsuario(CORREO_TEST);
         usuario.setNombre("Juan");
         usuario.setApellido("Perez");
 
         metodoPago = new MetodoPago();
         metodoPago.setId(100L);
         metodoPago.setUsuario(usuario);
-        metodoPago.setTipo("CARD");
+        metodoPago.setTipo(CARD);
         metodoPago.setLabel("Visa 1234");
         metodoPago.setDetails("4242424242424242");
         metodoPago.setDefault(true);
@@ -77,11 +79,11 @@ class MetodoPagoServiceImplTest {
         @Test
         void cuandoEsPrimerMetodo_seMarcaComoDefault() {
             MetodoPagoRequestDTO dto = new MetodoPagoRequestDTO();
-            dto.setType("CARD");
+            dto.setType(CARD);
             dto.setLabel("Visa");
             dto.setDetails("1234");
 
-            when(usuarioService.obtenerEntidadPorCorreo("test@test.com")).thenReturn(usuario);
+            when(usuarioService.obtenerEntidadPorCorreo(CORREO_TEST)).thenReturn(usuario);
             when(metodoPagoRepository.findByUsuarioId(1L)).thenReturn(Collections.emptyList());
             when(metodoPagoRepository.save(any(MetodoPago.class))).thenAnswer(inv -> {
                 MetodoPago m = inv.getArgument(0);
@@ -89,10 +91,10 @@ class MetodoPagoServiceImplTest {
                 return m;
             });
 
-            MetodoPagoResponseDTO resultado = metodoPagoService.agregar("test@test.com", dto);
+            MetodoPagoResponseDTO resultado = metodoPagoService.agregar(CORREO_TEST, dto);
 
             assertNotNull(resultado);
-            assertEquals("CARD", resultado.getType());
+            assertEquals(CARD, resultado.getType());
             assertTrue(resultado.isDefault());
             verify(auditoriaService).registrar(eq("METODO_PAGO_AGREGADO"), anyString(), eq(1L), anyString(), eq("MetodoPago"));
         }
@@ -100,11 +102,11 @@ class MetodoPagoServiceImplTest {
         @Test
         void cuandoNoEsPrimerMetodo_noEsDefault() {
             MetodoPagoRequestDTO dto = new MetodoPagoRequestDTO();
-            dto.setType("PSE");
+            dto.setType(PSE);
             dto.setLabel("Banco");
             dto.setDetails("ref-001");
 
-            when(usuarioService.obtenerEntidadPorCorreo("test@test.com")).thenReturn(usuario);
+            when(usuarioService.obtenerEntidadPorCorreo(CORREO_TEST)).thenReturn(usuario);
             when(metodoPagoRepository.findByUsuarioId(1L)).thenReturn(List.of(metodoPago));
             when(metodoPagoRepository.save(any(MetodoPago.class))).thenAnswer(inv -> {
                 MetodoPago m = inv.getArgument(0);
@@ -112,7 +114,7 @@ class MetodoPagoServiceImplTest {
                 return m;
             });
 
-            MetodoPagoResponseDTO resultado = metodoPagoService.agregar("test@test.com", dto);
+            MetodoPagoResponseDTO resultado = metodoPagoService.agregar(CORREO_TEST, dto);
 
             assertFalse(resultado.isDefault());
         }
@@ -123,7 +125,7 @@ class MetodoPagoServiceImplTest {
             dto.setType("CRYPTO");
 
             assertThrows(MetodoPagoInvalidoException.class,
-                    () -> metodoPagoService.agregar("test@test.com", dto));
+                    () -> metodoPagoService.agregar(CORREO_TEST, dto));
             verify(metodoPagoRepository, never()).save(any());
         }
 
@@ -133,22 +135,22 @@ class MetodoPagoServiceImplTest {
             dto.setType(null);
 
             assertThrows(MetodoPagoInvalidoException.class,
-                    () -> metodoPagoService.agregar("test@test.com", dto));
+                    () -> metodoPagoService.agregar(CORREO_TEST, dto));
         }
 
         @Test
         void aceptaTodosLosTiposValidos() {
-            for (String tipo : new String[] { "CARD", "PSE", "CASH", "TRANSFER" }) {
+            for (String tipo : new String[] { CARD, PSE, "CASH", "TRANSFER" }) {
                 MetodoPagoRequestDTO dto = new MetodoPagoRequestDTO();
                 dto.setType(tipo);
                 dto.setLabel("L");
                 dto.setDetails("D");
 
-                when(usuarioService.obtenerEntidadPorCorreo("test@test.com")).thenReturn(usuario);
+                when(usuarioService.obtenerEntidadPorCorreo(CORREO_TEST)).thenReturn(usuario);
                 when(metodoPagoRepository.findByUsuarioId(1L)).thenReturn(Collections.emptyList());
                 when(metodoPagoRepository.save(any(MetodoPago.class))).thenAnswer(inv -> inv.getArgument(0));
 
-                MetodoPagoResponseDTO resultado = metodoPagoService.agregar("test@test.com", dto);
+                MetodoPagoResponseDTO resultado = metodoPagoService.agregar(CORREO_TEST, dto);
 
                 assertEquals(tipo, resultado.getType());
             }
@@ -164,14 +166,14 @@ class MetodoPagoServiceImplTest {
             MetodoPago otro = new MetodoPago();
             otro.setId(101L);
             otro.setUsuario(usuario);
-            otro.setTipo("PSE");
+            otro.setTipo(PSE);
             otro.setDefault(false);
 
-            when(usuarioService.obtenerEntidadPorCorreo("test@test.com")).thenReturn(usuario);
+            when(usuarioService.obtenerEntidadPorCorreo(CORREO_TEST)).thenReturn(usuario);
             when(metodoPagoRepository.findById(100L)).thenReturn(Optional.of(metodoPago));
             when(metodoPagoRepository.findByUsuarioIdOrderByCreatedAtDesc(1L)).thenReturn(List.of(otro));
 
-            metodoPagoService.eliminar("test@test.com", 100L);
+            metodoPagoService.eliminar(CORREO_TEST, 100L);
 
             assertTrue(otro.isDefault());
             verify(metodoPagoRepository).delete(metodoPago);
@@ -180,11 +182,11 @@ class MetodoPagoServiceImplTest {
 
         @Test
         void cuandoEsDefaultYNoQuedanOtros_noAsignaNuevoDefault() {
-            when(usuarioService.obtenerEntidadPorCorreo("test@test.com")).thenReturn(usuario);
+            when(usuarioService.obtenerEntidadPorCorreo(CORREO_TEST)).thenReturn(usuario);
             when(metodoPagoRepository.findById(100L)).thenReturn(Optional.of(metodoPago));
             when(metodoPagoRepository.findByUsuarioIdOrderByCreatedAtDesc(1L)).thenReturn(Collections.emptyList());
 
-            metodoPagoService.eliminar("test@test.com", 100L);
+            metodoPagoService.eliminar(CORREO_TEST, 100L);
 
             verify(metodoPagoRepository).delete(metodoPago);
             verify(metodoPagoRepository, never()).save(any());
@@ -194,10 +196,10 @@ class MetodoPagoServiceImplTest {
         void cuandoNoEsDefault_soloElimina() {
             metodoPago.setDefault(false);
 
-            when(usuarioService.obtenerEntidadPorCorreo("test@test.com")).thenReturn(usuario);
+            when(usuarioService.obtenerEntidadPorCorreo(CORREO_TEST)).thenReturn(usuario);
             when(metodoPagoRepository.findById(100L)).thenReturn(Optional.of(metodoPago));
 
-            metodoPagoService.eliminar("test@test.com", 100L);
+            metodoPagoService.eliminar(CORREO_TEST, 100L);
 
             verify(metodoPagoRepository).delete(metodoPago);
             verify(metodoPagoRepository, never()).findByUsuarioIdOrderByCreatedAtDesc(any());
@@ -205,11 +207,11 @@ class MetodoPagoServiceImplTest {
 
         @Test
         void cuandoNoExiste_lanzaMetodoPagoNotFoundException() {
-            when(usuarioService.obtenerEntidadPorCorreo("test@test.com")).thenReturn(usuario);
+            when(usuarioService.obtenerEntidadPorCorreo(CORREO_TEST)).thenReturn(usuario);
             when(metodoPagoRepository.findById(999L)).thenReturn(Optional.empty());
 
             assertThrows(MetodoPagoNotFoundException.class,
-                    () -> metodoPagoService.eliminar("test@test.com", 999L));
+                    () -> metodoPagoService.eliminar(CORREO_TEST, 999L));
         }
 
         @Test
@@ -218,11 +220,11 @@ class MetodoPagoServiceImplTest {
             otroUsuario.setId(99L);
             metodoPago.setUsuario(otroUsuario);
 
-            when(usuarioService.obtenerEntidadPorCorreo("test@test.com")).thenReturn(usuario);
+            when(usuarioService.obtenerEntidadPorCorreo(CORREO_TEST)).thenReturn(usuario);
             when(metodoPagoRepository.findById(100L)).thenReturn(Optional.of(metodoPago));
 
             assertThrows(MetodoPagoNotFoundException.class,
-                    () -> metodoPagoService.eliminar("test@test.com", 100L));
+                    () -> metodoPagoService.eliminar(CORREO_TEST, 100L));
         }
     }
 
@@ -232,23 +234,23 @@ class MetodoPagoServiceImplTest {
 
         @Test
         void retornaListaDeMetodos() {
-            when(usuarioService.obtenerEntidadPorCorreo("test@test.com")).thenReturn(usuario);
+            when(usuarioService.obtenerEntidadPorCorreo(CORREO_TEST)).thenReturn(usuario);
             when(metodoPagoRepository.findByUsuarioIdOrderByIsDefaultDescCreatedAtDesc(1L))
                     .thenReturn(List.of(metodoPago));
 
-            List<MetodoPagoResponseDTO> resultado = metodoPagoService.listarPorCorreo("test@test.com");
+            List<MetodoPagoResponseDTO> resultado = metodoPagoService.listarPorCorreo(CORREO_TEST);
 
             assertEquals(1, resultado.size());
-            assertEquals("CARD", resultado.get(0).getType());
+            assertEquals(CARD, resultado.get(0).getType());
         }
 
         @Test
         void cuandoNoHay_retornaListaVacia() {
-            when(usuarioService.obtenerEntidadPorCorreo("test@test.com")).thenReturn(usuario);
+            when(usuarioService.obtenerEntidadPorCorreo(CORREO_TEST)).thenReturn(usuario);
             when(metodoPagoRepository.findByUsuarioIdOrderByIsDefaultDescCreatedAtDesc(1L))
                     .thenReturn(Collections.emptyList());
 
-            List<MetodoPagoResponseDTO> resultado = metodoPagoService.listarPorCorreo("test@test.com");
+            List<MetodoPagoResponseDTO> resultado = metodoPagoService.listarPorCorreo(CORREO_TEST);
 
             assertTrue(resultado.isEmpty());
         }
@@ -266,10 +268,10 @@ class MetodoPagoServiceImplTest {
             otro.setDefault(false);
 
             List<MetodoPago> todos = new ArrayList<>(List.of(metodoPago, otro));
-            when(usuarioService.obtenerEntidadPorCorreo("test@test.com")).thenReturn(usuario);
+            when(usuarioService.obtenerEntidadPorCorreo(CORREO_TEST)).thenReturn(usuario);
             when(metodoPagoRepository.findByUsuarioId(1L)).thenReturn(todos);
 
-            metodoPagoService.setDefaultPorCorreo("test@test.com", 101L);
+            metodoPagoService.setDefaultPorCorreo(CORREO_TEST, 101L);
 
             assertFalse(metodoPago.isDefault());
             assertTrue(otro.isDefault());
@@ -278,11 +280,11 @@ class MetodoPagoServiceImplTest {
 
         @Test
         void cuandoIdNoEstaEnLaLista_lanzaMetodoPagoNotFoundException() {
-            when(usuarioService.obtenerEntidadPorCorreo("test@test.com")).thenReturn(usuario);
+            when(usuarioService.obtenerEntidadPorCorreo(CORREO_TEST)).thenReturn(usuario);
             when(metodoPagoRepository.findByUsuarioId(1L)).thenReturn(List.of(metodoPago));
 
             assertThrows(MetodoPagoNotFoundException.class,
-                    () -> metodoPagoService.setDefaultPorCorreo("test@test.com", 999L));
+                    () -> metodoPagoService.setDefaultPorCorreo(CORREO_TEST, 999L));
         }
     }
 
@@ -293,17 +295,17 @@ class MetodoPagoServiceImplTest {
         @Test
         void actualizaTodosLosCampos() {
             MetodoPagoRequestDTO dto = new MetodoPagoRequestDTO();
-            dto.setType("PSE");
+            dto.setType(PSE);
             dto.setLabel("Nuevo Banco");
             dto.setDetails("ref-nueva");
 
-            when(usuarioService.obtenerEntidadPorCorreo("test@test.com")).thenReturn(usuario);
+            when(usuarioService.obtenerEntidadPorCorreo(CORREO_TEST)).thenReturn(usuario);
             when(metodoPagoRepository.findById(100L)).thenReturn(Optional.of(metodoPago));
             when(metodoPagoRepository.save(any(MetodoPago.class))).thenReturn(metodoPago);
 
-            MetodoPagoResponseDTO resultado = metodoPagoService.actualizar("test@test.com", 100L, dto);
+            MetodoPagoResponseDTO resultado = metodoPagoService.actualizar(CORREO_TEST, 100L, dto);
 
-            assertEquals("PSE", metodoPago.getTipo());
+            assertEquals(PSE, metodoPago.getTipo());
             assertEquals("Nuevo Banco", metodoPago.getLabel());
             assertEquals("ref-nueva", metodoPago.getDetails());
             assertNotNull(resultado);
@@ -313,13 +315,13 @@ class MetodoPagoServiceImplTest {
         void cuandoCamposNull_noActualiza() {
             MetodoPagoRequestDTO dto = new MetodoPagoRequestDTO();
 
-            when(usuarioService.obtenerEntidadPorCorreo("test@test.com")).thenReturn(usuario);
+            when(usuarioService.obtenerEntidadPorCorreo(CORREO_TEST)).thenReturn(usuario);
             when(metodoPagoRepository.findById(100L)).thenReturn(Optional.of(metodoPago));
             when(metodoPagoRepository.save(any(MetodoPago.class))).thenReturn(metodoPago);
 
-            metodoPagoService.actualizar("test@test.com", 100L, dto);
+            metodoPagoService.actualizar(CORREO_TEST, 100L, dto);
 
-            assertEquals("CARD", metodoPago.getTipo());
+            assertEquals(CARD, metodoPago.getTipo());
             assertEquals("Visa 1234", metodoPago.getLabel());
         }
 
@@ -330,13 +332,13 @@ class MetodoPagoServiceImplTest {
             dto.setLabel("");
             dto.setDetails("   ");
 
-            when(usuarioService.obtenerEntidadPorCorreo("test@test.com")).thenReturn(usuario);
+            when(usuarioService.obtenerEntidadPorCorreo(CORREO_TEST)).thenReturn(usuario);
             when(metodoPagoRepository.findById(100L)).thenReturn(Optional.of(metodoPago));
             when(metodoPagoRepository.save(any(MetodoPago.class))).thenReturn(metodoPago);
 
-            metodoPagoService.actualizar("test@test.com", 100L, dto);
+            metodoPagoService.actualizar(CORREO_TEST, 100L, dto);
 
-            assertEquals("CARD", metodoPago.getTipo());
+            assertEquals(CARD, metodoPago.getTipo());
         }
 
         @Test
@@ -344,22 +346,22 @@ class MetodoPagoServiceImplTest {
             MetodoPagoRequestDTO dto = new MetodoPagoRequestDTO();
             dto.setType("CRYPTO");
 
-            when(usuarioService.obtenerEntidadPorCorreo("test@test.com")).thenReturn(usuario);
+            when(usuarioService.obtenerEntidadPorCorreo(CORREO_TEST)).thenReturn(usuario);
             when(metodoPagoRepository.findById(100L)).thenReturn(Optional.of(metodoPago));
 
             assertThrows(MetodoPagoInvalidoException.class,
-                    () -> metodoPagoService.actualizar("test@test.com", 100L, dto));
+                    () -> metodoPagoService.actualizar(CORREO_TEST, 100L, dto));
         }
 
         @Test
         void cuandoNoExiste_lanzaMetodoPagoNotFoundException() {
             MetodoPagoRequestDTO dto = new MetodoPagoRequestDTO();
 
-            when(usuarioService.obtenerEntidadPorCorreo("test@test.com")).thenReturn(usuario);
+            when(usuarioService.obtenerEntidadPorCorreo(CORREO_TEST)).thenReturn(usuario);
             when(metodoPagoRepository.findById(999L)).thenReturn(Optional.empty());
 
             assertThrows(MetodoPagoNotFoundException.class,
-                    () -> metodoPagoService.actualizar("test@test.com", 999L, dto));
+                    () -> metodoPagoService.actualizar(CORREO_TEST, 999L, dto));
         }
 
         @Test
@@ -370,11 +372,11 @@ class MetodoPagoServiceImplTest {
             otroUsuario.setId(99L);
             metodoPago.setUsuario(otroUsuario);
 
-            when(usuarioService.obtenerEntidadPorCorreo("test@test.com")).thenReturn(usuario);
+            when(usuarioService.obtenerEntidadPorCorreo(CORREO_TEST)).thenReturn(usuario);
             when(metodoPagoRepository.findById(100L)).thenReturn(Optional.of(metodoPago));
 
             assertThrows(MetodoPagoNotFoundException.class,
-                    () -> metodoPagoService.actualizar("test@test.com", 100L, dto));
+                    () -> metodoPagoService.actualizar(CORREO_TEST, 100L, dto));
         }
     }
 

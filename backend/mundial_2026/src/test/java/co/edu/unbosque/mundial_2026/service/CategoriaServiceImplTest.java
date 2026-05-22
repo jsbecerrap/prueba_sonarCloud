@@ -54,12 +54,12 @@ class CategoriaServiceImplTest {
     private CategoriaServiceImpl categoriaService;
 
     private Categoria categoria;
-
+private static final String CAMISETAS = "Camisetas";
     @BeforeEach
     void setUp() {
         categoria = new Categoria();
         categoria.setId(1L);
-        categoria.setNombre("Camisetas");
+        categoria.setNombre(CAMISETAS);
         categoria.setDescripcion("Ropa deportiva");
         categoria.setActivo(true);
     }
@@ -92,9 +92,9 @@ class CategoriaServiceImplTest {
         @Test
         void cuandoNombreYaExiste_lanzaCategoriaYaExisteException() {
             CategoriaRequestDTO dto = new CategoriaRequestDTO();
-            dto.setNombre("Camisetas");
+            dto.setNombre(CAMISETAS);
 
-            when(categoriaRepository.findByNombre("Camisetas")).thenReturn(Optional.of(categoria));
+            when(categoriaRepository.findByNombre(CAMISETAS)).thenReturn(Optional.of(categoria));
 
             assertThrows(CategoriaYaExisteException.class, () -> categoriaService.crear(dto));
             verify(categoriaRepository, never()).save(any());
@@ -140,10 +140,10 @@ class CategoriaServiceImplTest {
         @Test
         void cuandoNombreDuplicadoEnMismaCategoria_noLanza() {
             CategoriaRequestDTO dto = new CategoriaRequestDTO();
-            dto.setNombre("Camisetas");
+            dto.setNombre(CAMISETAS);
 
             when(categoriaRepository.findByIdAndActivoTrue(1L)).thenReturn(Optional.of(categoria));
-            when(categoriaRepository.findByNombre("Camisetas")).thenReturn(Optional.of(categoria));
+            when(categoriaRepository.findByNombre(CAMISETAS)).thenReturn(Optional.of(categoria));
             when(categoriaRepository.save(any(Categoria.class))).thenReturn(categoria);
 
             CategoriaResponseDTO resultado = categoriaService.actualizar(1L, dto);
@@ -162,7 +162,7 @@ class CategoriaServiceImplTest {
 
             categoriaService.actualizar(1L, dto);
 
-            assertEquals("Camisetas", categoria.getNombre());
+            assertEquals(CAMISETAS, categoria.getNombre());
             assertEquals("Ropa deportiva", categoria.getDescripcion());
         }
 
@@ -266,7 +266,7 @@ class CategoriaServiceImplTest {
             List<CategoriaResponseDTO> resultado = categoriaService.listar();
 
             assertEquals(1, resultado.size());
-            assertEquals("Camisetas", resultado.get(0).getNombre());
+            assertEquals(CAMISETAS, resultado.get(0).getNombre());
         }
 
         @Test
@@ -299,7 +299,7 @@ class CategoriaServiceImplTest {
             Categoria resultado = categoriaService.obtenerEntidadPorId(1L);
 
             assertEquals(1L, resultado.getId());
-            assertEquals("Camisetas", resultado.getNombre());
+            assertEquals(CAMISETAS, resultado.getNombre());
         }
 
         @Test

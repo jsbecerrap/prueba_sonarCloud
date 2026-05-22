@@ -31,6 +31,11 @@ class EntradaServiceImplTest {
     @Mock private PartidoService partidoService;
     @Mock private EventoAuditoriaService auditoriaService;
     @Mock private NotificacionService notificacionService;
+    private static final String CORREO_USER1 = "user1@test.com";
+private static final String BARRA = "BARRA";
+private static final String RESERVADA = "RESERVADA";
+private static final String PAGADA = "PAGADA";
+private static final String DESTINO = "destino@test.com";
 
     private EntradaServiceImpl service;
 
@@ -69,7 +74,7 @@ class EntradaServiceImplTest {
         e.setEstado(estado);
         e.setCantidad(2);
         e.setPrecio(100000.0);
-        e.setCategoria("BARRA");
+        e.setCategoria(BARRA);
         e.setSector("Norte");
         e.setFila("A");
         e.setAsientoInicio(1);
@@ -92,21 +97,21 @@ class EntradaServiceImplTest {
         Usuario usuario = crearUsuario(1L);
         Partido partido = crearPartido(1L, 60000);
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
         when(partidoService.obtenerPartidoEntidadPorId(1L)).thenReturn(partido);
         when(entradaRepository.findByUsuarioIdAndFechaCompraBetween(eq(1L), any(), any())).thenReturn(List.of());
         when(entradaRepository.sumCantidadByPartidoAndEstados(eq(1L), anyList())).thenReturn(0);
-        when(entradaRepository.sumCantidadByPartidoCategoriaYFila(eq(1L), eq("BARRA"), eq("A"), anyList())).thenReturn(0);
-        when(entradaRepository.maxAsientoFinByPartidoCategoriaYFila(eq(1L), eq("BARRA"), eq("A"))).thenReturn(0);
+        when(entradaRepository.sumCantidadByPartidoCategoriaYFila(eq(1L), eq(BARRA), eq("A"), anyList())).thenReturn(0);
+        when(entradaRepository.maxAsientoFinByPartidoCategoriaYFila(eq(1L), eq(BARRA), eq("A"))).thenReturn(0);
         when(entradaRepository.save(any(Entrada.class))).thenAnswer(inv -> inv.getArgument(0));
         doNothing().when(partidoService).actualizarCapacidad(eq(1L), eq(-2));
         doNothing().when(auditoriaService).registrar(any(), any(), any(), any(), any());
         doNothing().when(notificacionService).notificarReservaCreada(any(), any());
 
-        EntradaResponseDTO resultado = service.reservarEntrada("user1@test.com", crearRequestDTO(1L, 2, "BARRA"));
+        EntradaResponseDTO resultado = service.reservarEntrada(CORREO_USER1, crearRequestDTO(1L, 2, BARRA));
 
         assertNotNull(resultado);
-        assertEquals("RESERVADA", resultado.getEstado());
+        assertEquals(RESERVADA, resultado.getEstado());
         verify(entradaRepository).save(any(Entrada.class));
         verify(partidoService).actualizarCapacidad(1L, -2);
     }
@@ -116,22 +121,22 @@ class EntradaServiceImplTest {
         Usuario usuario = crearUsuario(1L);
         Partido partido = crearPartido(1L, 60000);
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
         when(partidoService.obtenerPartidoEntidadPorId(1L)).thenReturn(partido);
         when(entradaRepository.findByUsuarioIdAndFechaCompraBetween(eq(1L), any(), any())).thenReturn(List.of());
         when(entradaRepository.sumCantidadByPartidoAndEstados(eq(1L), anyList())).thenReturn(0);
-        when(entradaRepository.sumCantidadByPartidoCategoriaYFila(eq(1L), eq("BARRA"), eq("A"), anyList())).thenReturn(0);
-        when(entradaRepository.maxAsientoFinByPartidoCategoriaYFila(eq(1L), eq("BARRA"), eq("A"))).thenReturn(0);
+        when(entradaRepository.sumCantidadByPartidoCategoriaYFila(eq(1L), eq(BARRA), eq("A"), anyList())).thenReturn(0);
+        when(entradaRepository.maxAsientoFinByPartidoCategoriaYFila(eq(1L), eq(BARRA), eq("A"))).thenReturn(0);
         when(entradaRepository.save(any(Entrada.class))).thenAnswer(inv -> inv.getArgument(0));
         doNothing().when(partidoService).actualizarCapacidad(eq(1L), eq(-1));
         doNothing().when(auditoriaService).registrar(any(), any(), any(), any(), any());
         doNothing().when(notificacionService).notificarReservaCreada(any(), any());
 
         EntradaRequestDTO dto = crearRequestDTO(1L, 1, null);
-        EntradaResponseDTO resultado = service.reservarEntrada("user1@test.com", dto);
+        EntradaResponseDTO resultado = service.reservarEntrada(CORREO_USER1, dto);
 
         assertNotNull(resultado);
-        assertEquals("BARRA", resultado.getCategoria());
+        assertEquals(BARRA, resultado.getCategoria());
     }
 
     @Test
@@ -139,11 +144,11 @@ class EntradaServiceImplTest {
         Usuario usuario = crearUsuario(1L);
         Partido partido = crearPartido(1L, 1);
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
         when(partidoService.obtenerPartidoEntidadPorId(1L)).thenReturn(partido);
 
         assertThrows(CupoNoDisponibleException.class,
-                () -> service.reservarEntrada("user1@test.com", crearRequestDTO(1L, 2, "BARRA")));
+                () -> service.reservarEntrada(CORREO_USER1, crearRequestDTO(1L, 2, BARRA)));
     }
 
 
@@ -152,43 +157,43 @@ class EntradaServiceImplTest {
         Usuario usuario = crearUsuario(1L);
         Partido partido = crearPartido(1L, 60000);
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
         when(partidoService.obtenerPartidoEntidadPorId(1L)).thenReturn(partido);
 
         assertThrows(LimiteSuperadoException.class,
-                () -> service.reservarEntrada("user1@test.com", crearRequestDTO(1L, 5, "BARRA")));
+                () -> service.reservarEntrada(CORREO_USER1, crearRequestDTO(1L, 5, BARRA)));
     }
 
     @Test
     void reservarEntrada_limiteDiarioSuperado_lanzaLimiteSuperado() {
         Usuario usuario = crearUsuario(1L);
         Partido partido = crearPartido(1L, 60000);
-        Entrada entradaHoy = crearEntrada(1L, usuario, partido, "PAGADA");
+        Entrada entradaHoy = crearEntrada(1L, usuario, partido, PAGADA);
         entradaHoy.setCantidad(11);
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
         when(partidoService.obtenerPartidoEntidadPorId(1L)).thenReturn(partido);
         when(entradaRepository.findByUsuarioIdAndFechaCompraBetween(eq(1L), any(), any()))
                 .thenReturn(List.of(entradaHoy));
 
         assertThrows(LimiteSuperadoException.class,
-                () -> service.reservarEntrada("user1@test.com", crearRequestDTO(1L, 2, "BARRA")));
+                () -> service.reservarEntrada(CORREO_USER1, crearRequestDTO(1L, 2, BARRA)));
     }
 
     @Test
     void reservarEntrada_entradasHoyReservadas_contanEnLimite() {
         Usuario usuario = crearUsuario(1L);
         Partido partido = crearPartido(1L, 60000);
-        Entrada entradaHoy = crearEntrada(1L, usuario, partido, "RESERVADA");
+        Entrada entradaHoy = crearEntrada(1L, usuario, partido, RESERVADA);
         entradaHoy.setCantidad(11);
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
         when(partidoService.obtenerPartidoEntidadPorId(1L)).thenReturn(partido);
         when(entradaRepository.findByUsuarioIdAndFechaCompraBetween(eq(1L), any(), any()))
                 .thenReturn(List.of(entradaHoy));
 
         assertThrows(LimiteSuperadoException.class,
-                () -> service.reservarEntrada("user1@test.com", crearRequestDTO(1L, 2, "BARRA")));
+                () -> service.reservarEntrada(CORREO_USER1, crearRequestDTO(1L, 2, BARRA)));
     }
 
     @Test
@@ -198,19 +203,19 @@ class EntradaServiceImplTest {
         Entrada entradaCancelada = crearEntrada(1L, usuario, partido, "CANCELADA");
         entradaCancelada.setCantidad(11);
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
         when(partidoService.obtenerPartidoEntidadPorId(1L)).thenReturn(partido);
         when(entradaRepository.findByUsuarioIdAndFechaCompraBetween(eq(1L), any(), any()))
                 .thenReturn(List.of(entradaCancelada));
         when(entradaRepository.sumCantidadByPartidoAndEstados(eq(1L), anyList())).thenReturn(0);
-        when(entradaRepository.sumCantidadByPartidoCategoriaYFila(eq(1L), eq("BARRA"), eq("A"), anyList())).thenReturn(0);
-        when(entradaRepository.maxAsientoFinByPartidoCategoriaYFila(eq(1L), eq("BARRA"), eq("A"))).thenReturn(0);
+        when(entradaRepository.sumCantidadByPartidoCategoriaYFila(eq(1L), eq(BARRA), eq("A"), anyList())).thenReturn(0);
+        when(entradaRepository.maxAsientoFinByPartidoCategoriaYFila(eq(1L), eq(BARRA), eq("A"))).thenReturn(0);
         when(entradaRepository.save(any(Entrada.class))).thenAnswer(inv -> inv.getArgument(0));
       doNothing().when(partidoService).actualizarCapacidad(any(), anyInt());
         doNothing().when(auditoriaService).registrar(any(), any(), any(), any(), any());
         doNothing().when(notificacionService).notificarReservaCreada(any(), any());
 
-        EntradaResponseDTO resultado = service.reservarEntrada("user1@test.com", crearRequestDTO(1L, 1, "BARRA"));
+        EntradaResponseDTO resultado = service.reservarEntrada(CORREO_USER1, crearRequestDTO(1L, 1, BARRA));
 
         assertNotNull(resultado);
     }
@@ -220,13 +225,13 @@ class EntradaServiceImplTest {
         Usuario usuario = crearUsuario(1L);
         Partido partido = crearPartido(1L, 60000);
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
         when(partidoService.obtenerPartidoEntidadPorId(1L)).thenReturn(partido);
         when(entradaRepository.findByUsuarioIdAndFechaCompraBetween(eq(1L), any(), any())).thenReturn(List.of());
         when(entradaRepository.sumCantidadByPartidoAndEstados(eq(1L), anyList())).thenReturn(0);
 
         assertThrows(CupoNoDisponibleException.class,
-                () -> service.reservarEntrada("user1@test.com", crearRequestDTO(1L, 1, "ZONA_INEXISTENTE")));
+                () -> service.reservarEntrada(CORREO_USER1, crearRequestDTO(1L, 1, "ZONA_INEXISTENTE")));
     }
 
     @Test
@@ -234,15 +239,15 @@ class EntradaServiceImplTest {
         Usuario usuario = crearUsuario(1L);
         Partido partido = crearPartido(1L, 60000);
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
         when(partidoService.obtenerPartidoEntidadPorId(1L)).thenReturn(partido);
         when(entradaRepository.findByUsuarioIdAndFechaCompraBetween(eq(1L), any(), any())).thenReturn(List.of());
         when(entradaRepository.sumCantidadByPartidoAndEstados(eq(1L), anyList())).thenReturn(0);
-        when(entradaRepository.sumCantidadByPartidoCategoriaYFila(eq(1L), eq("BARRA"), anyString(), anyList()))
+        when(entradaRepository.sumCantidadByPartidoCategoriaYFila(eq(1L), eq(BARRA), anyString(), anyList()))
                 .thenReturn(999999);
 
         assertThrows(CupoNoDisponibleException.class,
-                () -> service.reservarEntrada("user1@test.com", crearRequestDTO(1L, 1, "BARRA")));
+                () -> service.reservarEntrada(CORREO_USER1, crearRequestDTO(1L, 1, BARRA)));
     }
 
     @Test
@@ -253,18 +258,18 @@ class EntradaServiceImplTest {
         partido.setSeleccionVisitante("Brazil");
         partido.setRonda("Group Stage - 1");
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
         when(partidoService.obtenerPartidoEntidadPorId(1L)).thenReturn(partido);
         when(entradaRepository.findByUsuarioIdAndFechaCompraBetween(eq(1L), any(), any())).thenReturn(List.of());
         when(entradaRepository.sumCantidadByPartidoAndEstados(eq(1L), anyList())).thenReturn(0);
-        when(entradaRepository.sumCantidadByPartidoCategoriaYFila(eq(1L), eq("BARRA"), eq("A"), anyList())).thenReturn(0);
-        when(entradaRepository.maxAsientoFinByPartidoCategoriaYFila(eq(1L), eq("BARRA"), eq("A"))).thenReturn(5);
+        when(entradaRepository.sumCantidadByPartidoCategoriaYFila(eq(1L), eq(BARRA), eq("A"), anyList())).thenReturn(0);
+        when(entradaRepository.maxAsientoFinByPartidoCategoriaYFila(eq(1L), eq(BARRA), eq("A"))).thenReturn(5);
         when(entradaRepository.save(any(Entrada.class))).thenAnswer(inv -> inv.getArgument(0));
      doNothing().when(partidoService).actualizarCapacidad(any(), anyInt());
         doNothing().when(auditoriaService).registrar(any(), any(), any(), any(), any());
         doNothing().when(notificacionService).notificarReservaCreada(any(), any());
 
-        EntradaResponseDTO resultado = service.reservarEntrada("user1@test.com", crearRequestDTO(1L, 1, "BARRA"));
+        EntradaResponseDTO resultado = service.reservarEntrada(CORREO_USER1, crearRequestDTO(1L, 1, BARRA));
 
         assertNotNull(resultado);
         assertTrue(resultado.getPrecio() > 50000.0);
@@ -274,15 +279,15 @@ class EntradaServiceImplTest {
     void cancelarReserva_exitosa_retornaDTO() {
         Usuario usuario = crearUsuario(1L);
         Partido partido = crearPartido(1L, 1000);
-        Entrada entrada = crearEntrada(1L, usuario, partido, "RESERVADA");
+        Entrada entrada = crearEntrada(1L, usuario, partido, RESERVADA);
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
         when(entradaRepository.findById(1L)).thenReturn(Optional.of(entrada));
         when(entradaRepository.save(any(Entrada.class))).thenAnswer(inv -> inv.getArgument(0));
         doNothing().when(partidoService).actualizarCapacidad(1L, 2);
         doNothing().when(auditoriaService).registrar(any(), any(), any(), any(), any());
 
-        EntradaResponseDTO resultado = service.cancelarReserva("user1@test.com", 1L);
+        EntradaResponseDTO resultado = service.cancelarReserva(CORREO_USER1, 1L);
 
         assertNotNull(resultado);
         assertEquals("CANCELADA", resultado.getEstado());
@@ -293,11 +298,11 @@ class EntradaServiceImplTest {
     void cancelarReserva_entradaNoEncontrada_lanzaExcepcion() {
         Usuario usuario = crearUsuario(1L);
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
         when(entradaRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThrows(EntradaNotFoundException.class,
-                () -> service.cancelarReserva("user1@test.com", 99L));
+                () -> service.cancelarReserva(CORREO_USER1, 99L));
     }
 
     @Test
@@ -305,26 +310,26 @@ class EntradaServiceImplTest {
         Usuario usuario = crearUsuario(1L);
         Usuario otroUsuario = crearUsuario(2L);
         Partido partido = crearPartido(1L, 1000);
-        Entrada entrada = crearEntrada(1L, otroUsuario, partido, "RESERVADA");
+        Entrada entrada = crearEntrada(1L, otroUsuario, partido, RESERVADA);
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
         when(entradaRepository.findById(1L)).thenReturn(Optional.of(entrada));
 
         assertThrows(EstadoInvalidoException.class,
-                () -> service.cancelarReserva("user1@test.com", 1L));
+                () -> service.cancelarReserva(CORREO_USER1, 1L));
     }
 
     @Test
     void cancelarReserva_estadoNoCancelable_lanzaExcepcion() {
         Usuario usuario = crearUsuario(1L);
         Partido partido = crearPartido(1L, 1000);
-        Entrada entrada = crearEntrada(1L, usuario, partido, "PAGADA");
+        Entrada entrada = crearEntrada(1L, usuario, partido, PAGADA);
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
         when(entradaRepository.findById(1L)).thenReturn(Optional.of(entrada));
 
         assertThrows(EstadoInvalidoException.class,
-                () -> service.cancelarReserva("user1@test.com", 1L));
+                () -> service.cancelarReserva(CORREO_USER1, 1L));
     }
 
     @Test
@@ -339,7 +344,7 @@ class EntradaServiceImplTest {
     void confirmarPago_estadoNoReservada_lanzaExcepcion() {
         Usuario usuario = crearUsuario(1L);
         Partido partido = crearPartido(1L, 1000);
-        Entrada entrada = crearEntrada(1L, usuario, partido, "PAGADA");
+        Entrada entrada = crearEntrada(1L, usuario, partido, PAGADA);
 
         when(entradaRepository.findById(1L)).thenReturn(Optional.of(entrada));
 
@@ -351,7 +356,7 @@ class EntradaServiceImplTest {
     void confirmarPago_reservaExpirada_lanzaExcepcion() {
         Usuario usuario = crearUsuario(1L);
         Partido partido = crearPartido(1L, 1000);
-        Entrada entrada = crearEntrada(1L, usuario, partido, "RESERVADA");
+        Entrada entrada = crearEntrada(1L, usuario, partido, RESERVADA);
         entrada.setTtlReserva(LocalDateTime.now().minusMinutes(1));
 
         when(entradaRepository.findById(1L)).thenReturn(Optional.of(entrada));
@@ -364,13 +369,13 @@ class EntradaServiceImplTest {
     void transferirEntrada_entradaNoEncontrada_lanzaExcepcion() {
         Usuario usuario = crearUsuario(1L);
         TransferenciaRequestDTO dto = new TransferenciaRequestDTO();
-        dto.setCorreoDestino("destino@test.com");
+        dto.setCorreoDestino(DESTINO);
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
         when(entradaRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThrows(EntradaNotFoundException.class,
-                () -> service.transferirEntrada(99L, dto, "user1@test.com"));
+                () -> service.transferirEntrada(99L, dto, CORREO_USER1));
     }
 
     @Test
@@ -378,50 +383,50 @@ class EntradaServiceImplTest {
         Usuario usuario = crearUsuario(1L);
         Usuario otroUsuario = crearUsuario(2L);
         Partido partido = crearPartido(1L, 1000);
-        Entrada entrada = crearEntrada(1L, otroUsuario, partido, "PAGADA");
+        Entrada entrada = crearEntrada(1L, otroUsuario, partido, PAGADA);
         TransferenciaRequestDTO dto = new TransferenciaRequestDTO();
-        dto.setCorreoDestino("destino@test.com");
+        dto.setCorreoDestino(DESTINO);
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
         when(entradaRepository.findById(1L)).thenReturn(Optional.of(entrada));
 
         assertThrows(EstadoInvalidoException.class,
-                () -> service.transferirEntrada(1L, dto, "user1@test.com"));
+                () -> service.transferirEntrada(1L, dto, CORREO_USER1));
     }
 
     @Test
     void transferirEntrada_estadoNoPagada_lanzaExcepcion() {
         Usuario usuario = crearUsuario(1L);
         Partido partido = crearPartido(1L, 1000);
-        Entrada entrada = crearEntrada(1L, usuario, partido, "RESERVADA");
+        Entrada entrada = crearEntrada(1L, usuario, partido, RESERVADA);
         TransferenciaRequestDTO dto = new TransferenciaRequestDTO();
-        dto.setCorreoDestino("destino@test.com");
+        dto.setCorreoDestino(DESTINO);
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
         when(entradaRepository.findById(1L)).thenReturn(Optional.of(entrada));
 
         assertThrows(EstadoInvalidoException.class,
-                () -> service.transferirEntrada(1L, dto, "user1@test.com"));
+                () -> service.transferirEntrada(1L, dto, CORREO_USER1));
     }
 
     @Test
     void transferirEntrada_limiteDiarioSuperado_lanzaLimiteSuperado() {
         Usuario usuario = crearUsuario(1L);
         Partido partido = crearPartido(1L, 1000);
-        Entrada entrada = crearEntrada(1L, usuario, partido, "PAGADA");
+        Entrada entrada = crearEntrada(1L, usuario, partido, PAGADA);
         entrada.setCantidad(2);
         Entrada yaTransferida = crearEntrada(2L, usuario, partido, "TRANSFERIDA");
         yaTransferida.setCantidad(11);
         TransferenciaRequestDTO dto = new TransferenciaRequestDTO();
-        dto.setCorreoDestino("destino@test.com");
+        dto.setCorreoDestino(DESTINO);
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
         when(entradaRepository.findById(1L)).thenReturn(Optional.of(entrada));
         when(entradaRepository.findByUsuarioIdAndFechaCompraBetween(eq(1L), any(), any()))
                 .thenReturn(List.of(yaTransferida));
 
         assertThrows(LimiteSuperadoException.class,
-                () -> service.transferirEntrada(1L, dto, "user1@test.com"));
+                () -> service.transferirEntrada(1L, dto, CORREO_USER1));
     }
 
     @Test
@@ -429,11 +434,11 @@ class EntradaServiceImplTest {
         Usuario usuario = crearUsuario(1L);
         Usuario destino = crearUsuario(2L);
         Partido partido = crearPartido(1L, 1000);
-        Entrada entrada = crearEntrada(1L, usuario, partido, "PAGADA");
+        Entrada entrada = crearEntrada(1L, usuario, partido, PAGADA);
         TransferenciaRequestDTO dto = new TransferenciaRequestDTO();
         dto.setCorreoDestino("user2@test.com");
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
         when(usuarioService.obtenerEntidadPorCorreo("user2@test.com")).thenReturn(destino);
         when(entradaRepository.findById(1L)).thenReturn(Optional.of(entrada));
         when(entradaRepository.findByUsuarioIdAndFechaCompraBetween(eq(1L), any(), any())).thenReturn(List.of());
@@ -442,10 +447,10 @@ class EntradaServiceImplTest {
         doNothing().when(notificacionService).notificarEntradaTransferida(any(), any(), any());
         doNothing().when(notificacionService).notificarEntradaRecibida(any(), any(), any());
 
-        EntradaResponseDTO resultado = service.transferirEntrada(1L, dto, "user1@test.com");
+        EntradaResponseDTO resultado = service.transferirEntrada(1L, dto, CORREO_USER1);
 
         assertNotNull(resultado);
-        assertEquals("PAGADA", resultado.getEstado());
+        assertEquals(PAGADA, resultado.getEstado());
         verify(entradaRepository, times(2)).save(any(Entrada.class));
     }
 
@@ -454,13 +459,13 @@ class EntradaServiceImplTest {
         Usuario usuario = crearUsuario(1L);
         Usuario destino = crearUsuario(2L);
         Partido partido = crearPartido(1L, 1000);
-        Entrada entrada = crearEntrada(1L, usuario, partido, "PAGADA");
-        Entrada entradaPagadaHoy = crearEntrada(3L, usuario, partido, "PAGADA");
+        Entrada entrada = crearEntrada(1L, usuario, partido, PAGADA);
+        Entrada entradaPagadaHoy = crearEntrada(3L, usuario, partido, PAGADA);
         entradaPagadaHoy.setCantidad(10);
         TransferenciaRequestDTO dto = new TransferenciaRequestDTO();
         dto.setCorreoDestino("user2@test.com");
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
         when(usuarioService.obtenerEntidadPorCorreo("user2@test.com")).thenReturn(destino);
         when(entradaRepository.findById(1L)).thenReturn(Optional.of(entrada));
         when(entradaRepository.findByUsuarioIdAndFechaCompraBetween(eq(1L), any(), any()))
@@ -470,7 +475,7 @@ class EntradaServiceImplTest {
         doNothing().when(notificacionService).notificarEntradaTransferida(any(), any(), any());
         doNothing().when(notificacionService).notificarEntradaRecibida(any(), any(), any());
 
-        EntradaResponseDTO resultado = service.transferirEntrada(1L, dto, "user1@test.com");
+        EntradaResponseDTO resultado = service.transferirEntrada(1L, dto, CORREO_USER1);
 
         assertNotNull(resultado);
     }
@@ -479,11 +484,11 @@ class EntradaServiceImplTest {
     void reembolsarEntrada_entradaNoEncontrada_lanzaExcepcion() {
         Usuario usuario = crearUsuario(1L);
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
         when(entradaRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThrows(EntradaNotFoundException.class,
-                () -> service.reembolsarEntrada("user1@test.com", 99L));
+                () -> service.reembolsarEntrada(CORREO_USER1, 99L));
     }
 
     @Test
@@ -491,41 +496,41 @@ class EntradaServiceImplTest {
         Usuario usuario = crearUsuario(1L);
         Usuario otroUsuario = crearUsuario(2L);
         Partido partido = crearPartido(1L, 1000);
-        Entrada entrada = crearEntrada(1L, otroUsuario, partido, "PAGADA");
+        Entrada entrada = crearEntrada(1L, otroUsuario, partido, PAGADA);
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
         when(entradaRepository.findById(1L)).thenReturn(Optional.of(entrada));
 
         assertThrows(EstadoInvalidoException.class,
-                () -> service.reembolsarEntrada("user1@test.com", 1L));
+                () -> service.reembolsarEntrada(CORREO_USER1, 1L));
     }
 
     @Test
     void reembolsarEntrada_estadoNoPagada_lanzaExcepcion() {
         Usuario usuario = crearUsuario(1L);
         Partido partido = crearPartido(1L, 1000);
-        Entrada entrada = crearEntrada(1L, usuario, partido, "RESERVADA");
+        Entrada entrada = crearEntrada(1L, usuario, partido, RESERVADA);
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
         when(entradaRepository.findById(1L)).thenReturn(Optional.of(entrada));
 
         assertThrows(EstadoInvalidoException.class,
-                () -> service.reembolsarEntrada("user1@test.com", 1L));
+                () -> service.reembolsarEntrada(CORREO_USER1, 1L));
     }
 
     @Test
     void listarEntradasUsuario_retornaListaOrdenada() {
         Usuario usuario = crearUsuario(1L);
         Partido partido = crearPartido(1L, 1000);
-        Entrada e1 = crearEntrada(1L, usuario, partido, "PAGADA");
+        Entrada e1 = crearEntrada(1L, usuario, partido, PAGADA);
         e1.setFechaCompra(LocalDateTime.now().minusDays(1));
-        Entrada e2 = crearEntrada(2L, usuario, partido, "RESERVADA");
+        Entrada e2 = crearEntrada(2L, usuario, partido, RESERVADA);
         e2.setFechaCompra(LocalDateTime.now());
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
         when(entradaRepository.findByUsuarioId(1L)).thenReturn(List.of(e1, e2));
 
-        List<EntradaResponseDTO> resultado = service.listarEntradasUsuario("user1@test.com");
+        List<EntradaResponseDTO> resultado = service.listarEntradasUsuario(CORREO_USER1);
 
         assertNotNull(resultado);
         assertEquals(2, resultado.size());
@@ -536,10 +541,10 @@ class EntradaServiceImplTest {
     void listarEntradasUsuario_sinEntradas_retornaVacio() {
         Usuario usuario = crearUsuario(1L);
 
-        when(usuarioService.obtenerEntidadPorCorreo("user1@test.com")).thenReturn(usuario);
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
         when(entradaRepository.findByUsuarioId(1L)).thenReturn(List.of());
 
-        List<EntradaResponseDTO> resultado = service.listarEntradasUsuario("user1@test.com");
+        List<EntradaResponseDTO> resultado = service.listarEntradasUsuario(CORREO_USER1);
 
         assertNotNull(resultado);
         assertTrue(resultado.isEmpty());
@@ -549,7 +554,7 @@ class EntradaServiceImplTest {
     void obtenerEntrada_existente_retornaDTO() {
         Usuario usuario = crearUsuario(1L);
         Partido partido = crearPartido(1L, 1000);
-        Entrada entrada = crearEntrada(1L, usuario, partido, "PAGADA");
+        Entrada entrada = crearEntrada(1L, usuario, partido, PAGADA);
 
         when(entradaRepository.findById(1L)).thenReturn(Optional.of(entrada));
 
@@ -570,10 +575,10 @@ class EntradaServiceImplTest {
     void expirarReservasVencidas_conReservas_expiraYActualizaCapacidad() {
         Usuario usuario = crearUsuario(1L);
         Partido partido = crearPartido(1L, 1000);
-        Entrada entrada = crearEntrada(1L, usuario, partido, "RESERVADA");
+        Entrada entrada = crearEntrada(1L, usuario, partido, RESERVADA);
         entrada.setTtlReserva(LocalDateTime.now().minusMinutes(1));
 
-        when(entradaRepository.findByEstadoAndTtlReservaLessThan(eq("RESERVADA"), any())).thenReturn(List.of(entrada));
+        when(entradaRepository.findByEstadoAndTtlReservaLessThan(eq(RESERVADA), any())).thenReturn(List.of(entrada));
         when(entradaRepository.save(any(Entrada.class))).thenAnswer(inv -> inv.getArgument(0));
         doNothing().when(partidoService).actualizarCapacidad(eq(1L), eq(2));
         doNothing().when(auditoriaService).registrar(any(), any(), any(), any(), any());
@@ -588,7 +593,7 @@ class EntradaServiceImplTest {
 
     @Test
     void expirarReservasVencidas_sinReservas_noHaceNada() {
-        when(entradaRepository.findByEstadoAndTtlReservaLessThan(eq("RESERVADA"), any())).thenReturn(List.of());
+        when(entradaRepository.findByEstadoAndTtlReservaLessThan(eq(RESERVADA), any())).thenReturn(List.of());
 
         service.expirarReservasVencidas();
 
@@ -601,9 +606,9 @@ class EntradaServiceImplTest {
     void avisarReservasPorExpirar_conReservas_notificaUsuarios() {
         Usuario usuario = crearUsuario(1L);
         Partido partido = crearPartido(1L, 1000);
-        Entrada entrada = crearEntrada(1L, usuario, partido, "RESERVADA");
+        Entrada entrada = crearEntrada(1L, usuario, partido, RESERVADA);
 
-        when(entradaRepository.findByEstadoAndTtlReservaBetween(eq("RESERVADA"), any(), any()))
+        when(entradaRepository.findByEstadoAndTtlReservaBetween(eq(RESERVADA), any(), any()))
                 .thenReturn(List.of(entrada));
         doNothing().when(notificacionService).notificarReservaPorExpirar(any(), any());
 
@@ -614,7 +619,7 @@ class EntradaServiceImplTest {
 
     @Test
     void avisarReservasPorExpirar_sinReservas_noNotifica() {
-        when(entradaRepository.findByEstadoAndTtlReservaBetween(eq("RESERVADA"), any(), any()))
+        when(entradaRepository.findByEstadoAndTtlReservaBetween(eq(RESERVADA), any(), any()))
                 .thenReturn(List.of());
 
         service.avisarReservasPorExpirar();

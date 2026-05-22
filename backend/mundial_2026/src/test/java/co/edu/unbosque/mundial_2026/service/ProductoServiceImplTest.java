@@ -55,7 +55,7 @@ class ProductoServiceImplTest {
 
     @InjectMocks
     private ProductoServiceImpl productoService;
-
+private static final String IMG_JPG = "img.jpg";
     private Categoria categoria;
     private Producto producto;
     private VarianteProducto variante;
@@ -76,7 +76,7 @@ class ProductoServiceImplTest {
         producto.setNombre("Camiseta Brasil");
         producto.setDescripcion("Camiseta oficial");
         producto.setPrecio(50.0);
-        producto.setImagenUrl("img.jpg");
+        producto.setImagenUrl(IMG_JPG );
         producto.setActivo(true);
         producto.setCategoria(categoria);
         producto.setCodigoProducto("BRA-2026");
@@ -122,7 +122,7 @@ class ProductoServiceImplTest {
             dto.setNombre("Nuevo");
             dto.setDescripcion("Desc");
             dto.setPrecio(80.0);
-            dto.setImagenUrl("img.jpg");
+            dto.setImagenUrl(IMG_JPG );
             dto.setCategoriaId(1L);
             dto.setCodigoProducto("COD1");
             dto.setEquipo("Argentina");
@@ -212,7 +212,7 @@ class ProductoServiceImplTest {
             productoService.actualizar(10L, dto);
 
             assertEquals(50.0, producto.getPrecio());
-            assertEquals("img.jpg", producto.getImagenUrl());
+            assertEquals(IMG_JPG , producto.getImagenUrl());
         }
 
         @Test
@@ -229,7 +229,7 @@ class ProductoServiceImplTest {
 
             productoService.actualizar(10L, dto);
 
-            assertEquals("img.jpg", producto.getImagenUrl());
+            assertEquals(IMG_JPG , producto.getImagenUrl());
             assertEquals("Camiseta oficial", producto.getDescripcion());
             assertEquals("BRA-2026", producto.getCodigoProducto());
         }
@@ -381,7 +381,7 @@ class ProductoServiceImplTest {
         @Test
         void retornaListadoLiviano() {
             ProductoListadoDTO lite = new ProductoListadoDTO(10L, "Camiseta", "Desc", 50.0,
-                    "img.jpg", "Camisetas", "Brasil", "br", false, 10L, 1L);
+                    IMG_JPG , "Camisetas", "Brasil", "br", false, 10L, 1L);
             when(productoRepository.findAllLiviano()).thenReturn(List.of(lite));
 
             List<ProductoListadoDTO> resultado = productoService.listarTodosLiviano();

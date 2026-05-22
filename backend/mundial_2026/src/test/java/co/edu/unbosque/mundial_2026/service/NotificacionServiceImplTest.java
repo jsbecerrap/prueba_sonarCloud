@@ -35,7 +35,13 @@ class NotificacionServiceImplTest {
     @Mock private UsuarioRepository usuarioRepository;
     @Mock private PartidoRepository partidoRepository;
     @Mock private EventoAuditoriaService eventoAuditoriaService;
-
+private static final String COLOMBIA_VS_BRAZIL = "Colombia vs Brazil";
+private static final String TITULO_TEST = "Titulo test";
+private static final String INFO = "INFO";
+private static final String MENSAJE_TEST = "Mensaje test";
+private static final String SISTEMA = "SISTEMA";
+private static final String COLOMBIA = "Colombia";
+private static final String BRAZIL = "Brazil";
     @InjectMocks private NotificacionServiceImpl service;
 
     private Usuario crearUsuario(Long id, boolean activo) {
@@ -53,7 +59,7 @@ class NotificacionServiceImplTest {
     }
 
     private Notificacion crearNotificacion(Long id, Usuario usuario, boolean leida) {
-        Notificacion n = new Notificacion("INFO", "Titulo test", "Mensaje test", "SISTEMA", "ENVIADA", usuario);
+        Notificacion n = new Notificacion(INFO, TITULO_TEST, MENSAJE_TEST, SISTEMA, "ENVIADA", usuario);
         n.setId(id);
         n.setLeida(leida);
         n.setFecha(LocalDateTime.now());
@@ -63,19 +69,19 @@ class NotificacionServiceImplTest {
     private NotificacionRequestDTO crearRequestDTO(Long usuarioId) {
         NotificacionRequestDTO dto = new NotificacionRequestDTO();
         dto.setUsuarioId(usuarioId);
-        dto.setTipo("INFO");
-        dto.setTitulo("Titulo test");
-        dto.setMensaje("Mensaje test");
-        dto.setCanal("SISTEMA");
+        dto.setTipo(INFO);
+        dto.setTitulo(TITULO_TEST);
+        dto.setMensaje(MENSAJE_TEST);
+        dto.setCanal(SISTEMA);
         return dto;
     }
 
     private NotificacionMasivaRequestDTO crearMasivaDTO(List<Long> ids) {
         NotificacionMasivaRequestDTO dto = new NotificacionMasivaRequestDTO();
-        dto.setTipo("INFO");
+        dto.setTipo(INFO);
         dto.setTitulo("Titulo masivo");
         dto.setMensaje("Mensaje masivo");
-        dto.setCanal("SISTEMA");
+        dto.setCanal(SISTEMA);
         dto.setUsuarioIds(ids);
         return dto;
     }
@@ -221,11 +227,11 @@ class NotificacionServiceImplTest {
     void notificarPorPartido_partidoExistente_usuarioConSeleccionFav_notifica() {
         Partido partido = new Partido();
         partido.setId(1L);
-        partido.setSeleccionLocal("Colombia");
-        partido.setSeleccionVisitante("Brazil");
+        partido.setSeleccionLocal(COLOMBIA);
+        partido.setSeleccionVisitante(BRAZIL);
 
         Seleccion seleccion = new Seleccion();
-        seleccion.setNombre("Colombia");
+        seleccion.setNombre(COLOMBIA);
 
         Usuario usuario = crearUsuario(1L, true);
         usuario.setSeleccionesU(List.of(seleccion));
@@ -235,7 +241,7 @@ class NotificacionServiceImplTest {
         when(notificacionRepository.saveAll(any())).thenReturn(List.of());
         doNothing().when(eventoAuditoriaService).registrar(any(), any(), any(), any(), any());
 
-        service.notificarPorPartido(1L, "INFO", "Titulo", "Mensaje");
+        service.notificarPorPartido(1L, INFO, "Titulo", "Mensaje");
 
         verify(notificacionRepository).saveAll(argThat(list -> ((List<?>) list).size() == 1));
     }
@@ -244,8 +250,8 @@ class NotificacionServiceImplTest {
     void notificarPorPartido_usuarioSinSeleccionesFav_noEnviaNotificacion() {
         Partido partido = new Partido();
         partido.setId(1L);
-        partido.setSeleccionLocal("Colombia");
-        partido.setSeleccionVisitante("Brazil");
+        partido.setSeleccionLocal(COLOMBIA);
+        partido.setSeleccionVisitante(BRAZIL);
 
         Usuario usuario = crearUsuario(1L, true);
         usuario.setSeleccionesU(List.of());
@@ -255,7 +261,7 @@ class NotificacionServiceImplTest {
         when(notificacionRepository.saveAll(any())).thenReturn(List.of());
         doNothing().when(eventoAuditoriaService).registrar(any(), any(), any(), any(), any());
 
-        service.notificarPorPartido(1L, "INFO", "Titulo", "Mensaje");
+        service.notificarPorPartido(1L, INFO, "Titulo", "Mensaje");
 
         verify(notificacionRepository).saveAll(argThat(list -> ((List<?>) list).isEmpty()));
     }
@@ -264,11 +270,11 @@ class NotificacionServiceImplTest {
     void notificarPorPartido_usuarioInactivo_noEnviaNotificacion() {
         Partido partido = new Partido();
         partido.setId(1L);
-        partido.setSeleccionLocal("Colombia");
-        partido.setSeleccionVisitante("Brazil");
+        partido.setSeleccionLocal(COLOMBIA);
+        partido.setSeleccionVisitante(BRAZIL);
 
         Seleccion seleccion = new Seleccion();
-        seleccion.setNombre("Colombia");
+        seleccion.setNombre(COLOMBIA);
 
         Usuario inactivo = crearUsuario(2L, false);
         inactivo.setSeleccionesU(List.of(seleccion));
@@ -278,7 +284,7 @@ class NotificacionServiceImplTest {
         when(notificacionRepository.saveAll(any())).thenReturn(List.of());
         doNothing().when(eventoAuditoriaService).registrar(any(), any(), any(), any(), any());
 
-        service.notificarPorPartido(1L, "INFO", "Titulo", "Mensaje");
+        service.notificarPorPartido(1L, INFO, "Titulo", "Mensaje");
 
         verify(notificacionRepository).saveAll(argThat(list -> ((List<?>) list).isEmpty()));
     }
@@ -288,7 +294,7 @@ class NotificacionServiceImplTest {
         when(partidoRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThrows(PartidoNotFoundException.class,
-                () -> service.notificarPorPartido(99L, "INFO", "Titulo", "Mensaje"));
+                () -> service.notificarPorPartido(99L, INFO, "Titulo", "Mensaje"));
     }
 
     @Test
@@ -319,7 +325,7 @@ class NotificacionServiceImplTest {
         usuario.setFcmtoken(null);
         when(notificacionRepository.save(any(Notificacion.class))).thenReturn(new Notificacion());
 
-        service.notificarEntradaPagada(usuario, "Colombia vs Brazil", "VIP", "A", "12");
+        service.notificarEntradaPagada(usuario, COLOMBIA_VS_BRAZIL, "VIP", "A", "12");
 
         verify(notificacionRepository).save(any(Notificacion.class));
     }
@@ -374,7 +380,7 @@ class NotificacionServiceImplTest {
         usuario.setFcmtoken(null);
         when(notificacionRepository.save(any(Notificacion.class))).thenReturn(new Notificacion());
 
-        service.notificarEntradaTransferida(usuario, "destino@test.com", "Colombia vs Brazil");
+        service.notificarEntradaTransferida(usuario, "destino@test.com", COLOMBIA_VS_BRAZIL);
 
         verify(notificacionRepository).save(any(Notificacion.class));
     }
@@ -385,7 +391,7 @@ class NotificacionServiceImplTest {
         usuario.setFcmtoken(null);
         when(notificacionRepository.save(any(Notificacion.class))).thenReturn(new Notificacion());
 
-        service.notificarEntradaRecibida(usuario, "origen@test.com", "Colombia vs Brazil");
+        service.notificarEntradaRecibida(usuario, "origen@test.com", COLOMBIA_VS_BRAZIL);
 
         verify(notificacionRepository).save(any(Notificacion.class));
     }
@@ -396,7 +402,7 @@ class NotificacionServiceImplTest {
         usuario.setFcmtoken(null);
         when(notificacionRepository.save(any(Notificacion.class))).thenReturn(new Notificacion());
 
-        service.notificarReservaExpirada(usuario, "Colombia vs Brazil");
+        service.notificarReservaExpirada(usuario, COLOMBIA_VS_BRAZIL);
 
         verify(notificacionRepository).save(any(Notificacion.class));
     }
@@ -407,7 +413,7 @@ class NotificacionServiceImplTest {
         usuario.setFcmtoken(null);
         when(notificacionRepository.save(any(Notificacion.class))).thenReturn(new Notificacion());
 
-        service.notificarReservaPorExpirar(usuario, "Colombia vs Brazil");
+        service.notificarReservaPorExpirar(usuario, COLOMBIA_VS_BRAZIL);
 
         verify(notificacionRepository).save(any(Notificacion.class));
     }
@@ -418,7 +424,7 @@ class NotificacionServiceImplTest {
         usuario.setFcmtoken(null);
         when(notificacionRepository.save(any(Notificacion.class))).thenReturn(new Notificacion());
 
-        service.notificarReservaCreada(usuario, "Colombia vs Brazil");
+        service.notificarReservaCreada(usuario, COLOMBIA_VS_BRAZIL);
 
         verify(notificacionRepository).save(any(Notificacion.class));
     }

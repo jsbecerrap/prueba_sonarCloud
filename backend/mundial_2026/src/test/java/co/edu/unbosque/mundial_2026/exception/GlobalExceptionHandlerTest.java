@@ -12,6 +12,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 
 class GlobalExceptionHandlerTest {
 
+    private static final String MENSAJE = "mensaje";
     private final GlobalExceptionHandler handler = new GlobalExceptionHandler();
 
     @Test
@@ -19,7 +20,7 @@ class GlobalExceptionHandlerTest {
         ResponseEntity<Map<String, Object>> res =
                 handler.handleUsuarioNotFound(new UsuarioNotFoundException("no encontrado"));
         assertEquals(404, res.getStatusCode().value());
-        assertEquals("no encontrado", res.getBody().get("mensaje"));
+        assertEquals("no encontrado", res.getBody().get(MENSAJE));
     }
 
     @Test
@@ -27,7 +28,7 @@ class GlobalExceptionHandlerTest {
         ResponseEntity<Map<String, Object>> res =
                 handler.handleCorreoEnUso(new CorreoEnUsoException("correo en uso"));
         assertEquals(409, res.getStatusCode().value());
-        assertEquals("correo en uso", res.getBody().get("mensaje"));
+        assertEquals("correo en uso", res.getBody().get(MENSAJE));
     }
 
     @Test
@@ -35,7 +36,7 @@ class GlobalExceptionHandlerTest {
         ResponseEntity<Map<String, Object>> res =
                 handler.handleContrasenaIncorrecta(new ContrasenaIncorrectaException("incorrecta"));
         assertEquals(401, res.getStatusCode().value());
-        assertEquals("incorrecta", res.getBody().get("mensaje"));
+        assertEquals("incorrecta", res.getBody().get(MENSAJE));
     }
 
     @Test
@@ -50,7 +51,7 @@ class GlobalExceptionHandlerTest {
         ResponseEntity<Map<String, Object>> res =
                 handler.handleIllegalState(new IllegalStateException("estado inválido"));
         assertEquals(400, res.getStatusCode().value());
-        assertEquals("estado inválido", res.getBody().get("mensaje"));
+        assertEquals("estado inválido", res.getBody().get(MENSAJE));
     }
 
     @Test
@@ -58,7 +59,7 @@ class GlobalExceptionHandlerTest {
         ResponseEntity<Map<String, Object>> res =
                 handler.handleIllegalArgument(new IllegalArgumentException("argumento inválido"));
         assertEquals(400, res.getStatusCode().value());
-        assertEquals("argumento inválido", res.getBody().get("mensaje"));
+        assertEquals("argumento inválido", res.getBody().get(MENSAJE));
     }
 
     @Test
