@@ -21,7 +21,7 @@ class PartidoSchedulerTest {
     private PartidoScheduler scheduler;
 
     @Test
-    void actualizarResultadosHoy_invocaSincronizarConLigaYTemporada() throws Exception {
+    void actualizarResultadosHoy_invocaSincronizarConLigaYTemporada()  {
         when(partidoService.sincronizarPorFechaYLiga(anyString(), eq(1), eq(2026))).thenReturn(5);
 
         scheduler.actualizarResultadosHoy();
@@ -30,7 +30,7 @@ class PartidoSchedulerTest {
     }
 
     @Test
-    void actualizarResultadosHoy_serviceLanzaExcepcion_noPropagas() throws Exception {
+    void actualizarResultadosHoy_serviceLanzaExcepcion_noPropagas() {
         when(partidoService.sincronizarPorFechaYLiga(anyString(), anyInt(), anyInt()))
                 .thenThrow(new RuntimeException("API caída"));
 
@@ -38,7 +38,7 @@ class PartidoSchedulerTest {
     }
 
     @Test
-    void actualizarResultadosHoy_retornaCeroActualizados_noLanzaExcepcion() throws Exception {
+    void actualizarResultadosHoy_retornaCeroActualizados_noLanzaExcepcion() {
         when(partidoService.sincronizarPorFechaYLiga(anyString(), eq(1), eq(2026))).thenReturn(0);
 
         org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> scheduler.actualizarResultadosHoy());

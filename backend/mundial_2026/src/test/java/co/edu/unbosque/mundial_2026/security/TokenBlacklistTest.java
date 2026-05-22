@@ -31,13 +31,7 @@ class TokenBlacklistTest {
                 .compact();
     }
 
-    private String tokenExpirado() {
-        return Jwts.builder()
-                .subject("user@test.com")
-                .expiration(Date.from(Instant.now().minusSeconds(10)))
-                .signWith(TokenJwt.getSecretKey())
-                .compact();
-    }
+
 
     @Test
     void estaInvalidado_tokenNoAgregado_retornaFalse() {

@@ -62,7 +62,7 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    void handleValidation_retorna400ConCampos() throws Exception {
+    void handleValidation_retorna400ConCampos()  {
         BeanPropertyBindingResult bindingResult =
                 new BeanPropertyBindingResult(new Object(), "objeto");
         bindingResult.addError(new FieldError("objeto", "nombre", "no puede estar vacío"));

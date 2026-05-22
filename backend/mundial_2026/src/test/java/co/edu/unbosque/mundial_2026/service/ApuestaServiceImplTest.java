@@ -277,7 +277,7 @@ class ApuestaServiceImplTest {
             assertNotNull(resultado);
             assertEquals("Polla Test", resultado.getNombre());
             verify(participacionRepository).save(any(Participacion.class));
-            verify(notificacionService).notificarApuestaUnirse(eq(usuario), eq(usuario), eq("Polla Test"));
+           verify(notificacionService).notificarApuestaUnirse(usuario, usuario, "Polla Test");
             verify(auditoriaService).registrar(eq("APUESTA_UNIRSE"), anyString(), eq(1L), anyString(), eq("Apuesta"));
         }
 

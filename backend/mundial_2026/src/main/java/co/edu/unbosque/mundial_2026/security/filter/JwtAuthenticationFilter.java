@@ -37,16 +37,14 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
     private static final int SEGUNDOS_DIA = 86400;
 
-    // ===== Parámetros de rate limiting / bloqueo por intentos fallidos =====
+    private static final String KEY_MENSAJE = "mensaje";
+    
     private static final int MAX_INTENTOS_FALLIDOS = 5;
     private static final int MINUTOS_BLOQUEO = 15;
 
-    // Límite real de bcrypt; contraseñas más largas son cortadas internamente
-    // y, sobre todo, permiten ataques de DoS por costo de hash.
     private static final int MAX_LONGITUD_PASSWORD = 72;
 
-    // Clave que usamos para guardar el correo en el request entre
-    // attemptAuthentication y unsuccessfulAuthentication
+   
     private static final String ATTR_CORREO_INTENTO = "correoIntentoLogin";
 
     private final AuthenticationManager authManager;
@@ -146,7 +144,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         final Map<String, String> json = new HashMap<>();
         json.put("token", token);
         json.put("username", username);
-        json.put("mensaje", "Hola " + nombreCompleto + " sesión iniciada correctamente");
+      json.put(KEY_MENSAJE, "Hola " + nombreCompleto + " sesión iniciada correctamente");
 
         response.setContentType("application/json;charset=UTF-8");
         response.getWriter().write(new ObjectMapper().writeValueAsString(json));
@@ -167,10 +165,10 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
         final Map<String, String> json = new HashMap<>();
         if (estabaBloqueado) {
-            json.put("mensaje", "Demasiados intentos. Espera unos minutos.");
+          json.put(KEY_MENSAJE, "Demasiados intentos. Espera unos minutos.");
             response.setStatus(429); // Too Many Requests
         } else {
-            json.put("mensaje", "Error en la autenticacion correo/contraseña incorrecto");
+            json.put(KEY_MENSAJE, "Error en la autenticacion correo/contraseña incorrecto");
             response.setStatus(401);
         }
         json.put("error", failed.getMessage());

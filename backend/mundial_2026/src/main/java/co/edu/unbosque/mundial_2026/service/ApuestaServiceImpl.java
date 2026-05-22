@@ -218,7 +218,7 @@ public class ApuestaServiceImpl implements ApuestaService {
                                                 + " editó pronóstico en polla '" + apuesta.getNombre() + "'"
                                                 + PIPE_SEPARATOR + pronostico.getPartido().getSeleccionLocal()
                                                 + VS_SEPARATOR + pronostico.getPartido().getSeleccionVisitante()
-                                              + PIPE_SEPARATOR + "antes: " + golesLocalAnterior + "-"
+                                                + PIPE_SEPARATOR + "antes: " + golesLocalAnterior + "-"
                                                 + golesVisitanteAnterior + " (" + resultadoAnterior + ")"
                                                 + PIPE_SEPARATOR + "después: " + dto.getGolesLocalPronosticados() + "-"
                                                 + dto.getGolesVisitantePronosticados() + " (" + resultadoPronosticado
@@ -353,7 +353,8 @@ public class ApuestaServiceImpl implements ApuestaService {
 
                 auditoriaService.registrar(
                                 "APUESTA_FINALIZADA",
-                             "Polla '" + apuesta.getNombre() + "' finalizada" + PIPE_SEPARATOR + "ranking: " + rankingLog,
+                                "Polla '" + apuesta.getNombre() + "' finalizada" + PIPE_SEPARATOR + "ranking: "
+                                                + rankingLog,
                                 null,
                                 apuesta.getCodigoInvitacion(),
                                 ENTIDAD_APUESTA);
@@ -494,11 +495,9 @@ public class ApuestaServiceImpl implements ApuestaService {
                 for (final Pronostico pronostico : pronosticos) {
                         final Partido partido = pronostico.getPartido();
 
-                        if (partido.getGolesLocal() == null || partido.getGolesVisitante() == null) {
-                                continue;
-                        }
-
-                        if (pronostico.getPuntosObtenidos() != null && pronostico.getPuntosObtenidos() > 0) {
+                        if (partido.getGolesLocal() == null || partido.getGolesVisitante() == null
+                                        || (pronostico.getPuntosObtenidos() != null
+                                                        && pronostico.getPuntosObtenidos() > 0)) {
                                 continue;
                         }
 

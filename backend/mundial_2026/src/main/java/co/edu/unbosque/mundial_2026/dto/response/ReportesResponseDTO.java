@@ -7,6 +7,7 @@ public class ReportesResponseDTO {
     private int usuariosActivos;
 
     public ReportesResponseDTO() {
+        //Constructor comentario que requiere sonar
     }
 
     public int getTotalUsuarios() {

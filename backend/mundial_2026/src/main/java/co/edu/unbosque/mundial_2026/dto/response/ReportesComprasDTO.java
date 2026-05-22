@@ -10,6 +10,7 @@ public class ReportesComprasDTO {
     private List<VentasPorCategoriaDTO> ventasPorCategoria;
 
     public ReportesComprasDTO() {
+        //Constructor comentario que requiere sonar
     }
 
     public double getIngresoTotal() {

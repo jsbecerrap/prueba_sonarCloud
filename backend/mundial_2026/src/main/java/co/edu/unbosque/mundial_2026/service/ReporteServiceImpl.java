@@ -1,7 +1,6 @@
 package co.edu.unbosque.mundial_2026.service;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -85,7 +84,7 @@ public class ReporteServiceImpl implements ReporteService {
                         (String) row[2],
                         ((Number) row[3]).intValue(),
                         ((Number) row[4]).doubleValue()))
-                .collect(Collectors.toList());
+                .toList();
         dto.setProductosMasVendidos(productos);
 
         List<VentasPorCategoriaDTO> porCategoria = itemOrdenRepository
@@ -95,7 +94,7 @@ public class ReporteServiceImpl implements ReporteService {
                         (String) row[0],
                         ((Number) row[1]).intValue(),
                         ((Number) row[2]).doubleValue()))
-                .collect(Collectors.toList());
+                   .toList();
         dto.setVentasPorCategoria(porCategoria);
 
         return dto;
@@ -113,7 +112,7 @@ public class ReporteServiceImpl implements ReporteService {
                         (String) row[2],
                         (String) row[3],
                         ((Number) row[4]).intValue()))
-                .collect(Collectors.toList());
+                   .toList();
     }
 
     @Override
@@ -127,7 +126,7 @@ public class ReporteServiceImpl implements ReporteService {
                         (String) row[1],
                         (String) row[2],
                         ((Number) row[3]).intValue()))
-                .collect(Collectors.toList());
+                   .toList();
     }
 
     @Override
@@ -140,7 +139,7 @@ public class ReporteServiceImpl implements ReporteService {
                         (String) row[0],
                         ((Number) row[1]).intValue(),
                         ((Number) row[2]).doubleValue()))
-                .collect(Collectors.toList());
+                   .toList();
     }
 
     @Override
@@ -157,7 +156,7 @@ public class ReporteServiceImpl implements ReporteService {
                         (String) row[4],
                         ((Number) row[5]).intValue(),
                         ((Number) row[6]).doubleValue()))
-                .collect(Collectors.toList());
+                 .toList();
     }
 
     @Override
@@ -173,7 +172,7 @@ public class ReporteServiceImpl implements ReporteService {
                         (String) row[3],
                         ((Number) row[4]).intValue(),
                         ((Number) row[5]).doubleValue()))
-                .collect(Collectors.toList());
+                 .toList();
     }
 
     @Override
@@ -189,6 +188,6 @@ public class ReporteServiceImpl implements ReporteService {
                         (String) row[3],
                         ((Number) row[4]).intValue(),
                         ((Number) row[5]).doubleValue()))
-                .collect(Collectors.toList());
+                   .toList();
     }
 }
