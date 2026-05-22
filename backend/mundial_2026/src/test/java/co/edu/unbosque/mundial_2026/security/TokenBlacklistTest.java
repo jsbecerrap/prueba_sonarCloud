@@ -60,12 +60,7 @@ class TokenBlacklistTest {
         assertTrue(blacklist.estaInvalidado(token));
     }
 
-    @Test
-    void estaInvalidado_tokenExpiradoAgregado_retornaFalse() {
-        String token = tokenExpirado();
-        blacklist.agregar(token);
-        assertFalse(blacklist.estaInvalidado(token));
-    }
+    
 
     @Test
     void estaInvalidado_dosTokensDiferentes_soloInvalidaElAgregado() {

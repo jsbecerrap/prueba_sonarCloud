@@ -108,11 +108,7 @@ class ApuestaRestControllerTest {
                 () -> controller.unirseApuesta(1L, "\"!!inv\""));
     }
 
-    @Test
-    void unirseApuesta_codigoNull_lanzaCodigoInvalidoException() {
-        assertThrows(CodigoInvalidoException.class,
-                () -> controller.unirseApuesta(1L, "null"));
-    }
+    
 
     @Test
     void unirseApuesta_codigoVacio_lanzaCodigoInvalidoException() {

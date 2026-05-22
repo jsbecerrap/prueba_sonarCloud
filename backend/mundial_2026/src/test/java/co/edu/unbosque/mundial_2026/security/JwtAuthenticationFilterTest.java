@@ -95,8 +95,6 @@ class JwtAuthenticationFilterTest {
     void attemptAuthentication_credencialesValidas_delegaAlAuthManager() throws Exception {
         MockHttpServletRequest request = requestConCredenciales("user@test.com", "pass123");
         MockHttpServletResponse response = new MockHttpServletResponse();
-        Usuario usuario = usuarioSinBloqueo("user@test.com");
-        when(usuarioRepo.findByCorreoUsuario("user@test.com")).thenReturn(Optional.of(usuario));
         Authentication auth = new UsernamePasswordAuthenticationToken("user@test.com", "pass123");
         when(authManager.authenticate(any())).thenReturn(auth);
 

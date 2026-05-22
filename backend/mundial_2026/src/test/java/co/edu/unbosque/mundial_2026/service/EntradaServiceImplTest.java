@@ -205,7 +205,7 @@ class EntradaServiceImplTest {
         when(entradaRepository.sumCantidadByPartidoCategoriaYFila(eq(1L), eq("BARRA"), eq("A"), anyList())).thenReturn(0);
         when(entradaRepository.maxAsientoFinByPartidoCategoriaYFila(eq(1L), eq("BARRA"), eq("A"))).thenReturn(0);
         when(entradaRepository.save(any(Entrada.class))).thenAnswer(inv -> inv.getArgument(0));
-        doNothing().when(partidoService).actualizarCapacidad(any(), any());
+      doNothing().when(partidoService).actualizarCapacidad(any(), anyInt());
         doNothing().when(auditoriaService).registrar(any(), any(), any(), any(), any());
         doNothing().when(notificacionService).notificarReservaCreada(any(), any());
 
@@ -259,7 +259,7 @@ class EntradaServiceImplTest {
         when(entradaRepository.sumCantidadByPartidoCategoriaYFila(eq(1L), eq("BARRA"), eq("A"), anyList())).thenReturn(0);
         when(entradaRepository.maxAsientoFinByPartidoCategoriaYFila(eq(1L), eq("BARRA"), eq("A"))).thenReturn(5);
         when(entradaRepository.save(any(Entrada.class))).thenAnswer(inv -> inv.getArgument(0));
-        doNothing().when(partidoService).actualizarCapacidad(any(), any());
+     doNothing().when(partidoService).actualizarCapacidad(any(), anyInt());
         doNothing().when(auditoriaService).registrar(any(), any(), any(), any(), any());
         doNothing().when(notificacionService).notificarReservaCreada(any(), any());
 
@@ -592,7 +592,8 @@ class EntradaServiceImplTest {
         service.expirarReservasVencidas();
 
         verify(entradaRepository, never()).save(any());
-        verify(partidoService, never()).actualizarCapacidad(any(), any());
+     
+       verify(partidoService, never()).actualizarCapacidad(any(), anyInt());
     }
 
     @Test

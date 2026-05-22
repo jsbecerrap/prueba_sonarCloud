@@ -41,11 +41,11 @@ class UsuarioRestControllerTest {
     @Mock private Authentication authentication;
 
     @BeforeEach
-    void setUpSecurityContext() {
-        when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getName()).thenReturn("user@test.com");
-        SecurityContextHolder.setContext(securityContext);
-    }
+void setUpSecurityContext() {
+    lenient().when(securityContext.getAuthentication()).thenReturn(authentication);
+    lenient().when(authentication.getName()).thenReturn("user@test.com");
+    SecurityContextHolder.setContext(securityContext);
+}
 
     @AfterEach
     void clearSecurityContext() {

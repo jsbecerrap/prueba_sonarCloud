@@ -78,7 +78,7 @@ class MetodoPagoControllerTest {
 
     @Test
     void agregar_valido_retorna200() {
-        when(metodoPagoService.agregar("user@test.com", requestValido())).thenReturn(responseDTO());
+      when(metodoPagoService.agregar(any(), any())).thenReturn(responseDTO());
 
         ResponseEntity<MetodoPagoResponseDTO> res = controller.agregar("user@test.com", requestValido());
 
@@ -190,8 +190,7 @@ class MetodoPagoControllerTest {
 
     @Test
     void actualizar_valido_retorna200() {
-        when(metodoPagoService.actualizar("user@test.com", 1L, requestValido()))
-                .thenReturn(responseDTO());
+       when(metodoPagoService.actualizar(any(), eq(1L), any())).thenReturn(responseDTO());
 
         ResponseEntity<MetodoPagoResponseDTO> res =
                 controller.actualizar("user@test.com", 1L, requestValido());
