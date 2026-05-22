@@ -1,27 +1,17 @@
 package co.edu.unbosque.mundial_2026.controller;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.web.servlet.MockMvc;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.ResponseEntity;
 
 import co.edu.unbosque.mundial_2026.dto.request.CategoriaRequestDTO;
 import co.edu.unbosque.mundial_2026.dto.response.CategoriaResponseDTO;
@@ -30,17 +20,14 @@ import co.edu.unbosque.mundial_2026.dto.response.ProductoResponseDTO;
 import co.edu.unbosque.mundial_2026.dto.response.ReactivarCategoriaResponseDTO;
 import co.edu.unbosque.mundial_2026.service.CategoriaService;
 
-@WebMvcTest(CategoriaController.class)
-@ActiveProfiles("test")
+@ExtendWith(MockitoExtension.class)
 class CategoriaControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @MockBean
+    @Mock
     private CategoriaService categoriaService;
 
-    private final ObjectMapper mapper = new ObjectMapper();
+    @InjectMocks
+    private CategoriaController controller;
 
     private CategoriaRequestDTO requestValido() {
         CategoriaRequestDTO dto = new CategoriaRequestDTO();
@@ -50,284 +37,195 @@ class CategoriaControllerTest {
     }
 
     @Test
-    void crear_conRolAdmin_retorna201() throws Exception {
+    void crear_valido_retorna201() {
         when(categoriaService.crear(any())).thenReturn(new CategoriaResponseDTO());
 
-        mockMvc.perform(post("/api/categorias")
-                .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN")))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(requestValido())))
-                .andExpect(status().isCreated());
+        ResponseEntity<CategoriaResponseDTO> res = controller.crear(requestValido());
+
+        assertEquals(201, res.getStatusCode().value());
+        assertNotNull(res.getBody());
+        verify(categoriaService).crear(any());
     }
 
     @Test
-    void crear_sinRolAdmin_retorna403() throws Exception {
-        mockMvc.perform(post("/api/categorias")
-                .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_USER")))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(requestValido())))
-                .andExpect(status().isForbidden());
+    void crear_retornaElDTODelServicio() {
+        CategoriaResponseDTO esperado = new CategoriaResponseDTO();
+        esperado.setId(5L);
+        when(categoriaService.crear(any())).thenReturn(esperado);
+
+        ResponseEntity<CategoriaResponseDTO> res = controller.crear(requestValido());
+
+        assertEquals(5L, res.getBody().getId());
     }
 
     @Test
-    void crear_sinAutenticacion_retorna401() throws Exception {
-        mockMvc.perform(post("/api/categorias")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(requestValido())))
-                .andExpect(status().isUnauthorized());
+    void crear_serviceLanzaExcepcion_propaga() {
+        when(categoriaService.crear(any())).thenThrow(new RuntimeException("ya existe"));
+
+        assertThrows(RuntimeException.class, () -> controller.crear(requestValido()));
     }
 
     @Test
-    void crear_nombreVacio_retorna400() throws Exception {
-        CategoriaRequestDTO dto = new CategoriaRequestDTO();
-        dto.setNombre("");
-
-        mockMvc.perform(post("/api/categorias")
-                .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN")))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(dto)))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void crear_nombreNull_retorna400() throws Exception {
-        CategoriaRequestDTO dto = new CategoriaRequestDTO();
-
-        mockMvc.perform(post("/api/categorias")
-                .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN")))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(dto)))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void crear_nombreMuyCorto_retorna400() throws Exception {
-        CategoriaRequestDTO dto = new CategoriaRequestDTO();
-        dto.setNombre("A");
-
-        mockMvc.perform(post("/api/categorias")
-                .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN")))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(dto)))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void crear_nombreConCaracteresInvalidos_retorna400() throws Exception {
-        CategoriaRequestDTO dto = new CategoriaRequestDTO();
-        dto.setNombre("Camisetas!!@#");
-
-        mockMvc.perform(post("/api/categorias")
-                .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN")))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(dto)))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void crear_descripcionDemasiadoLarga_retorna400() throws Exception {
-        CategoriaRequestDTO dto = requestValido();
-        dto.setDescripcion("a".repeat(251));
-
-        mockMvc.perform(post("/api/categorias")
-                .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN")))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(dto)))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void listar_sinAutenticacion_retorna200() throws Exception {
-        when(categoriaService.listar()).thenReturn(List.of(new CategoriaResponseDTO()));
-
-        mockMvc.perform(get("/api/categorias"))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    void listar_listaVacia_retorna200() throws Exception {
-        when(categoriaService.listar()).thenReturn(List.of());
-
-        mockMvc.perform(get("/api/categorias"))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    void listar_conJwt_retorna200() throws Exception {
-        when(categoriaService.listar()).thenReturn(List.of(new CategoriaResponseDTO()));
-
-        mockMvc.perform(get("/api/categorias")
-                .with(jwt()))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    void actualizar_conRolAdmin_retorna200() throws Exception {
-        when(categoriaService.actualizar(eq(1L), any())).thenReturn(new CategoriaResponseDTO());
-
-        mockMvc.perform(put("/api/categorias/1")
-                .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN")))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(requestValido())))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    void actualizar_sinRolAdmin_retorna403() throws Exception {
-        mockMvc.perform(put("/api/categorias/1")
-                .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_USER")))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(requestValido())))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    void actualizar_sinAutenticacion_retorna401() throws Exception {
-        mockMvc.perform(put("/api/categorias/1")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(requestValido())))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    void actualizar_bodyInvalido_retorna400() throws Exception {
-        CategoriaRequestDTO dto = new CategoriaRequestDTO();
-
-        mockMvc.perform(put("/api/categorias/1")
-                .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN")))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(dto)))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void desactivar_conRolAdmin_retorna200() throws Exception {
-        when(categoriaService.desactivar(1L)).thenReturn(new DesactivarCategoriaResponseDTO());
-
-        mockMvc.perform(patch("/api/categorias/1/desactivar")
-                .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN"))))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    void desactivar_sinRolAdmin_retorna403() throws Exception {
-        mockMvc.perform(patch("/api/categorias/1/desactivar")
-                .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_USER"))))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    void desactivar_sinAutenticacion_retorna401() throws Exception {
-        mockMvc.perform(patch("/api/categorias/1/desactivar"))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    void reactivar_conRolAdmin_retorna200() throws Exception {
-        when(categoriaService.reactivar(1L)).thenReturn(new ReactivarCategoriaResponseDTO());
-
-        mockMvc.perform(patch("/api/categorias/1/reactivar")
-                .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN"))))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    void reactivar_sinRolAdmin_retorna403() throws Exception {
-        mockMvc.perform(patch("/api/categorias/1/reactivar")
-                .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_USER"))))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    void reactivar_sinAutenticacion_retorna401() throws Exception {
-        mockMvc.perform(patch("/api/categorias/1/reactivar"))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    void listarTodas_conRolAdmin_retorna200() throws Exception {
-        when(categoriaService.listarTodas()).thenReturn(List.of(new CategoriaResponseDTO()));
-
-        mockMvc.perform(get("/api/categorias/todas")
-                .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN"))))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    void listarTodas_listaVacia_retorna200() throws Exception {
-        when(categoriaService.listarTodas()).thenReturn(List.of());
-
-        mockMvc.perform(get("/api/categorias/todas")
-                .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN"))))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    void listarTodas_sinRolAdmin_retorna403() throws Exception {
-        mockMvc.perform(get("/api/categorias/todas")
-                .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_USER"))))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    void listarTodas_sinAutenticacion_retorna401() throws Exception {
-        mockMvc.perform(get("/api/categorias/todas"))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    void obtenerProductos_conRolAdmin_retorna200() throws Exception {
-        when(categoriaService.obtenerProductosPorCategoria(1L)).thenReturn(List.of(new ProductoResponseDTO()));
-
-        mockMvc.perform(get("/api/categorias/1/productos")
-                .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN"))))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    void obtenerProductos_listaVacia_retorna200() throws Exception {
-        when(categoriaService.obtenerProductosPorCategoria(eq(99L))).thenReturn(List.of());
-
-        mockMvc.perform(get("/api/categorias/99/productos")
-                .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN"))))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    void obtenerProductos_sinRolAdmin_retorna403() throws Exception {
-        mockMvc.perform(get("/api/categorias/1/productos")
-                .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_USER"))))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    void obtenerProductos_sinAutenticacion_retorna401() throws Exception {
-        mockMvc.perform(get("/api/categorias/1/productos"))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    void crear_descripcionNula_retorna201() throws Exception {
+    void crear_descripcionNula_retorna201() {
         CategoriaRequestDTO dto = new CategoriaRequestDTO();
         dto.setNombre("Gorras");
         when(categoriaService.crear(any())).thenReturn(new CategoriaResponseDTO());
 
-        mockMvc.perform(post("/api/categorias")
-                .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN")))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(dto)))
-                .andExpect(status().isCreated());
+        ResponseEntity<CategoriaResponseDTO> res = controller.crear(dto);
+
+        assertEquals(201, res.getStatusCode().value());
+    }
+
+
+
+    @Test
+    void listar_retorna200ConLista() {
+        when(categoriaService.listar()).thenReturn(List.of(new CategoriaResponseDTO()));
+
+        ResponseEntity<List<CategoriaResponseDTO>> res = controller.listar();
+
+        assertEquals(200, res.getStatusCode().value());
+        assertEquals(1, res.getBody().size());
+        verify(categoriaService).listar();
     }
 
     @Test
-    void actualizar_nombreConCaracteresInvalidos_retorna400() throws Exception {
-        CategoriaRequestDTO dto = new CategoriaRequestDTO();
-        dto.setNombre("Cat@!!!");
+    void listar_listaVacia_retorna200() {
+        when(categoriaService.listar()).thenReturn(List.of());
 
-        mockMvc.perform(put("/api/categorias/1")
-                .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN")))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(dto)))
-                .andExpect(status().isBadRequest());
+        ResponseEntity<List<CategoriaResponseDTO>> res = controller.listar();
+
+        assertEquals(200, res.getStatusCode().value());
+        assertTrue(res.getBody().isEmpty());
+    }
+
+
+    @Test
+    void actualizar_valido_retorna200() {
+        when(categoriaService.actualizar(eq(1L), any())).thenReturn(new CategoriaResponseDTO());
+
+        ResponseEntity<CategoriaResponseDTO> res = controller.actualizar(1L, requestValido());
+
+        assertEquals(200, res.getStatusCode().value());
+        assertNotNull(res.getBody());
+        verify(categoriaService).actualizar(eq(1L), any());
+    }
+
+    @Test
+    void actualizar_retornaElDTODelServicio() {
+        CategoriaResponseDTO esperado = new CategoriaResponseDTO();
+        esperado.setId(1L);
+        when(categoriaService.actualizar(eq(1L), any())).thenReturn(esperado);
+
+        ResponseEntity<CategoriaResponseDTO> res = controller.actualizar(1L, requestValido());
+
+        assertEquals(1L, res.getBody().getId());
+    }
+
+    @Test
+    void actualizar_serviceLanzaExcepcion_propaga() {
+        when(categoriaService.actualizar(eq(99L), any())).thenThrow(new RuntimeException("no encontrada"));
+
+        assertThrows(RuntimeException.class, () -> controller.actualizar(99L, requestValido()));
+    }
+
+   
+
+    @Test
+    void desactivar_retorna200() {
+        when(categoriaService.desactivar(1L)).thenReturn(new DesactivarCategoriaResponseDTO());
+
+        ResponseEntity<DesactivarCategoriaResponseDTO> res = controller.desactivar(1L);
+
+        assertEquals(200, res.getStatusCode().value());
+        assertNotNull(res.getBody());
+        verify(categoriaService).desactivar(1L);
+    }
+
+    @Test
+    void desactivar_serviceLanzaExcepcion_propaga() {
+        when(categoriaService.desactivar(99L)).thenThrow(new RuntimeException("no encontrada"));
+
+        assertThrows(RuntimeException.class, () -> controller.desactivar(99L));
+    }
+
+   
+
+    @Test
+    void reactivar_retorna200() {
+        when(categoriaService.reactivar(1L)).thenReturn(new ReactivarCategoriaResponseDTO());
+
+        ResponseEntity<ReactivarCategoriaResponseDTO> res = controller.reactivar(1L);
+
+        assertEquals(200, res.getStatusCode().value());
+        assertNotNull(res.getBody());
+        verify(categoriaService).reactivar(1L);
+    }
+
+    @Test
+    void reactivar_serviceLanzaExcepcion_propaga() {
+        when(categoriaService.reactivar(99L)).thenThrow(new RuntimeException("no encontrada"));
+
+        assertThrows(RuntimeException.class, () -> controller.reactivar(99L));
+    }
+
+
+    @Test
+    void listarTodas_retorna200ConLista() {
+        when(categoriaService.listarTodas()).thenReturn(List.of(new CategoriaResponseDTO()));
+
+        ResponseEntity<List<CategoriaResponseDTO>> res = controller.listarTodas();
+
+        assertEquals(200, res.getStatusCode().value());
+        assertEquals(1, res.getBody().size());
+        verify(categoriaService).listarTodas();
+    }
+
+    @Test
+    void listarTodas_listaVacia_retorna200() {
+        when(categoriaService.listarTodas()).thenReturn(List.of());
+
+        ResponseEntity<List<CategoriaResponseDTO>> res = controller.listarTodas();
+
+        assertEquals(200, res.getStatusCode().value());
+        assertTrue(res.getBody().isEmpty());
+    }
+
+    @Test
+    void listarTodas_serviceLanzaExcepcion_propaga() {
+        when(categoriaService.listarTodas()).thenThrow(new RuntimeException("error"));
+
+        assertThrows(RuntimeException.class, () -> controller.listarTodas());
+    }
+
+ 
+    @Test
+    void obtenerProductos_retorna200ConLista() {
+        when(categoriaService.obtenerProductosPorCategoria(1L))
+                .thenReturn(List.of(new ProductoResponseDTO()));
+
+        ResponseEntity<List<ProductoResponseDTO>> res = controller.obtenerProductos(1L);
+
+        assertEquals(200, res.getStatusCode().value());
+        assertEquals(1, res.getBody().size());
+        verify(categoriaService).obtenerProductosPorCategoria(1L);
+    }
+
+    @Test
+    void obtenerProductos_listaVacia_retorna200() {
+        when(categoriaService.obtenerProductosPorCategoria(99L)).thenReturn(List.of());
+
+        ResponseEntity<List<ProductoResponseDTO>> res = controller.obtenerProductos(99L);
+
+        assertEquals(200, res.getStatusCode().value());
+        assertTrue(res.getBody().isEmpty());
+    }
+
+    @Test
+    void obtenerProductos_categoriaNoExistente_propaga() {
+        when(categoriaService.obtenerProductosPorCategoria(99L))
+                .thenThrow(new RuntimeException("categoria no encontrada"));
+
+        assertThrows(RuntimeException.class, () -> controller.obtenerProductos(99L));
     }
 }

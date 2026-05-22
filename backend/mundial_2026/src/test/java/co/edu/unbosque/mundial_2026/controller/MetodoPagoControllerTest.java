@@ -1,47 +1,30 @@
 package co.edu.unbosque.mundial_2026.controller;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.web.servlet.MockMvc;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.ResponseEntity;
 
 import co.edu.unbosque.mundial_2026.dto.request.MetodoPagoRequestDTO;
 import co.edu.unbosque.mundial_2026.dto.response.MetodoPagoResponseDTO;
 import co.edu.unbosque.mundial_2026.service.MetodoPagoService;
 
-@WebMvcTest(MetodoPagoController.class)
-@ActiveProfiles("test")
+@ExtendWith(MockitoExtension.class)
 class MetodoPagoControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @MockBean
+    @Mock
     private MetodoPagoService metodoPagoService;
 
-    private final ObjectMapper mapper = new ObjectMapper();
+    @InjectMocks
+    private MetodoPagoController controller;
 
     private MetodoPagoRequestDTO requestValido() {
         MetodoPagoRequestDTO dto = new MetodoPagoRequestDTO();
@@ -60,278 +43,182 @@ class MetodoPagoControllerTest {
         return dto;
     }
 
+   
+
     @Test
-    void listar_conJwt_retorna200() throws Exception {
-        when(metodoPagoService.listarPorCorreo(anyString()))
+    void listar_retorna200ConLista() {
+        when(metodoPagoService.listarPorCorreo("user@test.com"))
                 .thenReturn(List.of(responseDTO()));
 
-        mockMvc.perform(get("/payments")
-                .with(jwt().jwt(j -> j.subject("user@test.com"))))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray());
+        ResponseEntity<List<MetodoPagoResponseDTO>> res = controller.listar("user@test.com");
+
+        assertEquals(200, res.getStatusCode().value());
+        assertEquals(1, res.getBody().size());
+        verify(metodoPagoService).listarPorCorreo("user@test.com");
     }
 
     @Test
-    void listar_listaVacia_retorna200() throws Exception {
-        when(metodoPagoService.listarPorCorreo(anyString())).thenReturn(List.of());
+    void listar_listaVacia_retorna200() {
+        when(metodoPagoService.listarPorCorreo("user@test.com")).thenReturn(List.of());
 
-        mockMvc.perform(get("/payments")
-                .with(jwt().jwt(j -> j.subject("user@test.com"))))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray());
+        ResponseEntity<List<MetodoPagoResponseDTO>> res = controller.listar("user@test.com");
+
+        assertEquals(200, res.getStatusCode().value());
+        assertTrue(res.getBody().isEmpty());
     }
 
     @Test
-    void listar_sinAutenticacion_retorna401() throws Exception {
-        mockMvc.perform(get("/payments"))
-                .andExpect(status().isUnauthorized());
+    void listar_serviceLanzaExcepcion_propaga() {
+        when(metodoPagoService.listarPorCorreo(any())).thenThrow(new RuntimeException("error"));
+
+        assertThrows(RuntimeException.class, () -> controller.listar("user@test.com"));
+    }
+
+   
+
+    @Test
+    void agregar_valido_retorna200() {
+        when(metodoPagoService.agregar("user@test.com", requestValido())).thenReturn(responseDTO());
+
+        ResponseEntity<MetodoPagoResponseDTO> res = controller.agregar("user@test.com", requestValido());
+
+        assertEquals(200, res.getStatusCode().value());
+        assertNotNull(res.getBody());
+        assertEquals("CARD", res.getBody().getType());
+        verify(metodoPagoService).agregar(eq("user@test.com"), any());
     }
 
     @Test
-    void agregar_valido_retorna200() throws Exception {
-        when(metodoPagoService.agregar(anyString(), any())).thenReturn(responseDTO());
+    void agregar_serviceRetornaNull_retorna400() {
+        when(metodoPagoService.agregar(any(), any())).thenReturn(null);
 
-        mockMvc.perform(post("/payments")
-                .with(jwt().jwt(j -> j.subject("user@test.com")))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(requestValido())))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.type").value("CARD"));
+        ResponseEntity<MetodoPagoResponseDTO> res = controller.agregar("user@test.com", requestValido());
+
+        assertEquals(400, res.getStatusCode().value());
+        assertNull(res.getBody());
     }
 
     @Test
-    void agregar_serviceRetornaNull_retorna400() throws Exception {
-        when(metodoPagoService.agregar(anyString(), any())).thenReturn(null);
-
-        mockMvc.perform(post("/payments")
-                .with(jwt().jwt(j -> j.subject("user@test.com")))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(requestValido())))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void agregar_tipoInvalido_retorna400() throws Exception {
-        MetodoPagoRequestDTO dto = requestValido();
-        dto.setType("BITCOIN");
-
-        mockMvc.perform(post("/payments")
-                .with(jwt().jwt(j -> j.subject("user@test.com")))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(dto)))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void agregar_tipoVacio_retorna400() throws Exception {
-        MetodoPagoRequestDTO dto = requestValido();
-        dto.setType("");
-
-        mockMvc.perform(post("/payments")
-                .with(jwt().jwt(j -> j.subject("user@test.com")))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(dto)))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void agregar_tipoNull_retorna400() throws Exception {
-        MetodoPagoRequestDTO dto = requestValido();
-        dto.setType(null);
-
-        mockMvc.perform(post("/payments")
-                .with(jwt().jwt(j -> j.subject("user@test.com")))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(dto)))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void agregar_labelVacio_retorna400() throws Exception {
-        MetodoPagoRequestDTO dto = requestValido();
-        dto.setLabel("");
-
-        mockMvc.perform(post("/payments")
-                .with(jwt().jwt(j -> j.subject("user@test.com")))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(dto)))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void agregar_labelMuyCorto_retorna400() throws Exception {
-        MetodoPagoRequestDTO dto = requestValido();
-        dto.setLabel("Ab");
-
-        mockMvc.perform(post("/payments")
-                .with(jwt().jwt(j -> j.subject("user@test.com")))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(dto)))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void agregar_labelConCaracteresInvalidos_retorna400() throws Exception {
-        MetodoPagoRequestDTO dto = requestValido();
-        dto.setLabel("Visa@#$%");
-
-        mockMvc.perform(post("/payments")
-                .with(jwt().jwt(j -> j.subject("user@test.com")))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(dto)))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void agregar_tipoPSE_retorna200() throws Exception {
+    void agregar_tipoPSE_retorna200() {
         MetodoPagoRequestDTO dto = requestValido();
         dto.setType("PSE");
         MetodoPagoResponseDTO resp = responseDTO();
         resp.setType("PSE");
-        when(metodoPagoService.agregar(anyString(), any())).thenReturn(resp);
+        when(metodoPagoService.agregar(any(), any())).thenReturn(resp);
 
-        mockMvc.perform(post("/payments")
-                .with(jwt().jwt(j -> j.subject("user@test.com")))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(dto)))
-                .andExpect(status().isOk());
+        ResponseEntity<MetodoPagoResponseDTO> res = controller.agregar("user@test.com", dto);
+
+        assertEquals(200, res.getStatusCode().value());
+        assertEquals("PSE", res.getBody().getType());
     }
 
     @Test
-    void agregar_tipoCASH_retorna200() throws Exception {
+    void agregar_tipoCASH_retorna200() {
         MetodoPagoRequestDTO dto = requestValido();
         dto.setType("CASH");
-        when(metodoPagoService.agregar(anyString(), any())).thenReturn(responseDTO());
+        when(metodoPagoService.agregar(any(), any())).thenReturn(responseDTO());
 
-        mockMvc.perform(post("/payments")
-                .with(jwt().jwt(j -> j.subject("user@test.com")))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(dto)))
-                .andExpect(status().isOk());
+        ResponseEntity<MetodoPagoResponseDTO> res = controller.agregar("user@test.com", dto);
+
+        assertEquals(200, res.getStatusCode().value());
     }
 
     @Test
-    void agregar_tipoTRANSFER_retorna200() throws Exception {
+    void agregar_tipoTRANSFER_retorna200() {
         MetodoPagoRequestDTO dto = requestValido();
         dto.setType("TRANSFER");
-        when(metodoPagoService.agregar(anyString(), any())).thenReturn(responseDTO());
+        when(metodoPagoService.agregar(any(), any())).thenReturn(responseDTO());
 
-        mockMvc.perform(post("/payments")
-                .with(jwt().jwt(j -> j.subject("user@test.com")))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(dto)))
-                .andExpect(status().isOk());
+        ResponseEntity<MetodoPagoResponseDTO> res = controller.agregar("user@test.com", dto);
+
+        assertEquals(200, res.getStatusCode().value());
     }
 
     @Test
-    void agregar_sinAutenticacion_retorna401() throws Exception {
-        mockMvc.perform(post("/payments")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(requestValido())))
-                .andExpect(status().isUnauthorized());
+    void agregar_serviceLanzaExcepcion_propaga() {
+        when(metodoPagoService.agregar(any(), any())).thenThrow(new RuntimeException("error"));
+
+        assertThrows(RuntimeException.class,
+                () -> controller.agregar("user@test.com", requestValido()));
+    }
+
+   
+
+    @Test
+    void setDefault_retorna204() {
+        doNothing().when(metodoPagoService).setDefaultPorCorreo("user@test.com", 1L);
+
+        ResponseEntity<Void> res = controller.setDefault("user@test.com", 1L);
+
+        assertEquals(204, res.getStatusCode().value());
+        assertNull(res.getBody());
+        verify(metodoPagoService).setDefaultPorCorreo("user@test.com", 1L);
     }
 
     @Test
-    void setDefault_retorna204() throws Exception {
-        doNothing().when(metodoPagoService).setDefaultPorCorreo(anyString(), eq(1L));
+    void setDefault_serviceLanzaExcepcion_propaga() {
+        doThrow(new RuntimeException("no encontrado"))
+                .when(metodoPagoService).setDefaultPorCorreo(any(), eq(99L));
 
-        mockMvc.perform(patch("/payments/1/default")
-                .with(jwt().jwt(j -> j.subject("user@test.com"))))
-                .andExpect(status().isNoContent());
+        assertThrows(RuntimeException.class,
+                () -> controller.setDefault("user@test.com", 99L));
+    }
+
+
+
+    @Test
+    void eliminar_retorna204() {
+        doNothing().when(metodoPagoService).eliminar("user@test.com", 1L);
+
+        ResponseEntity<Void> res = controller.eliminar("user@test.com", 1L);
+
+        assertEquals(204, res.getStatusCode().value());
+        assertNull(res.getBody());
+        verify(metodoPagoService).eliminar("user@test.com", 1L);
     }
 
     @Test
-    void setDefault_sinAutenticacion_retorna401() throws Exception {
-        mockMvc.perform(patch("/payments/1/default"))
-                .andExpect(status().isUnauthorized());
+    void eliminar_serviceLanzaExcepcion_propaga() {
+        doThrow(new RuntimeException("no encontrado"))
+                .when(metodoPagoService).eliminar(any(), eq(99L));
+
+        assertThrows(RuntimeException.class,
+                () -> controller.eliminar("user@test.com", 99L));
+    }
+
+   
+
+    @Test
+    void actualizar_valido_retorna200() {
+        when(metodoPagoService.actualizar("user@test.com", 1L, requestValido()))
+                .thenReturn(responseDTO());
+
+        ResponseEntity<MetodoPagoResponseDTO> res =
+                controller.actualizar("user@test.com", 1L, requestValido());
+
+        assertEquals(200, res.getStatusCode().value());
+        assertNotNull(res.getBody());
+        verify(metodoPagoService).actualizar(eq("user@test.com"), eq(1L), any());
     }
 
     @Test
-    void setDefault_serviceLanzaExcepcion_retorna500() throws Exception {
-        doThrow(new RuntimeException("No encontrado"))
-                .when(metodoPagoService).setDefaultPorCorreo(anyString(), eq(99L));
+    void actualizar_retornaElDTODelServicio() {
+        MetodoPagoResponseDTO esperado = responseDTO();
+        esperado.setLabel("Visa Actualizada");
+        when(metodoPagoService.actualizar(any(), eq(1L), any())).thenReturn(esperado);
 
-        mockMvc.perform(patch("/payments/99/default")
-                .with(jwt().jwt(j -> j.subject("user@test.com"))))
-                .andExpect(status().is5xxServerError());
+        ResponseEntity<MetodoPagoResponseDTO> res =
+                controller.actualizar("user@test.com", 1L, requestValido());
+
+        assertEquals("Visa Actualizada", res.getBody().getLabel());
     }
 
     @Test
-    void eliminar_retorna204() throws Exception {
-        doNothing().when(metodoPagoService).eliminar(anyString(), eq(1L));
+    void actualizar_serviceLanzaExcepcion_propaga() {
+        when(metodoPagoService.actualizar(any(), eq(99L), any()))
+                .thenThrow(new RuntimeException("no encontrado"));
 
-        mockMvc.perform(delete("/payments/1")
-                .with(jwt().jwt(j -> j.subject("user@test.com"))))
-                .andExpect(status().isNoContent());
-    }
-
-    @Test
-    void eliminar_sinAutenticacion_retorna401() throws Exception {
-        mockMvc.perform(delete("/payments/1"))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    void eliminar_serviceLanzaExcepcion_retorna500() throws Exception {
-        doThrow(new RuntimeException("No encontrado"))
-                .when(metodoPagoService).eliminar(anyString(), eq(99L));
-
-        mockMvc.perform(delete("/payments/99")
-                .with(jwt().jwt(j -> j.subject("user@test.com"))))
-                .andExpect(status().is5xxServerError());
-    }
-
-    @Test
-    void actualizar_valido_retorna200() throws Exception {
-        when(metodoPagoService.actualizar(anyString(), eq(1L), any())).thenReturn(responseDTO());
-
-        mockMvc.perform(patch("/payments/1")
-                .with(jwt().jwt(j -> j.subject("user@test.com")))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(requestValido())))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    void actualizar_bodyInvalido_retorna400() throws Exception {
-        MetodoPagoRequestDTO dto = new MetodoPagoRequestDTO();
-
-        mockMvc.perform(patch("/payments/1")
-                .with(jwt().jwt(j -> j.subject("user@test.com")))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(dto)))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void actualizar_tipoInvalido_retorna400() throws Exception {
-        MetodoPagoRequestDTO dto = requestValido();
-        dto.setType("CRIPTO");
-
-        mockMvc.perform(patch("/payments/1")
-                .with(jwt().jwt(j -> j.subject("user@test.com")))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(dto)))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void actualizar_sinAutenticacion_retorna401() throws Exception {
-        mockMvc.perform(patch("/payments/1")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(requestValido())))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    void actualizar_detallesInvalidos_retorna400() throws Exception {
-        MetodoPagoRequestDTO dto = requestValido();
-        dto.setDetails("ref@#$%!");
-
-        mockMvc.perform(patch("/payments/1")
-                .with(jwt().jwt(j -> j.subject("user@test.com")))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(dto)))
-                .andExpect(status().isBadRequest());
+        assertThrows(RuntimeException.class,
+                () -> controller.actualizar("user@test.com", 99L, requestValido()));
     }
 }

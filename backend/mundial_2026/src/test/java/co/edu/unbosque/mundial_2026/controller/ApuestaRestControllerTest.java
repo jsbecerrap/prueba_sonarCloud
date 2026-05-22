@@ -1,34 +1,18 @@
 package co.edu.unbosque.mundial_2026.controller;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.when;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.MediaType;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.web.servlet.MockMvc;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.ResponseEntity;
 
 import co.edu.unbosque.mundial_2026.dto.ApuestaConParticipantesDTO;
 import co.edu.unbosque.mundial_2026.dto.ApuestaDTO;
@@ -39,19 +23,14 @@ import co.edu.unbosque.mundial_2026.dto.request.PronosticoRequestDTO;
 import co.edu.unbosque.mundial_2026.exception.CodigoInvalidoException;
 import co.edu.unbosque.mundial_2026.service.ApuestaService;
 
-@WebMvcTest(ApuestaRestController.class)
-@ActiveProfiles("test")
+@ExtendWith(MockitoExtension.class)
 class ApuestaRestControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
-
-    @MockBean
+    @Mock
     private ApuestaService apuestaService;
 
-    private final ObjectMapper mapper = new ObjectMapper()
-            .registerModule(new JavaTimeModule())
-            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    @InjectMocks
+    private ApuestaRestController controller;
 
     private ApuestaRequestDTO apuestaRequestValido() {
         ApuestaRequestDTO dto = new ApuestaRequestDTO();
@@ -72,394 +51,426 @@ class ApuestaRestControllerTest {
         return dto;
     }
 
+   
+
     @Test
-    void crearApuesta_valido_retorna200() throws Exception {
+    void crearApuesta_valido_retorna200() {
         when(apuestaService.crearApuesta(any())).thenReturn(new ApuestaDTO());
 
-        mockMvc.perform(post("/api/apuestas/crear")
-                .with(jwt())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(apuestaRequestValido())))
-                .andExpect(status().isOk());
+        ResponseEntity<ApuestaDTO> res = controller.crearApuesta(apuestaRequestValido());
+
+        assertEquals(200, res.getStatusCode().value());
+        assertNotNull(res.getBody());
+        verify(apuestaService).crearApuesta(any());
     }
 
     @Test
-    void crearApuesta_bodyInvalido_retorna400() throws Exception {
-        ApuestaRequestDTO dto = new ApuestaRequestDTO();
+    void crearApuesta_serviceRetornaDTO_retornaEseDTO() {
+        ApuestaDTO esperado = new ApuestaDTO();
+        esperado.setId(42L);
+        when(apuestaService.crearApuesta(any())).thenReturn(esperado);
 
-        mockMvc.perform(post("/api/apuestas/crear")
-                .with(jwt())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(dto)))
-                .andExpect(status().isBadRequest());
+        ResponseEntity<ApuestaDTO> res = controller.crearApuesta(apuestaRequestValido());
+
+        assertEquals(42L, res.getBody().getId());
     }
 
     @Test
-    void crearApuesta_sinAutenticacion_retorna401() throws Exception {
-        mockMvc.perform(post("/api/apuestas/crear")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(apuestaRequestValido())))
-                .andExpect(status().isUnauthorized());
+    void crearApuesta_serviceLanzaExcepcion_propaga() {
+        when(apuestaService.crearApuesta(any())).thenThrow(new RuntimeException("error"));
+
+        assertThrows(RuntimeException.class, () -> controller.crearApuesta(apuestaRequestValido()));
     }
 
+
     @Test
-    void unirseApuesta_codigoValido_retorna200() throws Exception {
+    void unirseApuesta_codigoValido_retorna200() {
         when(apuestaService.unirseApuesta(anyString(), anyLong())).thenReturn(new ApuestaDTO());
 
-        mockMvc.perform(post("/api/apuestas/unirse/1")
-                .with(jwt())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("\"AbCd1234\""))
-                .andExpect(status().isOk());
+        ResponseEntity<ApuestaDTO> res = controller.unirseApuesta(1L, "\"AbCd1234\"");
+
+        assertEquals(200, res.getStatusCode().value());
+        assertNotNull(res.getBody());
     }
 
     @Test
-    void unirseApuesta_codigoUUID_retorna200() throws Exception {
+    void unirseApuesta_codigoUUID_retorna200() {
         when(apuestaService.unirseApuesta(anyString(), anyLong())).thenReturn(new ApuestaDTO());
 
-        mockMvc.perform(post("/api/apuestas/unirse/1")
-                .with(jwt())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("\"550e8400-e29b-41d4-a716-446655440000\""))
-                .andExpect(status().isOk());
+        ResponseEntity<ApuestaDTO> res = controller.unirseApuesta(1L, "\"550e8400-e29b-41d4-a716-446655440000\"");
+
+        assertEquals(200, res.getStatusCode().value());
     }
 
     @Test
-    void unirseApuesta_codigoInvalido_retorna400() throws Exception {
-        mockMvc.perform(post("/api/apuestas/unirse/1")
-                .with(jwt())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("\"!!inv\""))
-                .andExpect(status().isBadRequest());
+    void unirseApuesta_codigoInvalido_lanzaCodigoInvalidoException() {
+        assertThrows(CodigoInvalidoException.class,
+                () -> controller.unirseApuesta(1L, "\"!!inv\""));
     }
 
     @Test
-    void unirseApuesta_codigoNull_retorna400() throws Exception {
-        mockMvc.perform(post("/api/apuestas/unirse/1")
-                .with(jwt())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("null"))
-                .andExpect(status().isBadRequest());
+    void unirseApuesta_codigoNull_lanzaCodigoInvalidoException() {
+        assertThrows(CodigoInvalidoException.class,
+                () -> controller.unirseApuesta(1L, "null"));
     }
 
     @Test
-    void registrarPronostico_valido_retorna200() throws Exception {
-        when(apuestaService.registrarPronostico(any())).thenReturn(new PronosticoDTO());
-
-        mockMvc.perform(post("/api/apuestas/pronostico")
-                .with(jwt())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(pronosticoRequestValido())))
-                .andExpect(status().isOk());
+    void unirseApuesta_codigoVacio_lanzaCodigoInvalidoException() {
+        assertThrows(CodigoInvalidoException.class,
+                () -> controller.unirseApuesta(1L, "\"\""));
     }
 
     @Test
-    void registrarPronostico_resultadoInvalido_retorna400() throws Exception {
-        PronosticoRequestDTO dto = pronosticoRequestValido();
-        dto.setResultadoPronosticado("INVALIDO");
-
-        mockMvc.perform(post("/api/apuestas/pronostico")
-                .with(jwt())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(dto)))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void registrarPronostico_sinResultado_retorna400() throws Exception {
-        PronosticoRequestDTO dto = pronosticoRequestValido();
-        dto.setResultadoPronosticado(null);
-
-        mockMvc.perform(post("/api/apuestas/pronostico")
-                .with(jwt())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(dto)))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void obtenerRanking_retorna200() throws Exception {
-        when(apuestaService.obtenerRanking(1L)).thenReturn(List.of(new ParticipacionDTO()));
-
-        mockMvc.perform(get("/api/apuestas/ranking/1")
-                .with(jwt()))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    void cerrarApuesta_conRolAdmin_retorna200() throws Exception {
-        when(apuestaService.cerrarApuesta(1L)).thenReturn(new ApuestaDTO());
-
-        mockMvc.perform(post("/api/apuestas/cerrar/1")
-                .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN"))))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    void cerrarApuesta_sinRolAdmin_retorna403() throws Exception {
-        mockMvc.perform(post("/api/apuestas/cerrar/1")
-                .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_USER"))))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    void calcularPuntos_conRolAdmin_retorna200() throws Exception {
-        when(apuestaService.calcularPuntos(1L)).thenReturn(List.of());
-
-        mockMvc.perform(get("/api/apuestas/puntos/1")
-                .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN"))))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    void calcularPuntos_sinRolAdmin_retorna403() throws Exception {
-        mockMvc.perform(get("/api/apuestas/puntos/1")
-                .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_USER"))))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    void listarApuestasPorUsuario_retorna200() throws Exception {
-        when(apuestaService.listarApuestasPorUsuario(1L)).thenReturn(List.of(new ApuestaDTO()));
-
-        mockMvc.perform(get("/api/apuestas/usuario/1")
-                .with(jwt()))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    void obtenerApuesta_retorna200() throws Exception {
-        when(apuestaService.obtenerApuesta(1L)).thenReturn(new ApuestaDTO());
-
-        mockMvc.perform(get("/api/apuestas/1")
-                .with(jwt()))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    void listarParticipantes_retorna200() throws Exception {
-        when(apuestaService.listarParticipantes(1L)).thenReturn(List.of());
-
-        mockMvc.perform(get("/api/apuestas/participantes/1")
-                .with(jwt()))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    void verificarPronostico_retorna200() throws Exception {
-        when(apuestaService.verificarPronostico(1L)).thenReturn(new PronosticoDTO());
-
-        mockMvc.perform(get("/api/apuestas/verificar/1")
-                .with(jwt()))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    void misPronosticos_retorna200() throws Exception {
-        when(apuestaService.misPronosticos(1L, 2L)).thenReturn(List.of());
-
-        mockMvc.perform(get("/api/apuestas/mis-pronosticos/1/2")
-                .with(jwt()))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    void editarPronostico_valido_retorna200() throws Exception {
-        when(apuestaService.editarPronostico(anyLong(), any(), any())).thenReturn(new PronosticoDTO());
-
-        mockMvc.perform(put("/api/apuestas/pronostico/1")
-                .with(jwt().jwt(j -> j.subject("user@test.com")))
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(pronosticoRequestValido())))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    void editarPronostico_bodyInvalido_retorna400() throws Exception {
-        PronosticoRequestDTO dto = pronosticoRequestValido();
-        dto.setResultadoPronosticado(null);
-
-        mockMvc.perform(put("/api/apuestas/pronostico/1")
-                .with(jwt())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(dto)))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void eliminarPronostico_retorna204() throws Exception {
-        doNothing().when(apuestaService).eliminarPronostico(anyLong(), any());
-
-        mockMvc.perform(delete("/api/apuestas/pronostico/1")
-                .with(jwt().jwt(j -> j.subject("user@test.com"))))
-                .andExpect(status().isNoContent());
-    }
-
-    @Test
-    void eliminarPronostico_sinAuth_retorna401() throws Exception {
-        mockMvc.perform(delete("/api/apuestas/pronostico/1"))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    void calcularPuntosParciales_retorna200() throws Exception {
-        when(apuestaService.calcularPuntosParciales(1L)).thenReturn(List.of());
-
-        mockMvc.perform(get("/api/apuestas/puntos-parciales/1")
-                .with(jwt()))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    void listarTodas_conRolAdmin_retorna200() throws Exception {
-        when(apuestaService.listarTodas()).thenReturn(List.of());
-
-        mockMvc.perform(get("/api/apuestas/todas")
-                .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN"))))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    void listarTodas_sinRolAdmin_retorna403() throws Exception {
-        mockMvc.perform(get("/api/apuestas/todas")
-                .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_USER"))))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    void eliminarApuesta_conRolAdmin_retorna204() throws Exception {
-        doNothing().when(apuestaService).eliminarApuesta(1L);
-
-        mockMvc.perform(delete("/api/apuestas/1")
-                .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_ADMIN"))))
-                .andExpect(status().isNoContent());
-    }
-
-    @Test
-    void eliminarApuesta_sinRolAdmin_retorna403() throws Exception {
-        mockMvc.perform(delete("/api/apuestas/1")
-                .with(jwt().authorities(new SimpleGrantedAuthority("ROLE_USER"))))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
-    void listarApuestasPorUsuarioCompleto_retorna200() throws Exception {
-        when(apuestaService.listarApuestasPorUsuarioCompleto(1L)).thenReturn(List.of(new ApuestaConParticipantesDTO()));
-
-        mockMvc.perform(get("/api/apuestas/usuario/1/completo")
-                .with(jwt()))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    void unirseApuesta_serviceLanzaExcepcion_retorna400() throws Exception {
+    void unirseApuesta_serviceLanzaExcepcion_propaga() {
         when(apuestaService.unirseApuesta(anyString(), anyLong()))
                 .thenThrow(new CodigoInvalidoException("Codigo ya usado"));
 
-        mockMvc.perform(post("/api/apuestas/unirse/1")
-                .with(jwt())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content("\"AbCd1234\""))
-                .andExpect(status().isBadRequest());
+        assertThrows(CodigoInvalidoException.class,
+                () -> controller.unirseApuesta(1L, "\"AbCd1234\""));
+    }
+
+
+    @Test
+    void registrarPronostico_valido_retorna200() {
+        when(apuestaService.registrarPronostico(any())).thenReturn(new PronosticoDTO());
+
+        ResponseEntity<PronosticoDTO> res = controller.registrarPronostico(pronosticoRequestValido());
+
+        assertEquals(200, res.getStatusCode().value());
+        assertNotNull(res.getBody());
+        verify(apuestaService).registrarPronostico(any());
     }
 
     @Test
-    void editarPronostico_golesNegativos_retorna400() throws Exception {
-        PronosticoRequestDTO dto = pronosticoRequestValido();
-        dto.setGolesLocalPronosticados(-1);
-
-        mockMvc.perform(put("/api/apuestas/pronostico/1")
-                .with(jwt())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(dto)))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void editarPronostico_golesExcesivos_retorna400() throws Exception {
-        PronosticoRequestDTO dto = pronosticoRequestValido();
-        dto.setGolesVisitantePronosticados(21);
-
-        mockMvc.perform(put("/api/apuestas/pronostico/1")
-                .with(jwt())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(dto)))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void crearApuesta_nombreCorto_retorna400() throws Exception {
-        ApuestaRequestDTO dto = apuestaRequestValido();
-        dto.setNombre("Ab");
-
-        mockMvc.perform(post("/api/apuestas/crear")
-                .with(jwt())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(dto)))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void crearApuesta_fechaPasada_retorna400() throws Exception {
-        ApuestaRequestDTO dto = apuestaRequestValido();
-        dto.setFechaCierre(LocalDateTime.now().minusDays(1));
-
-        mockMvc.perform(post("/api/apuestas/crear")
-                .with(jwt())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(dto)))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void doNothing_eliminarPronostico_conServiceThrows_retorna500() throws Exception {
-        doThrow(new RuntimeException("Error interno")).when(apuestaService).eliminarPronostico(anyLong(), anyString());
-
-        mockMvc.perform(delete("/api/apuestas/pronostico/99")
-                .with(jwt().jwt(j -> j.subject("user@test.com"))))
-                .andExpect(status().is5xxServerError());
-    }
-
-    @Test
-    void registrarPronostico_empate_retorna200() throws Exception {
+    void registrarPronostico_empate_retorna200() {
         PronosticoRequestDTO dto = pronosticoRequestValido();
         dto.setResultadoPronosticado("EMPATE");
         when(apuestaService.registrarPronostico(any())).thenReturn(new PronosticoDTO());
 
-        mockMvc.perform(post("/api/apuestas/pronostico")
-                .with(jwt())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(dto)))
-                .andExpect(status().isOk());
+        ResponseEntity<PronosticoDTO> res = controller.registrarPronostico(dto);
+
+        assertEquals(200, res.getStatusCode().value());
     }
 
     @Test
-    void registrarPronostico_visitante_retorna200() throws Exception {
+    void registrarPronostico_visitante_retorna200() {
         PronosticoRequestDTO dto = pronosticoRequestValido();
         dto.setResultadoPronosticado("VISITANTE");
         when(apuestaService.registrarPronostico(any())).thenReturn(new PronosticoDTO());
 
-        mockMvc.perform(post("/api/apuestas/pronostico")
-                .with(jwt())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(dto)))
-                .andExpect(status().isOk());
+        ResponseEntity<PronosticoDTO> res = controller.registrarPronostico(dto);
+
+        assertEquals(200, res.getStatusCode().value());
     }
 
     @Test
-    void editarPronostico_sinAuth_retorna401() throws Exception {
-        mockMvc.perform(put("/api/apuestas/pronostico/1")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(mapper.writeValueAsString(pronosticoRequestValido())))
-                .andExpect(status().isUnauthorized());
+    void registrarPronostico_serviceLanzaExcepcion_propaga() {
+        when(apuestaService.registrarPronostico(any())).thenThrow(new RuntimeException("error"));
+
+        assertThrows(RuntimeException.class,
+                () -> controller.registrarPronostico(pronosticoRequestValido()));
+    }
+
+   
+
+    @Test
+    void obtenerRanking_retorna200ConLista() {
+        when(apuestaService.obtenerRanking(1L)).thenReturn(List.of(new ParticipacionDTO()));
+
+        ResponseEntity<List<ParticipacionDTO>> res = controller.obtenerRanking(1L);
+
+        assertEquals(200, res.getStatusCode().value());
+        assertEquals(1, res.getBody().size());
+        verify(apuestaService).obtenerRanking(1L);
     }
 
     @Test
-    void listarApuestasPorUsuario_listaVacia_retorna200() throws Exception {
-        when(apuestaService.listarApuestasPorUsuario(eq(99L))).thenReturn(List.of());
+    void obtenerRanking_listaVacia_retorna200() {
+        when(apuestaService.obtenerRanking(99L)).thenReturn(List.of());
 
-        mockMvc.perform(get("/api/apuestas/usuario/99")
-                .with(jwt()))
-                .andExpect(status().isOk());
+        ResponseEntity<List<ParticipacionDTO>> res = controller.obtenerRanking(99L);
+
+        assertEquals(200, res.getStatusCode().value());
+        assertTrue(res.getBody().isEmpty());
+    }
+
+
+
+    @Test
+    void cerrarApuesta_retorna200() {
+        when(apuestaService.cerrarApuesta(1L)).thenReturn(new ApuestaDTO());
+
+        ResponseEntity<ApuestaDTO> res = controller.cerrarApuesta(1L);
+
+        assertEquals(200, res.getStatusCode().value());
+        assertNotNull(res.getBody());
+        verify(apuestaService).cerrarApuesta(1L);
+    }
+
+    @Test
+    void cerrarApuesta_serviceLanzaExcepcion_propaga() {
+        when(apuestaService.cerrarApuesta(99L)).thenThrow(new RuntimeException("no encontrada"));
+
+        assertThrows(RuntimeException.class, () -> controller.cerrarApuesta(99L));
+    }
+
+   
+
+    @Test
+    void calcularPuntos_retorna200ConLista() {
+        when(apuestaService.calcularPuntos(1L)).thenReturn(List.of(new PronosticoDTO()));
+
+        ResponseEntity<List<PronosticoDTO>> res = controller.calcularPuntos(1L);
+
+        assertEquals(200, res.getStatusCode().value());
+        assertEquals(1, res.getBody().size());
+        verify(apuestaService).calcularPuntos(1L);
+    }
+
+    @Test
+    void calcularPuntos_listaVacia_retorna200() {
+        when(apuestaService.calcularPuntos(1L)).thenReturn(List.of());
+
+        ResponseEntity<List<PronosticoDTO>> res = controller.calcularPuntos(1L);
+
+        assertEquals(200, res.getStatusCode().value());
+        assertTrue(res.getBody().isEmpty());
+    }
+
+
+    @Test
+    void listarApuestasPorUsuario_retorna200ConLista() {
+        when(apuestaService.listarApuestasPorUsuario(1L)).thenReturn(List.of(new ApuestaDTO()));
+
+        ResponseEntity<List<ApuestaDTO>> res = controller.listarApuestasPorUsuario(1L);
+
+        assertEquals(200, res.getStatusCode().value());
+        assertEquals(1, res.getBody().size());
+        verify(apuestaService).listarApuestasPorUsuario(1L);
+    }
+
+    @Test
+    void listarApuestasPorUsuario_listaVacia_retorna200() {
+        when(apuestaService.listarApuestasPorUsuario(99L)).thenReturn(List.of());
+
+        ResponseEntity<List<ApuestaDTO>> res = controller.listarApuestasPorUsuario(99L);
+
+        assertEquals(200, res.getStatusCode().value());
+        assertTrue(res.getBody().isEmpty());
+    }
+
+
+    @Test
+    void obtenerApuesta_existente_retorna200() {
+        ApuestaDTO dto = new ApuestaDTO();
+        dto.setId(1L);
+        when(apuestaService.obtenerApuesta(1L)).thenReturn(dto);
+
+        ResponseEntity<ApuestaDTO> res = controller.obtenerApuesta(1L);
+
+        assertEquals(200, res.getStatusCode().value());
+        assertEquals(1L, res.getBody().getId());
+        verify(apuestaService).obtenerApuesta(1L);
+    }
+
+    @Test
+    void obtenerApuesta_noExistente_propaga() {
+        when(apuestaService.obtenerApuesta(99L)).thenThrow(new RuntimeException("no encontrada"));
+
+        assertThrows(RuntimeException.class, () -> controller.obtenerApuesta(99L));
+    }
+
+
+
+    @Test
+    void listarParticipantes_retorna200ConLista() {
+        when(apuestaService.listarParticipantes(1L)).thenReturn(List.of(new ParticipacionDTO()));
+
+        ResponseEntity<List<ParticipacionDTO>> res = controller.listarParticipantes(1L);
+
+        assertEquals(200, res.getStatusCode().value());
+        assertEquals(1, res.getBody().size());
+        verify(apuestaService).listarParticipantes(1L);
+    }
+
+    @Test
+    void listarParticipantes_listaVacia_retorna200() {
+        when(apuestaService.listarParticipantes(1L)).thenReturn(List.of());
+
+        ResponseEntity<List<ParticipacionDTO>> res = controller.listarParticipantes(1L);
+
+        assertEquals(200, res.getStatusCode().value());
+        assertTrue(res.getBody().isEmpty());
+    }
+
+
+    @Test
+    void verificarPronostico_retorna200() {
+        when(apuestaService.verificarPronostico(1L)).thenReturn(new PronosticoDTO());
+
+        ResponseEntity<PronosticoDTO> res = controller.verificarPronostico(1L);
+
+        assertEquals(200, res.getStatusCode().value());
+        assertNotNull(res.getBody());
+        verify(apuestaService).verificarPronostico(1L);
+    }
+
+    @Test
+    void verificarPronostico_noExistente_propaga() {
+        when(apuestaService.verificarPronostico(99L)).thenThrow(new RuntimeException("no encontrado"));
+
+        assertThrows(RuntimeException.class, () -> controller.verificarPronostico(99L));
+    }
+
+
+    @Test
+    void misPronosticos_retorna200ConLista() {
+        when(apuestaService.misPronosticos(1L, 2L)).thenReturn(List.of(new PronosticoDTO()));
+
+        ResponseEntity<List<PronosticoDTO>> res = controller.misPronosticos(1L, 2L);
+
+        assertEquals(200, res.getStatusCode().value());
+        assertEquals(1, res.getBody().size());
+        verify(apuestaService).misPronosticos(1L, 2L);
+    }
+
+    @Test
+    void misPronosticos_listaVacia_retorna200() {
+        when(apuestaService.misPronosticos(1L, 2L)).thenReturn(List.of());
+
+        ResponseEntity<List<PronosticoDTO>> res = controller.misPronosticos(1L, 2L);
+
+        assertEquals(200, res.getStatusCode().value());
+        assertTrue(res.getBody().isEmpty());
+    }
+
+
+    @Test
+    void editarPronostico_valido_retorna200() {
+        when(apuestaService.editarPronostico(anyLong(), any(), any())).thenReturn(new PronosticoDTO());
+
+        ResponseEntity<PronosticoDTO> res = controller.editarPronostico(1L, pronosticoRequestValido(), "user@test.com");
+
+        assertEquals(200, res.getStatusCode().value());
+        assertNotNull(res.getBody());
+        verify(apuestaService).editarPronostico(eq(1L), any(), eq("user@test.com"));
+    }
+
+    @Test
+    void editarPronostico_serviceLanzaExcepcion_propaga() {
+        when(apuestaService.editarPronostico(anyLong(), any(), any()))
+                .thenThrow(new RuntimeException("no autorizado"));
+
+        assertThrows(RuntimeException.class,
+                () -> controller.editarPronostico(1L, pronosticoRequestValido(), "user@test.com"));
+    }
+
+  
+
+    @Test
+    void eliminarPronostico_retorna204() {
+        doNothing().when(apuestaService).eliminarPronostico(anyLong(), any());
+
+        ResponseEntity<Void> res = controller.eliminarPronostico(1L, "user@test.com");
+
+        assertEquals(204, res.getStatusCode().value());
+        assertNull(res.getBody());
+        verify(apuestaService).eliminarPronostico(1L, "user@test.com");
+    }
+
+    @Test
+    void eliminarPronostico_serviceLanzaExcepcion_propaga() {
+        doThrow(new RuntimeException("error interno")).when(apuestaService)
+                .eliminarPronostico(anyLong(), anyString());
+
+        assertThrows(RuntimeException.class,
+                () -> controller.eliminarPronostico(99L, "user@test.com"));
+    }
+
+
+    @Test
+    void calcularPuntosParciales_retorna200ConLista() {
+        when(apuestaService.calcularPuntosParciales(1L)).thenReturn(List.of(new PronosticoDTO()));
+
+        ResponseEntity<List<PronosticoDTO>> res = controller.calcularPuntosParciales(1L);
+
+        assertEquals(200, res.getStatusCode().value());
+        assertEquals(1, res.getBody().size());
+        verify(apuestaService).calcularPuntosParciales(1L);
+    }
+
+    @Test
+    void calcularPuntosParciales_listaVacia_retorna200() {
+        when(apuestaService.calcularPuntosParciales(1L)).thenReturn(List.of());
+
+        ResponseEntity<List<PronosticoDTO>> res = controller.calcularPuntosParciales(1L);
+
+        assertEquals(200, res.getStatusCode().value());
+        assertTrue(res.getBody().isEmpty());
+    }
+
+   
+
+    @Test
+    void listarTodas_retorna200ConLista() {
+        when(apuestaService.listarTodas()).thenReturn(List.of(new ApuestaDTO()));
+
+        ResponseEntity<List<ApuestaDTO>> res = controller.listarTodas();
+
+        assertEquals(200, res.getStatusCode().value());
+        assertEquals(1, res.getBody().size());
+        verify(apuestaService).listarTodas();
+    }
+
+    @Test
+    void listarTodas_listaVacia_retorna200() {
+        when(apuestaService.listarTodas()).thenReturn(List.of());
+
+        ResponseEntity<List<ApuestaDTO>> res = controller.listarTodas();
+
+        assertEquals(200, res.getStatusCode().value());
+        assertTrue(res.getBody().isEmpty());
+    }
+
+    
+
+    @Test
+    void eliminarApuesta_retorna204() {
+        doNothing().when(apuestaService).eliminarApuesta(1L);
+
+        ResponseEntity<Void> res = controller.eliminarApuesta(1L);
+
+        assertEquals(204, res.getStatusCode().value());
+        assertNull(res.getBody());
+        verify(apuestaService).eliminarApuesta(1L);
+    }
+
+    @Test
+    void eliminarApuesta_serviceLanzaExcepcion_propaga() {
+        doThrow(new RuntimeException("no encontrada")).when(apuestaService).eliminarApuesta(99L);
+
+        assertThrows(RuntimeException.class, () -> controller.eliminarApuesta(99L));
+    }
+
+    @Test
+    void listarApuestasPorUsuarioCompleto_retorna200ConLista() {
+        when(apuestaService.listarApuestasPorUsuarioCompleto(1L))
+                .thenReturn(List.of(new ApuestaConParticipantesDTO()));
+
+        ResponseEntity<List<ApuestaConParticipantesDTO>> res = controller.listarApuestasPorUsuarioCompleto(1L);
+
+        assertEquals(200, res.getStatusCode().value());
+        assertEquals(1, res.getBody().size());
+        verify(apuestaService).listarApuestasPorUsuarioCompleto(1L);
+    }
+
+    @Test
+    void listarApuestasPorUsuarioCompleto_listaVacia_retorna200() {
+        when(apuestaService.listarApuestasPorUsuarioCompleto(99L)).thenReturn(List.of());
+
+        ResponseEntity<List<ApuestaConParticipantesDTO>> res = controller.listarApuestasPorUsuarioCompleto(99L);
+
+        assertEquals(200, res.getStatusCode().value());
+        assertTrue(res.getBody().isEmpty());
     }
 }

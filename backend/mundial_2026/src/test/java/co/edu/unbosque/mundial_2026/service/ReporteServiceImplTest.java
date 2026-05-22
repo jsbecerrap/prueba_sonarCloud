@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -17,7 +18,6 @@ import org.springframework.data.domain.Pageable;
 import co.edu.unbosque.mundial_2026.dto.response.*;
 import co.edu.unbosque.mundial_2026.entity.Usuario;
 import co.edu.unbosque.mundial_2026.repository.*;
-import co.edu.unbosque.mundial_2026.service.ReporteServiceImpl;
 
 @ExtendWith(MockitoExtension.class)
 class ReporteServiceImplTest {
@@ -40,13 +40,18 @@ class ReporteServiceImplTest {
         return u;
     }
 
+    private List<Object[]> filas(Object... valores) {
+        List<Object[]> lista = new ArrayList<>();
+        lista.add(valores);
+        return lista;
+    }
+
     @Test
     void obtenerEstadisticasGenerales_retornaValoresCorrectos() {
-        Usuario u = crearUsuario(1L);
         when(usuarioRepository.count()).thenReturn(10L);
         when(partidoRepository.count()).thenReturn(5L);
         when(ordenRepository.count()).thenReturn(20L);
-        when(usuarioRepository.findByActivoTrue()).thenReturn(List.of(u, crearUsuario(2L)));
+        when(usuarioRepository.findByActivoTrue()).thenReturn(List.of(crearUsuario(1L), crearUsuario(2L)));
 
         ReportesResponseDTO resultado = service.obtenerEstadisticasGenerales();
 
@@ -73,16 +78,14 @@ class ReporteServiceImplTest {
 
     @Test
     void obtenerReportesCompras_conDatos_retornaDTO() {
-        Object[] rowProducto = new Object[]{ 1L, "Camiseta", "Ropa", 50, 500000.0 };
-        Object[] rowCategoria = new Object[]{ "Ropa", 80, 800000.0 };
+        List<Object[]> filasProducto = filas(1L, "Camiseta", "Ropa", 50, 500000.0);
+        List<Object[]> filasCategoria = filas("Ropa", 80, 800000.0);
 
         when(ordenRepository.sumIngresoTotal()).thenReturn(1500000.0);
         when(ordenRepository.countByFechaPagoIsNotNull()).thenReturn(30L);
         when(entradaRepository.sumEntradasVendidas()).thenReturn(100L);
-        when(itemOrdenRepository.findTopProductosMasVendidos(any(Pageable.class)))
-                .thenReturn(List.of(rowProducto));
-        when(itemOrdenRepository.findVentasPorCategoria())
-                .thenReturn(List.of(rowCategoria));
+        when(itemOrdenRepository.findTopProductosMasVendidos(any(Pageable.class))).thenReturn(filasProducto);
+        when(itemOrdenRepository.findVentasPorCategoria()).thenReturn(filasCategoria);
 
         ReportesComprasDTO resultado = service.obtenerReportesCompras();
 
@@ -101,8 +104,8 @@ class ReporteServiceImplTest {
         when(ordenRepository.sumIngresoTotal()).thenReturn(null);
         when(ordenRepository.countByFechaPagoIsNotNull()).thenReturn(0L);
         when(entradaRepository.sumEntradasVendidas()).thenReturn(null);
-        when(itemOrdenRepository.findTopProductosMasVendidos(any(Pageable.class))).thenReturn(List.of());
-        when(itemOrdenRepository.findVentasPorCategoria()).thenReturn(List.of());
+        when(itemOrdenRepository.findTopProductosMasVendidos(any(Pageable.class))).thenReturn(new ArrayList<>());
+        when(itemOrdenRepository.findVentasPorCategoria()).thenReturn(new ArrayList<>());
 
         ReportesComprasDTO resultado = service.obtenerReportesCompras();
 
@@ -116,8 +119,8 @@ class ReporteServiceImplTest {
         when(ordenRepository.sumIngresoTotal()).thenReturn(0.0);
         when(ordenRepository.countByFechaPagoIsNotNull()).thenReturn(0L);
         when(entradaRepository.sumEntradasVendidas()).thenReturn(0L);
-        when(itemOrdenRepository.findTopProductosMasVendidos(any(Pageable.class))).thenReturn(List.of());
-        when(itemOrdenRepository.findVentasPorCategoria()).thenReturn(List.of());
+        when(itemOrdenRepository.findTopProductosMasVendidos(any(Pageable.class))).thenReturn(new ArrayList<>());
+        when(itemOrdenRepository.findVentasPorCategoria()).thenReturn(new ArrayList<>());
 
         ReportesComprasDTO resultado = service.obtenerReportesCompras();
 
@@ -128,8 +131,8 @@ class ReporteServiceImplTest {
 
     @Test
     void obtenerPartidosMasApostados_conDatos_retornaLista() {
-        Object[] row = new Object[]{ 1L, "Colombia", "Brazil", "Grupo A", 200 };
-        when(pronosticoRepository.findPartidosMasApostados(any(Pageable.class))).thenReturn(List.of(row));
+        List<Object[]> filas = filas(1L, "Colombia", "Brazil", "Grupo A", 200);
+        when(pronosticoRepository.findPartidosMasApostados(any(Pageable.class))).thenReturn(filas);
 
         List<PartidoMasApostadoDTO> resultado = service.obtenerPartidosMasApostados();
 
@@ -142,7 +145,7 @@ class ReporteServiceImplTest {
 
     @Test
     void obtenerPartidosMasApostados_sinDatos_retornaListaVacia() {
-        when(pronosticoRepository.findPartidosMasApostados(any(Pageable.class))).thenReturn(List.of());
+        when(pronosticoRepository.findPartidosMasApostados(any(Pageable.class))).thenReturn(new ArrayList<>());
 
         List<PartidoMasApostadoDTO> resultado = service.obtenerPartidosMasApostados();
 
@@ -152,8 +155,8 @@ class ReporteServiceImplTest {
 
     @Test
     void obtenerPollaRanking_conDatos_retornaLista() {
-        Object[] row = new Object[]{ 1L, "Polla Mundial", "ACTIVA", 15 };
-        when(participacionRepository.findPollaRanking(any(Pageable.class))).thenReturn(List.of(row));
+        List<Object[]> filas = filas(1L, "Polla Mundial", "ACTIVA", 15);
+        when(participacionRepository.findPollaRanking(any(Pageable.class))).thenReturn(filas);
 
         List<PollaRankingDTO> resultado = service.obtenerPollaRanking();
 
@@ -166,7 +169,7 @@ class ReporteServiceImplTest {
 
     @Test
     void obtenerPollaRanking_sinDatos_retornaListaVacia() {
-        when(participacionRepository.findPollaRanking(any(Pageable.class))).thenReturn(List.of());
+        when(participacionRepository.findPollaRanking(any(Pageable.class))).thenReturn(new ArrayList<>());
 
         List<PollaRankingDTO> resultado = service.obtenerPollaRanking();
 
@@ -176,8 +179,8 @@ class ReporteServiceImplTest {
 
     @Test
     void obtenerIngresosPorMetodoPago_conDatos_retornaLista() {
-        Object[] row = new Object[]{ "TARJETA", 40, 4000000.0 };
-        when(ordenRepository.findIngresosPorMetodoPago()).thenReturn(List.of(row));
+        List<Object[]> filas = filas("TARJETA", 40, 4000000.0);
+        when(ordenRepository.findIngresosPorMetodoPago()).thenReturn(filas);
 
         List<IngresoMetodoPagoDTO> resultado = service.obtenerIngresosPorMetodoPago();
 
@@ -190,7 +193,7 @@ class ReporteServiceImplTest {
 
     @Test
     void obtenerIngresosPorMetodoPago_sinDatos_retornaListaVacia() {
-        when(ordenRepository.findIngresosPorMetodoPago()).thenReturn(List.of());
+        when(ordenRepository.findIngresosPorMetodoPago()).thenReturn(new ArrayList<>());
 
         List<IngresoMetodoPagoDTO> resultado = service.obtenerIngresosPorMetodoPago();
 
@@ -200,8 +203,8 @@ class ReporteServiceImplTest {
 
     @Test
     void obtenerEntradasPorPartido_conDatos_retornaLista() {
-        Object[] row = new Object[]{ 1L, "Colombia", "Brazil", "Grupo A", "MetLife Stadium", 300, 9000000.0 };
-        when(entradaRepository.findEntradasPorPartido()).thenReturn(List.of(row));
+        List<Object[]> filas = filas(1L, "Colombia", "Brazil", "Grupo A", "MetLife Stadium", 300, 9000000.0);
+        when(entradaRepository.findEntradasPorPartido()).thenReturn(filas);
 
         List<EntradaPorPartidoDTO> resultado = service.obtenerEntradasPorPartido();
 
@@ -215,7 +218,7 @@ class ReporteServiceImplTest {
 
     @Test
     void obtenerEntradasPorPartido_sinDatos_retornaListaVacia() {
-        when(entradaRepository.findEntradasPorPartido()).thenReturn(List.of());
+        when(entradaRepository.findEntradasPorPartido()).thenReturn(new ArrayList<>());
 
         List<EntradaPorPartidoDTO> resultado = service.obtenerEntradasPorPartido();
 
@@ -225,9 +228,9 @@ class ReporteServiceImplTest {
 
     @Test
     void obtenerTopUsuariosSouvenir_conDatos_retornaLista() {
-        Object[] row = new Object[]{ 1L, "Juan", "Perez", "juan@test.com", 5, 250000.0 };
+        List<Object[]> filas = filas(1L, "Juan", "Perez", "juan@test.com", 5, 250000.0);
         Pageable pageable = PageRequest.of(0, 5);
-        when(ordenRepository.findTopUsuariosSouvenir(pageable)).thenReturn(List.of(row));
+        when(ordenRepository.findTopUsuariosSouvenir(pageable)).thenReturn(filas);
 
         List<TopUsuarioSouvenirDTO> resultado = service.obtenerTopUsuariosSouvenir(pageable);
 
@@ -242,7 +245,7 @@ class ReporteServiceImplTest {
     @Test
     void obtenerTopUsuariosSouvenir_sinDatos_retornaListaVacia() {
         Pageable pageable = PageRequest.of(0, 5);
-        when(ordenRepository.findTopUsuariosSouvenir(pageable)).thenReturn(List.of());
+        when(ordenRepository.findTopUsuariosSouvenir(pageable)).thenReturn(new ArrayList<>());
 
         List<TopUsuarioSouvenirDTO> resultado = service.obtenerTopUsuariosSouvenir(pageable);
 
@@ -252,9 +255,9 @@ class ReporteServiceImplTest {
 
     @Test
     void obtenerTopUsuariosEntrada_conDatos_retornaLista() {
-        Object[] row = new Object[]{ 2L, "Maria", "Lopez", "maria@test.com", 8, 640000.0 };
+        List<Object[]> filas = filas(2L, "Maria", "Lopez", "maria@test.com", 8, 640000.0);
         Pageable pageable = PageRequest.of(0, 5);
-        when(entradaRepository.findTopUsuariosEntrada(pageable)).thenReturn(List.of(row));
+        when(entradaRepository.findTopUsuariosEntrada(pageable)).thenReturn(filas);
 
         List<TopUsuarioEntradaDTO> resultado = service.obtenerTopUsuariosEntrada(pageable);
 
@@ -268,7 +271,7 @@ class ReporteServiceImplTest {
     @Test
     void obtenerTopUsuariosEntrada_sinDatos_retornaListaVacia() {
         Pageable pageable = PageRequest.of(0, 5);
-        when(entradaRepository.findTopUsuariosEntrada(pageable)).thenReturn(List.of());
+        when(entradaRepository.findTopUsuariosEntrada(pageable)).thenReturn(new ArrayList<>());
 
         List<TopUsuarioEntradaDTO> resultado = service.obtenerTopUsuariosEntrada(pageable);
 

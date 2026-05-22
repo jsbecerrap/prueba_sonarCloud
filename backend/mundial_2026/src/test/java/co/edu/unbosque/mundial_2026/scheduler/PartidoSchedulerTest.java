@@ -1,5 +1,47 @@
 package co.edu.unbosque.mundial_2026.scheduler;
 
-public class PartidoSchedulerTest {
-    
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import co.edu.unbosque.mundial_2026.service.PartidoService;
+
+@ExtendWith(MockitoExtension.class)
+class PartidoSchedulerTest {
+
+    @Mock
+    private PartidoService partidoService;
+
+    @InjectMocks
+    private PartidoScheduler scheduler;
+
+    @Test
+    void actualizarResultadosHoy_invocaSincronizarConLigaYTemporada() throws Exception {
+        when(partidoService.sincronizarPorFechaYLiga(anyString(), eq(1), eq(2026))).thenReturn(5);
+
+        scheduler.actualizarResultadosHoy();
+
+        verify(partidoService).sincronizarPorFechaYLiga(anyString(), eq(1), eq(2026));
+    }
+
+    @Test
+    void actualizarResultadosHoy_serviceLanzaExcepcion_noPropagas() throws Exception {
+        when(partidoService.sincronizarPorFechaYLiga(anyString(), anyInt(), anyInt()))
+                .thenThrow(new RuntimeException("API caída"));
+
+        org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> scheduler.actualizarResultadosHoy());
+    }
+
+    @Test
+    void actualizarResultadosHoy_retornaCeroActualizados_noLanzaExcepcion() throws Exception {
+        when(partidoService.sincronizarPorFechaYLiga(anyString(), eq(1), eq(2026))).thenReturn(0);
+
+        org.junit.jupiter.api.Assertions.assertDoesNotThrow(() -> scheduler.actualizarResultadosHoy());
+        verify(partidoService).sincronizarPorFechaYLiga(anyString(), eq(1), eq(2026));
+    }
 }

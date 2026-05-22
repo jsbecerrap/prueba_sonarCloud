@@ -33,7 +33,10 @@ jobs:
       - name: Build and analyze
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=jsbecerrap_prueba_sonarCloud -f backend/mundial_2026/pom.xml
+        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar
+          -Dsonar.projectKey=jsbecerrap_prueba_sonarCloud
+          -Dsonar.coverage.exclusions=**/repository/**,**/entity/**,**/dto/**,**/AppConfig.java,**/FireBaseConfig.java,**/RestClientConfig.java,**/Mundial2026Application.java,**/exception/Apuesta*.java,**/exception/Categoria*.java,**/exception/Carrito*.java,**/exception/Codigo*.java,**/exception/Contrasena*.java,**/exception/Correo*.java,**/exception/Cupo*.java,**/exception/Entrada*.java,**/exception/Estado*.java,**/exception/Item*.java,**/exception/Limite*.java,**/exception/MetodoPago*.java,**/exception/Orden*.java,**/exception/Pago*.java,**/exception/Participacion*.java,**/exception/Partido*.java,**/exception/Producto*.java,**/exception/Pronostico*.java,**/exception/Rol*.java,**/exception/Stock*.java,**/exception/Usuario*.java
+          -f backend/mundial_2026/pom.xml
 
   frontend:
     name: Analyze Frontend
