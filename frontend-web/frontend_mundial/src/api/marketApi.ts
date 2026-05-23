@@ -109,7 +109,7 @@ export async function buyListing(
   await sleep();
 
   const listing = mockDb.marketlistings.find((item) => item.id === listingId);
-  if (!listing || listing.status !== "ACTIVE") return false;
+  if (listing?.status !== "ACTIVE") return false;
   if (listing.poolCode !== poolCode) return false;
   if (listing.sellerId === buyerId) return false;
 
@@ -158,7 +158,7 @@ export async function cancelListing(
   await sleep();
 
   const listing = mockDb.marketlistings.find((item) => item.id === listingId);
-  if (!listing || listing.poolCode !== poolCode) return false;
+  if (listing?.poolCode !== poolCode) return false;
   if (listing.sellerId !== sellerId || listing.status !== "ACTIVE") return false;
 
   const pool = poolsMock.find((item) => item.code === poolCode);

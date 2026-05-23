@@ -113,13 +113,15 @@ export default function Transactions() {
         </Paper>
       ) : (
         <Stack spacing={1.5}>
-          {txsFiltradas.map((tx) => (
+         {txsFiltradas.map((tx) => {
+            const kindLabel = tx.kind === "TICKET" ? "Entrada" : tx.kind === "ORDEN" ? "Souvenir" : "Monedas";
+            return (
             <Paper key={tx.id} variant="outlined" sx={{ p: 2 }}>
               <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" spacing={2}>
                 <Stack spacing={0.5}>
                   <Stack direction="row" spacing={1} alignItems="center">
                     <Typography sx={{ fontWeight: 800 }}>
-                      {tx.kind === "TICKET" ? "Entrada" : tx.kind === "ORDEN" ? "Souvenir" : "Monedas"}
+                      {kindLabel}
                     </Typography>
                     <Chip
                       label={statusLabels[tx.status]}
@@ -161,7 +163,7 @@ export default function Transactions() {
                 </Stack>
               </Stack>
             </Paper>
-          ))}
+          );})}
         </Stack>
       )}
     </Stack>

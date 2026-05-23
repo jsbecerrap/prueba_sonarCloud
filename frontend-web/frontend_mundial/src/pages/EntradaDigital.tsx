@@ -9,9 +9,9 @@ function formatPrecio(value: number) {
   return `$${value.toLocaleString("es-CO")} COP`;
 }
 
-function QRDecorativo({ value }: { value: string }) {
+function QRDecorativo({ value }: { readonly value: string }) {
   // QR decorativo generado con patrón SVG basado en el valor
-  const hash = value.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
+ const hash = value.split("").reduce((acc, c) => acc + (c.codePointAt(0) ?? 0), 0);
   const cells = 10;
   const size = 120;
   const cellSize = size / cells;
@@ -56,12 +56,12 @@ function QRDecorativo({ value }: { value: string }) {
   );
 }
 
-function AsientosVisual({ inicio, cantidad, fila, sector }: { inicio: number; cantidad: number; fila: string; sector: string }) {
+function AsientosVisual({ inicio, cantidad, fila, sector }: { readonly inicio: number; readonly cantidad: number; readonly fila: string; readonly sector: string }) {
   const asientos = Array.from({ length: cantidad }, (_, i) => inicio + i);
   return (
     <Stack spacing={1}>
       <Typography variant="caption" color="text.secondary" sx={{ textTransform: "uppercase", letterSpacing: 1 }}>
-        Sector {sector} · Fila {fila} · {asientos.length === 1 ? `Asiento ${asientos[0]}` : `Asientos ${asientos[0]}–${asientos[asientos.length - 1]}`}
+        Sector {sector} · Fila {fila} · {asientos.length === 1 ? `Asiento ${asientos[0]}` : `Asientos ${asientos[0]}–${asientos.at(-1)}`}
       </Typography>
       <Stack direction="row" spacing={0.75} flexWrap="wrap">
         {asientos.map((a) => (
@@ -98,8 +98,8 @@ export default function EntradaDigital() {
     if (!user || !ticketId) return;
     getTicketById(user.id, ticketId)
       .then((data) => {
-        if (!data) setError("No se encontró la entrada.");
-        else setTicket(data);
+        if (data) setTicket(data);
+        else setError("No se encontró la entrada.");
       })
       .catch(() => setError("Error cargando la entrada."))
       .finally(() => setLoading(false));

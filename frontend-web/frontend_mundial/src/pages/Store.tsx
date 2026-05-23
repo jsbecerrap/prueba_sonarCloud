@@ -45,13 +45,13 @@ function ProductCard({
   onChangeVariante,
 }: {
 
- product: ProductoListadoResponse;
-  onAdd: (product: ProductoListadoResponse, qty: number) => void;
-  loading: boolean;
-  quantity: number;
-  onChangeQty: (productId: number, delta: number, maxStock: number) => void;
-  varianteSeleccionada: number | null;
-  onChangeVariante: (productId: number, varianteId: number) => void;
+readonly product: ProductoListadoResponse;
+  readonly onAdd: (product: ProductoListadoResponse, qty: number) => void;
+  readonly loading: boolean;
+  readonly quantity: number;
+  readonly onChangeQty: (productId: number, delta: number, maxStock: number) => void;
+  readonly varianteSeleccionada: number | null;
+  readonly onChangeVariante: (productId: number, varianteId: number) => void;
 }) {
   return (
     <Paper
@@ -163,7 +163,7 @@ if (prods.length > 0) {
 
  
 const handleConfirmarDialog = async () => {
-  if (!dialogProducto || !dialogProducto.varianteId) return;
+if (!dialogProducto?.varianteId) { return; }
   try {
     setAgregando(dialogProducto.producto.id);
     await agregarAlCarrito({
@@ -342,13 +342,15 @@ const productosPaginados = productosFiltrados.slice(0, limite);
               fullWidth
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon fontSize="small" />
-                  </InputAdornment>
-                ),
-              }}
+             slotProps={{
+  input: {
+    startAdornment: (
+      <InputAdornment position="start">
+        <SearchIcon fontSize="small" />
+      </InputAdornment>
+    ),
+  },
+}}
             />
 
             <Divider />

@@ -200,12 +200,12 @@ export default function Notifications() {
           <TextField
             label="Desde" type="date" size="small"
             value={desde} onChange={(e) => setDesde(e.target.value)}
-            InputLabelProps={{ shrink: true }} sx={{ width: 180 }}
+           slotProps={{ inputLabel: { shrink: true } }} sx={{ width: 180 }}
           />
           <TextField
             label="Hasta" type="date" size="small"
             value={hasta} onChange={(e) => setHasta(e.target.value)}
-            InputLabelProps={{ shrink: true }} sx={{ width: 180 }}
+            slotProps={{ inputLabel: { shrink: true } }} sx={{ width: 180 }}
           />
           <Button variant="contained" size="small" onClick={onBuscar}>Buscar</Button>
           {buscando && <Button variant="outlined" size="small" onClick={() => refresh(0)}>Limpiar</Button>}

@@ -23,9 +23,7 @@ import type { Pool } from "../types/pool";
 import type { SystemEvent, SystemEventType } from "../types/systemEvent";
 import { EVENT_GROUPS, getEventLabel } from "../types/systemEvent";
 import { getPools } from "../api/poolsApi";
-import { getSystemEvents } from "../api/eventsApi";
 import { useApp } from "../context/AppContext";
-import { formatTeam } from "../utils/countries";
 import { validateRequired, type FieldErrors } from "../utils/validation";
 import { bannerImages } from "../theme/bannerImages";
 
@@ -33,7 +31,6 @@ type Msg = { text: string; severity: "success" | "error" | "info" } | null;
 type MatchField = "homeName" | "awayName" | "city" | "stadium" | "startLocal";
 import {
   adminCreateMatch,
-  adminGetMatches,
   adminPublishResult,
   adminSetMatchStatus,
   adminGetUsuarios,
@@ -291,7 +288,7 @@ setPools(ps);
     const live = matches.filter((m) => m.status === "LIVE").length;
     const scheduled = matches.filter((m) => m.status === "SCHEDULED").length;
     const pending = matches.filter((m) => m.status === "PENDING_DATA").length;
-    const members = pools.reduce((sum, pool) => sum + pool.members.length, 0);
+    
     return [
       { label: "Partidos", value: matches.length },
       { label: "En vivo", value: live },
@@ -329,14 +326,18 @@ const productosFiltrados = useMemo(() => {
   });
 }, [productos, prodFiltroNombre, prodFiltroCategoria, prodFiltroEstado]);
 const usuariosFiltrados = useMemo(() => {
-  if (!usuarioFiltro) return usuarios;
-  const q = usuarioFiltro.toLowerCase();
-  return usuarios.filter((u) =>
-    u.nombre.toLowerCase().includes(q) ||
-    u.apellido.toLowerCase().includes(q) ||
-    u.correoUsuario.toLowerCase().includes(q) ||
-    String(u.id).includes(q)
-  );
+  const base = usuarioFiltro
+    ? (() => {
+        const q = usuarioFiltro.toLowerCase();
+        return usuarios.filter((u) =>
+          u.nombre.toLowerCase().includes(q) ||
+          u.apellido.toLowerCase().includes(q) ||
+          u.correoUsuario.toLowerCase().includes(q) ||
+          String(u.id).includes(q)
+        );
+      })()
+    : usuarios;
+  return [...base].sort((a, b) => Number(b.activo) - Number(a.activo));
 }, [usuarios, usuarioFiltro]);  
 const validateMatchForm = () => {
     const nextErrors: FieldErrors<MatchField> = {
@@ -1040,12 +1041,13 @@ onClick={(e) => { e.preventDefault(); navigate("/profile", { state: { vista: "ed
             ) : (
               <Stack spacing={1}>
                 {usuariosFiltrados.map((u) => (
-                  <Paper key={u.id} variant="outlined" sx={{ p: 2 }}>
+                  <Paper key={u.id} variant="outlined" sx={{ p: 2, opacity: u.activo ? 1 : 0.5 }}>
                     <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ sm: "center" }} spacing={1}>
                       <Box>
                         <Stack direction="row" spacing={1} alignItems="center">
-                          <Typography sx={{ fontWeight: 700 }}>{u.nombre} {u.apellido}</Typography>
+                          <Typography sx={{ fontWeight: 700, textDecoration: u.activo ? "none" : "line-through" }}>{u.nombre} {u.apellido}</Typography>
                           <Chip label={`ID: ${u.id}`} size="small" variant="outlined" />
+                          {!u.activo && <Chip label="Inactivo" size="small" color="default" />}
                         </Stack>
                         <Typography color="text.secondary">{u.correoUsuario}</Typography>
                         <Typography variant="caption" color="text.secondary">
@@ -1054,9 +1056,11 @@ onClick={(e) => { e.preventDefault(); navigate("/profile", { state: { vista: "ed
                       </Box>
                       <Stack direction="row" spacing={1} alignItems="center">
                         <Chip label={u.rol} size="small" color={u.rol === "ROLE_ADMIN" ? "error" : "default"} />
-                        <Button size="small" color="error" variant="outlined" disabled={loading} onClick={() => onEliminarUsuario(u)}>
-                          Desactivar
-                        </Button>
+                        {u.activo && (
+                          <Button size="small" color="error" variant="outlined" disabled={loading} onClick={() => onEliminarUsuario(u)}>
+                            Desactivar
+                          </Button>
+                        )}
                       </Stack>
                     </Stack>
                   </Paper>

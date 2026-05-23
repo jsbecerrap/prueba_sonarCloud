@@ -18,7 +18,7 @@ const baseMatch = (score?: { home: number; away: number }): Match => ({
 });
 
 describe("scorePrediction", () => {
-  it("retorna 0 si no hay score", () => expect(scorePrediction(basePred(), baseMatch(undefined))).toBe(0));
+  it("retorna 0 si no hay score", () => expect(scorePrediction(basePred(), baseMatch())).toBe(0));
   it("retorna 3 marcador exacto victoria", () => expect(scorePrediction({ ...basePred(), homeScore: 2, awayScore: 1 }, baseMatch({ home: 2, away: 1 }))).toBe(3));
   it("retorna 3 marcador exacto empate", () => expect(scorePrediction({ ...basePred(), homeScore: 0, awayScore: 0 }, baseMatch({ home: 0, away: 0 }))).toBe(3));
   it("retorna 1 acertó local sin marcador exacto", () => expect(scorePrediction({ ...basePred(), homeScore: 1, awayScore: 0 }, baseMatch({ home: 3, away: 1 }))).toBe(1));

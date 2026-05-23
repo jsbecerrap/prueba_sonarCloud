@@ -12,7 +12,6 @@ import {
 } from "../../api/paymentsApi";
 import { markTicketAsPaid, markTicketAsRefunded } from "../../api/ticketsApi";
 import { mockDb, paymentsMock } from "../../api/mockDb";
-import type { PaymentMethod } from "../../types/payment";
 import type { Ticket } from "../../types/ticket";
 
 const mockMarkPaid = vi.mocked(markTicketAsPaid);
@@ -179,7 +178,7 @@ describe("createCoinsPayment", () => {
     await expect(createCoinsPayment("u1", -5, "pm_u1_card", 5000)).rejects.toThrow("Coins inválidas");
   });
   it("lanza error si coins no es finito", async () => {
-    await expect(createCoinsPayment("u1", NaN, "pm_u1_card", 5000)).rejects.toThrow("Coins inválidas");
+   await expect(createCoinsPayment("u1", Number.NaN, "pm_u1_card", 5000)).rejects.toThrow("Coins inválidas");
   });
 });
 

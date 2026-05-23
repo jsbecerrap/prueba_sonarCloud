@@ -270,7 +270,7 @@ useEffect(() => {
               <Stack direction="row" spacing={1}>
                 <Select value={seleccionada} onChange={(e) => setSeleccionada(e.target.value as number)} displayEmpty size="small" sx={{ minWidth: 200 }}>
                   <MenuItem value="">Selecciona una selección</MenuItem>
-                  {todasSelecciones.filter((s) => !selecciones.find((f) => f.id === s.id)).map((s) => (
+                 {todasSelecciones.filter((s) => !selecciones.some((f) => f.id === s.id)).map((s) => (
                     <MenuItem key={s.id} value={s.id}>{s.nombre}</MenuItem>
                   ))}
                 </Select>
@@ -290,7 +290,7 @@ useEffect(() => {
               <Stack direction="row" spacing={1}>
                 <Select value={estadioSeleccionado} onChange={(e) => setEstadioSeleccionado(e.target.value as number)} displayEmpty size="small" sx={{ minWidth: 200 }}>
                   <MenuItem value="">Selecciona un estadio</MenuItem>
-                  {todosEstadios.filter((e) => !estadios.find((f) => f.id === e.id)).map((e) => (
+                 {todosEstadios.filter((e) => !estadios.some((f) => f.id === e.id)).map((e) => (
                     <MenuItem key={e.id} value={e.id}>{e.nombre}</MenuItem>
                   ))}
                 </Select>
@@ -310,7 +310,7 @@ useEffect(() => {
               <Stack direction="row" spacing={1}>
                 <Select value={ciudadSeleccionada} onChange={(e) => setCiudadSeleccionada(e.target.value as number)} displayEmpty size="small" sx={{ minWidth: 200 }}>
                   <MenuItem value="">Selecciona una ciudad</MenuItem>
-                  {todasCiudades.filter((c) => !ciudades.find((f) => f.id === c.id)).map((c) => (
+                 {todasCiudades.filter((c) => !ciudades.some((f) => f.id === c.id)).map((c) => (
                     <MenuItem key={c.id} value={c.id}>{c.nombre}</MenuItem>
                   ))}
                 </Select>

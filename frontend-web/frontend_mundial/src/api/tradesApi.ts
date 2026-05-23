@@ -1,7 +1,6 @@
 import { USE_MOCK } from "./config";
 import { http } from "./http";
 import { mockDb } from "./mockDb";
-import { poolsMock } from "./poolsMockDb";
 
 import type { AlbumEvent } from "../types/albumEvent";
 import type { DailyStats } from "../types/dailyStats";
@@ -106,9 +105,9 @@ export async function acceptTrade(poolCode: string, tradeId: string): Promise<bo
   await sleep(150);
 
   const trade = tradesMock.find((item) => item.id === tradeId);
-  if (!trade || trade.status !== "PENDING") return false;
+ if (trade?.status !== "PENDING") return false;
 
-  const pool = poolsMock.find((item) => item.code === poolCode);
+if (trade?.status !== "PENDING") { return false; }
   if (!pool) return false;
 
   const from = pool.members.find((member) => member.user.id === trade.fromUserId);

@@ -32,7 +32,7 @@ import { useApp } from "./context/AppContext";
 import Reports from "./pages/Reports";
 
 
-type GuardProps = { children: ReactNode };
+type GuardProps = { readonly children: ReactNode };
 
 function AdminOnly({ children }: GuardProps) {
   const { user, authLoading } = useApp();

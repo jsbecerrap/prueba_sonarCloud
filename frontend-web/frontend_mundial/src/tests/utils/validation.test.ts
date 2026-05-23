@@ -100,7 +100,7 @@ describe("validateCode", () => {
 });
 
 describe("validatePositiveNumber", () => {
-  it("retorna error si no es finito", () => expect(validatePositiveNumber(NaN, "Cantidad")).toBe("Cantidad debe ser un número válido."));
+ it("retorna error si no es finito", () => expect(validatePositiveNumber(Number.NaN, "Cantidad")).toBe("Cantidad debe ser un número válido."));
   it("retorna error si es Infinity", () => expect(validatePositiveNumber(Infinity, "Cantidad")).toBe("Cantidad debe ser un número válido."));
   it("retorna error si es menor al mínimo", () => expect(validatePositiveNumber(0, "Cantidad", 1)).toBe("Cantidad debe ser mínimo 1."));
   it("retorna error si es mayor al máximo", () => expect(validatePositiveNumber(101, "Cantidad", 1, 100)).toBe("Cantidad debe ser máximo 100."));
@@ -111,7 +111,7 @@ describe("validatePositiveNumber", () => {
 });
 
 describe("validateIntegerRange", () => {
-  it("retorna error si no es finito", () => expect(validateIntegerRange(NaN, "Número", 1, 10)).toBe("Número debe ser un número válido."));
+ it("retorna error si no es finito", () => expect(validateIntegerRange(Number.NaN, "Número", 1, 10)).toBe("Número debe ser un número válido."));
   it("retorna error si no es entero", () => expect(validateIntegerRange(1.5, "Número", 1, 10)).toBe("Número debe ser un número entero."));
   it("retorna error si es menor al mínimo", () => expect(validateIntegerRange(0, "Número", 1, 10)).toBe("Número debe ser mínimo 1."));
   it("retorna error si es mayor al máximo", () => expect(validateIntegerRange(11, "Número", 1, 10)).toBe("Número debe ser máximo 10."));

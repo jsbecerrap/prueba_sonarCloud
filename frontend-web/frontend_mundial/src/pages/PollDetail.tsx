@@ -315,7 +315,7 @@ export default function PoolDetail() {
               const predsForMatch = allPreds.filter((p) => p.matchId === m.id); 
 
  
-
+const lockedSuffix = my?.lockedAt ? ` (${new Date(my.lockedAt).toLocaleString()})` : "";
               return ( 
 
                 <Paper key={m.id} variant="outlined" sx={{ p: 2 }}> 
@@ -366,7 +366,7 @@ export default function PoolDetail() {
 
                       disabled={closed} 
 
-                      inputProps={{ min: 0, max: 20 }} 
+                      slotProps={{ htmlInput: { min: 0, max: 20 } }} 
 
                       onChange={(e) => 
 
@@ -394,7 +394,7 @@ export default function PoolDetail() {
 
                       disabled={closed} 
 
-                      inputProps={{ min: 0, max: 20 }} 
+                      slotProps={{ htmlInput: { min: 0, max: 20 } }} 
 
                       onChange={(e) => 
 
@@ -430,7 +430,7 @@ export default function PoolDetail() {
 
                       {my.updatedAt ? ` • editado ${new Date(my.updatedAt).toLocaleString()}` : ""} 
 
-                      {my.locked ? ` • LOCKED${my.lockedAt ? ` (${new Date(my.lockedAt).toLocaleString()})` : ""}` : ""} 
+                    {my.locked ? ` • LOCKED${lockedSuffix}` : ""}
 
                     </Typography> 
 

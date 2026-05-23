@@ -119,17 +119,17 @@ function formatCompactCOP(value: number) {
  * ============================================================ */
 
 interface TooltipPayloadItem {
-  name?: string;
-  value?: number;
-  color?: string;
-  payload?: { color?: string };
+  readonly name?: string;
+  readonly value?: number;
+  readonly color?: string;
+  readonly payload?: { readonly color?: string };
 }
 
 interface DarkTooltipProps {
-  active?: boolean;
-  payload?: TooltipPayloadItem[];
-  label?: string;
-  formatter?: (v: number) => string;
+  readonly active?: boolean;
+  readonly payload?: TooltipPayloadItem[];
+  readonly label?: string;
+  readonly formatter?: (v: number) => string;
 }
 
 function DarkTooltip({ active, payload, label, formatter }: DarkTooltipProps) {
@@ -179,11 +179,11 @@ function DarkTooltip({ active, payload, label, formatter }: DarkTooltipProps) {
  * ============================================================ */
 
 interface KpiCardProps {
-  label: string;
-  value: string;
-  icon: React.ReactNode;
-  color: string;
-  size?: "lg" | "md";
+  readonly label: string;
+  readonly value: string;
+  readonly icon: React.ReactNode;
+  readonly color: string;
+  readonly size?: "lg" | "md";
 }
 
 function KpiCard({ label, value, icon, color, size = "md" }: KpiCardProps) {
@@ -261,12 +261,11 @@ function KpiCard({ label, value, icon, color, size = "md" }: KpiCardProps) {
 }
 
 interface SectionHeaderProps {
-  title: string;
-  subtitle?: string;
-  icon?: React.ReactNode;
-  accent?: string;
+  readonly title: string;
+  readonly subtitle?: string;
+  readonly icon?: React.ReactNode;
+  readonly accent?: string;
 }
-
 function SectionHeader({ title, subtitle, icon, accent = ACCENT_GREEN }: SectionHeaderProps) {
   return (
     <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 2.5 }}>

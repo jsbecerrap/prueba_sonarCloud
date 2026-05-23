@@ -286,7 +286,7 @@ export default function Album() {
             >
               {countryStickers.map((sticker, index) => {
                 const owned = ownedIds.has(sticker.id);
-
+const rotation = index % 2 === 0 ? "-1deg" : "1deg";
                 return (
                   <Box
                     key={sticker.id}
@@ -301,7 +301,7 @@ export default function Album() {
                         ? "1px solid rgba(23,32,25,.22)"
                         : "2px dashed rgba(23,32,25,.30)",
                       boxShadow: owned ? "0 14px 28px rgba(40,30,18,.20)" : "inset 0 0 0 1px rgba(255,255,255,.40)",
-                      transform: owned ? `rotate(${index % 2 === 0 ? "-1deg" : "1deg"})` : "none",
+                    transform: owned ? `rotate(${rotation})` : "none",
                     }}
                   >
                     {owned ? (

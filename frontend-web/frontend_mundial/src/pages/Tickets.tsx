@@ -12,7 +12,6 @@ import {
   Paper,
   Stack,
   TextField,
-  Tooltip,
   Typography,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
@@ -394,8 +393,10 @@ await reserveTicket(user.id, selectedMatchId, quantity, categoria, sector, fila)
             })}
           </Stack>
 
-          {/* Selector de sector */}
-          {categoria && (
+        {/* Selector de sector */}
+          {(() => {
+            const sectoresPorCategoria = categoria === "BARRA" ? ["Norte", "Sur"] : categoria === "GENERAL" ? ["Oriental", "Occidental"] : categoria === "ESQUINA" ? ["Noroccidental", "Nororiental", "Suroccidental", "Suroriental"] : ["Occidental VIP"];
+            return categoria && (
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ mt: 2 }}>
               <TextField
                 select
@@ -405,12 +406,12 @@ await reserveTicket(user.id, selectedMatchId, quantity, categoria, sector, fila)
                 disabled={loading}
                 fullWidth
               >
-              {(categoria === "BARRA" ? ["Norte", "Sur"] : categoria === "GENERAL" ? ["Oriental", "Occidental"] : categoria === "ESQUINA" ? ["Noroccidental", "Nororiental", "Suroccidental", "Suroriental"] : ["Occidental VIP"]).map((s) => (
+{sectoresPorCategoria.map((s) => (
                   <MenuItem key={s} value={s}>{s}</MenuItem>
                 ))}
               </TextField>
-            </Stack>
-          )}
+            </Stack>);})()}
+          
 
           {categoria && (
             <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block" }}>

@@ -45,7 +45,7 @@ export default function Layout() {
 
   const navSections: NavSection[] = useMemo(() => {
    if (isAdmin) return [{ label: "Admin", items: [{ label: "Panel admin", to: "/admin" }, { label: "Reportes", to: "/reports" }] }];
-    if (isSupport) return [{ label: "Atención", items: [{ label: "Soporte", to: "/support" }] }];
+  if (isSupport) { return [{ label: "Atención", items: [{ label: "Soporte", to: "/support" }] }]; }
     if (!isUser) return [];
 
     return [
@@ -198,7 +198,18 @@ export default function Layout() {
             })}
           </Stack>
 
-          {!user ? (
+          {user ? (
+            <Tooltip title="Cerrar sesión">
+              <Button
+                variant="outlined"
+                color="inherit"
+                onClick={handleLogout}
+                startIcon={<LogoutRoundedIcon />}
+              >
+                Salir
+              </Button>
+            </Tooltip>
+          ) : (
             <Tooltip title="Iniciar sesión">
               <Button
                 variant="outlined"
@@ -208,17 +219,6 @@ export default function Layout() {
                 startIcon={<LoginRoundedIcon />}
               >
                 Login
-              </Button>
-            </Tooltip>
-          ) : (
-            <Tooltip title="Cerrar sesión">
-              <Button
-                variant="outlined"
-                color="inherit"
-                onClick={handleLogout}
-                startIcon={<LogoutRoundedIcon />}
-              >
-                Salir
               </Button>
             </Tooltip>
           )}
@@ -287,17 +287,7 @@ export default function Layout() {
 
             <Divider />
 
-            {!user ? (
-              <Button
-                variant="contained"
-                component={RouterLink}
-                to="/login"
-                onClick={() => setOpen(false)}
-                startIcon={<LoginRoundedIcon />}
-              >
-                Login
-              </Button>
-            ) : (
+            {user ? (
               <Button
                 variant="outlined"
                 color="inherit"
@@ -308,6 +298,16 @@ export default function Layout() {
                 startIcon={<LogoutRoundedIcon />}
               >
                 Salir
+              </Button>
+            ) : (
+              <Button
+                variant="contained"
+                component={RouterLink}
+                to="/login"
+                onClick={() => setOpen(false)}
+                startIcon={<LoginRoundedIcon />}
+              >
+                Login
               </Button>
             )}
           </Stack>
