@@ -1,6 +1,7 @@
 export type SupportStatus = "OPEN" | "IN_REVIEW" | "CLOSED";
 export type SupportCategory = "TICKET" | "NOTIFICATION" | "PAYMENT" | "TRANSFER" | "OTHER";
 
+
 export type SupportRequest = {
   id: string;
   userId: string;
