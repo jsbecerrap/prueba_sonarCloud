@@ -26,6 +26,10 @@ import co.edu.unbosque.mundial_2026.repository.UsuarioRepository;
 import co.edu.unbosque.mundial_2026.security.filter.JwtAuthenticationFilter;
 import co.edu.unbosque.mundial_2026.security.filter.JwtValidationFilter;
 
+/**
+ * Configuración principal de seguridad del sistema
+ * define autenticación autorización filtros JWT CORS y políticas de sesión
+ */
 @Configuration
 @EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
@@ -42,31 +46,47 @@ public class SecurityConfig {
     private static final String API_AUDITORIA = "/api/auditoria/**";
 
     public SecurityConfig(AuthenticationConfiguration authConfig,
-            UsuarioRepository usuarioRepository,
-            TokenBlacklist tokenBlacklist) {
+                          UsuarioRepository usuarioRepository,
+                          TokenBlacklist tokenBlacklist) {
         this.authConfig = authConfig;
         this.usuarioRepository = usuarioRepository;
         this.tokenBlacklist = tokenBlacklist;
     }
 
+    /**
+     * Expone el AuthenticationManager usado por Spring Security
+     * encargado de procesar autenticación de credenciales
+     */
     @Bean
     public AuthenticationManager authenticationManager() throws Exception {
         return authConfig.getAuthenticationManager();
     }
 
+    /**
+     * Define el encoder de contraseñas usando BCrypt
+     * asegurando almacenamiento seguro de credenciales
+     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
+    /**
+     * Inicializa la clave secreta del JWT al iniciar la aplicación
+     */
     @Bean
     public CommandLineRunner initJwtKey() {
         return args -> TokenJwt.init(jwtSecret);
     }
 
+    /**
+     * Configura la cadena de filtros de seguridad HTTP
+     * define rutas públicas protegidas roles filtros JWT CORS y sesión stateless
+     */
     @Bean
     public SecurityFilterChain filterChain(final HttpSecurity http,
-            final AuthenticationManager authManager) throws Exception {
+                                           final AuthenticationManager authManager) throws Exception {
+
         return http.authorizeHttpRequests(authz -> authz
                 .requestMatchers(HttpMethod.GET, "/api/usuarios/listar").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/usuarios/registrar").permitAll()
@@ -88,29 +108,40 @@ public class SecurityConfig {
                 .build();
     }
 
+    /**
+     * Configuración CORS para permitir peticiones desde frontend locales y producción
+     * define métodos permitidos headers y dominios autorizados
+     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         final CorsConfiguration config = new CorsConfiguration();
+
         config.setAllowedOriginPatterns(Arrays.asList(
-        "http://localhost:3000",
-        "http://localhost:4200",
-        "http://localhost:8080",
-        "http://localhost:5173",
-        "https://mundial-2026-hub.vercel.app",
-        "https://*.vercel.app"));
+                "http://localhost:3000",
+                "http://localhost:4200",
+                "http://localhost:8080",
+                "http://localhost:5173",
+                "https://mundial-2026-hub.vercel.app",
+                "https://*.vercel.app"));
+
         config.setAllowedMethods(Arrays.asList("GET", "POST", "DELETE", "PUT", "PATCH"));
         config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
         config.setAllowCredentials(true);
 
         final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
+
         return source;
     }
 
+    /**
+     * Registra el filtro CORS con máxima prioridad para evitar bloqueos en solicitudes cross-origin
+     */
     @Bean
     public FilterRegistrationBean<CorsFilter> corsFilter() {
-        final FilterRegistrationBean<CorsFilter> corsBean = new FilterRegistrationBean<>(
-                new CorsFilter(corsConfigurationSource()));
+        final FilterRegistrationBean<CorsFilter> corsBean =
+                new FilterRegistrationBean<>(new CorsFilter(corsConfigurationSource()));
+
         corsBean.setOrder(Ordered.HIGHEST_PRECEDENCE);
         return corsBean;
     }

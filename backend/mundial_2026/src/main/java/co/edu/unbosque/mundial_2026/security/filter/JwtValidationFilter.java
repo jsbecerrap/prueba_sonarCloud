@@ -18,8 +18,6 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
-
-
 import co.edu.unbosque.mundial_2026.security.TokenBlacklist;
 import co.edu.unbosque.mundial_2026.security.TokenJwt;
 import io.jsonwebtoken.Claims;
@@ -31,20 +29,30 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+/**
+ * Filtro encargado de validar el token JWT en cada petición protegida
+ * verifica firma validez expiración y estado en blacklist
+ */
 public class JwtValidationFilter extends BasicAuthenticationFilter {
 
     private final TokenBlacklist tokenBlacklist;
 
     public JwtValidationFilter(final AuthenticationManager authManager,
-            final TokenBlacklist tokenBlacklist) {
+                               final TokenBlacklist tokenBlacklist) {
         super(authManager);
         this.tokenBlacklist = tokenBlacklist;
     }
-//Revisa el token del usuario para acceder a funcionalidades del aplicativo
+
+    /**
+     * Intercepta cada petición HTTP y valida el token JWT si existe
+     * verifica que no esté en blacklist y lo convierte en autenticación del sistema
+     */
     @Override
     protected void doFilterInternal(final HttpServletRequest request,
-            final HttpServletResponse response,
-            final FilterChain chain) throws IOException, ServletException {
+                                   final HttpServletResponse response,
+                                   final FilterChain chain)
+            throws IOException, ServletException {
+
         try {
             final String header = request.getHeader(HEADER_AUTHORIZATION);
 
@@ -58,7 +66,7 @@ public class JwtValidationFilter extends BasicAuthenticationFilter {
             if (tokenBlacklist.estaInvalidado(token)) {
                 final Map<String, String> body = new HashMap<>();
                 body.put("error", "Token invalidado");
-                body.put("mensaje", "Sesión cerrada, inicia sesión nuevamente");
+                body.put("mensaje", "Sesión cerrada inicia sesión nuevamente");
                 escribirRespuestaError(response, HttpStatus.UNAUTHORIZED.value(), body);
                 return;
             }
@@ -70,6 +78,7 @@ public class JwtValidationFilter extends BasicAuthenticationFilter {
                     .getPayload();
 
             final String username = claims.getSubject();
+
             final List<GrantedAuthority> authorities =
                     ((List<?>) claims.get("authorities"))
                             .stream()
@@ -78,6 +87,7 @@ public class JwtValidationFilter extends BasicAuthenticationFilter {
 
             SecurityContextHolder.getContext().setAuthentication(
                     new UsernamePasswordAuthenticationToken(username, null, authorities));
+
             chain.doFilter(request, response);
 
         } catch (JwtException e) {
@@ -87,10 +97,19 @@ public class JwtValidationFilter extends BasicAuthenticationFilter {
             escribirRespuestaError(response, HttpStatus.UNAUTHORIZED.value(), body);
         }
     }
-//Metodo para asginarle el estado y el mensaje al usuario
+
+    /**
+     * Construye y envía una respuesta JSON de error cuando el token es inválido o no autorizado
+     *
+     * @param response respuesta HTTP
+     * @param status código de estado HTTP
+     * @param body contenido del mensaje de error
+     */
     private void escribirRespuestaError(final HttpServletResponse response,
-            final int status,
-            final Map<String, String> body) throws IOException {
+                                        final int status,
+                                        final Map<String, String> body)
+            throws IOException {
+
         response.setStatus(status);
         response.setContentType(CONTENT_TYPE);
         response.getWriter().write(new ObjectMapper().writeValueAsString(body));

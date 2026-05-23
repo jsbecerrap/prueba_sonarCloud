@@ -6,6 +6,10 @@ import org.springframework.stereotype.Component;
 import co.edu.unbosque.mundial_2026.repository.ApuestaRepository;
 import co.edu.unbosque.mundial_2026.service.ApuestaService;
 
+/**
+ * Componente encargado de ejecutar tareas programadas relacionadas con apuestas
+ * automatiza cierre de apuestas y cálculo de puntajes parciales y finales
+ */
 @Component
 public class ApuestaScheduler {
 
@@ -17,20 +21,29 @@ public class ApuestaScheduler {
         this.apuestaRepository = apuestaRepository;
     }
 
-    // cada 5 minutos cierra pollas vencidas
+    /**
+     * Ejecuta el cierre automático de apuestas vencidas
+     * se ejecuta cada 5 minutos para actualizar el estado del sistema
+     */
     @Scheduled(fixedDelay = 300_000)
     public void cerrarPollasvencidas() {
         apuestaService.cerrarApuestasVencidas();
     }
 
-    // cada 10 minutos calcula puntos parciales de pollas abiertas
+    /**
+     * Calcula los puntos parciales de apuestas que aún están abiertas
+     * permite actualización progresiva del ranking de usuarios
+     */
     @Scheduled(fixedDelay = 600_000)
     public void calcularParciales() {
         apuestaRepository.findByEstado("ABIERTA")
                 .forEach(a -> apuestaService.calcularPuntosParciales(a.getId()));
     }
 
-    // cada 10 minutos calcula puntos finales de pollas cerradas
+    /**
+     * Calcula los puntos finales de todas las apuestas cerradas
+     * asegurando actualización completa de resultados del sistema
+     */
     @Scheduled(fixedDelay = 600_000)
     public void calcularFinales() {
         apuestaService.calcularPuntosAutomatico();

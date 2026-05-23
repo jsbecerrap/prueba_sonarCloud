@@ -9,6 +9,10 @@ import org.springframework.stereotype.Component;
 
 import co.edu.unbosque.mundial_2026.service.PartidoService;
 
+/**
+ * Scheduler encargado de actualizar automáticamente la información de partidos
+ * sincroniza resultados diarios y mantiene los datos del mundial actualizados
+ */
 @Component
 public class PartidoScheduler {
 
@@ -22,17 +26,26 @@ public class PartidoScheduler {
         this.partidoService = partidoService;
     }
 
-    // cada 5 minutos actualiza resultados de partidos de hoy
+    /**
+     * Actualiza los resultados de los partidos del día actual
+     * ejecuta sincronización periódica cada 5 minutos
+     * registra en logs la cantidad de partidos actualizados o errores ocurridos
+     */
     @Scheduled(fixedDelay = 300_000)
     public void actualizarResultadosHoy() {
         final String hoy = LocalDate.now()
                 .format(DateTimeFormatter.ISO_LOCAL_DATE);
+
         try {
             final int actualizados = partidoService
                     .sincronizarPorFechaYLiga(hoy, LIGA_MUNDIAL, TEMPORADA_MUNDIAL);
-          logger.log(java.util.logging.Level.INFO, "Partidos actualizados hoy: {0}", actualizados);
+
+            logger.log(java.util.logging.Level.INFO,
+                    "Partidos actualizados hoy: {0}", actualizados);
+
         } catch (Exception e) {
-         logger.log(java.util.logging.Level.WARNING, "Error actualizando partidos: {0}", e.getMessage());
+            logger.log(java.util.logging.Level.WARNING,
+                    "Error actualizando partidos: {0}", e.getMessage());
         }
     }
 }

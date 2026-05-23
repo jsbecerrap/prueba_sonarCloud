@@ -33,38 +33,39 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import static co.edu.unbosque.mundial_2026.security.TokenJwt.HEADER_AUTHORIZATION;
 import static co.edu.unbosque.mundial_2026.security.TokenJwt.PREFIX_TOKEN;
 
+/**
+ * Filtro de autenticación JWT encargado de interceptar el login del sistema
+ * valida credenciales controla intentos fallidos genera token y gestiona bloqueo de usuarios
+ */
 public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
 
     private static final int SEGUNDOS_DIA = 86400;
-
     private static final String KEY_MENSAJE = "mensaje";
-    
     private static final int MAX_INTENTOS_FALLIDOS = 5;
     private static final int MINUTOS_BLOQUEO = 15;
-
     private static final int MAX_LONGITUD_PASSWORD = 72;
-
-   
     private static final String ATTR_CORREO_INTENTO = "correoIntentoLogin";
 
     private final AuthenticationManager authManager;
     private final UsuarioRepository usuarioRepo;
 
     public JwtAuthenticationFilter(final AuthenticationManager authManager,
-            final UsuarioRepository usuarioRepo) {
+                                   final UsuarioRepository usuarioRepo) {
         super(authManager);
         this.authManager = authManager;
         this.usuarioRepo = usuarioRepo;
     }
 
-    /*
-     * Lee las credenciales del request UNA sola vez. Antes de delegar al
-     * AuthenticationManager, verifica si el usuario está bloqueado por
-     * intentos fallidos previos y rechaza el login en ese caso.
+    /**
+     * Intercepta la petición de login y extrae credenciales
+     * valida bloqueo de cuenta por intentos fallidos y limita ataques por contraseñas excesivas
+     * delega la autenticación al AuthenticationManager
      */
     @Override
     public Authentication attemptAuthentication(final HttpServletRequest request,
-            final HttpServletResponse response) throws AuthenticationException {
+                                               final HttpServletResponse response)
+            throws AuthenticationException {
+
         try {
             final Usuario credenciales = new ObjectMapper()
                     .readValue(request.getInputStream(), Usuario.class);
@@ -72,20 +73,12 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
             final String correo = credenciales.getCorreoUsuario();
             final String contrasena = credenciales.getContrasena();
 
-            // Guardamos el correo en el request para poder identificarlo en
-            // unsuccessfulAuthentication. Si es null se queda en null y
-            // simplemente no se incrementa contador (no podemos saber a quién).
             request.setAttribute(ATTR_CORREO_INTENTO, correo);
 
-            // Anti bcrypt DoS: rechaza contraseñas absurdamente largas
-            // sin siquiera intentar compararlas.
             if (contrasena != null && contrasena.length() > MAX_LONGITUD_PASSWORD) {
-                throw new AuthenticationServiceException(
-                        "La contraseña excede la longitud permitida");
+                throw new AuthenticationServiceException("La contraseña excede la longitud permitida");
             }
 
-            // Verifica si la cuenta está actualmente bloqueada por intentos
-            // fallidos. Solo aplica para usuarios existentes.
             if (correo != null && !correo.isBlank()) {
                 final Optional<Usuario> opt = usuarioRepo.findByCorreoUsuario(correo);
                 if (opt.isPresent()) {
@@ -105,21 +98,21 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         }
     }
 
-    /*
-     * Autenticación exitosa: emite el token JWT y resetea el contador
-     * de intentos fallidos del usuario.
+    /**
+     * Ejecuta la lógica cuando la autenticación es exitosa
+     * genera el token JWT incluye roles del usuario y reinicia contador de intentos fallidos
      */
     @Override
     protected void successfulAuthentication(final HttpServletRequest request,
-            final HttpServletResponse response,
-            final FilterChain chain,
-            final Authentication authResult) throws IOException, ServletException {
+                                           final HttpServletResponse response,
+                                           final FilterChain chain,
+                                           final Authentication authResult)
+            throws IOException, ServletException {
 
         final String username = authResult.getName();
         final Usuario usuario = usuarioRepo.findByCorreoUsuario(username)
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
 
-        // Reset del contador de intentos fallidos tras login exitoso
         if ((usuario.getIntentosFallidos() != null && usuario.getIntentosFallidos() > 0)
                 || usuario.getBloqueadoHasta() != null) {
             usuario.setIntentosFallidos(0);
@@ -128,6 +121,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         }
 
         final String nombreCompleto = usuario.getNombre() + " " + usuario.getApellido();
+
         List<GrantedAuthority> roles = new ArrayList<>(authResult.getAuthorities());
 
         final String token = Jwts.builder()
@@ -144,49 +138,61 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         final Map<String, String> json = new HashMap<>();
         json.put("token", token);
         json.put("username", username);
-      json.put(KEY_MENSAJE, "Hola " + nombreCompleto + " sesión iniciada correctamente");
+        json.put(KEY_MENSAJE, "Hola " + nombreCompleto + " sesión iniciada correctamente");
 
         response.setContentType("application/json;charset=UTF-8");
         response.getWriter().write(new ObjectMapper().writeValueAsString(json));
     }
 
+    /**
+     * Maneja los intentos de autenticación fallidos
+     * incrementa contador de intentos bloquea usuario si excede el límite y responde error adecuado
+     */
     @Override
     protected void unsuccessfulAuthentication(final HttpServletRequest request,
-            final HttpServletResponse response,
-            final AuthenticationException failed) throws IOException, ServletException {
+                                             final HttpServletResponse response,
+                                             final AuthenticationException failed)
+            throws IOException, ServletException {
 
         final Object attrCorreo = request.getAttribute(ATTR_CORREO_INTENTO);
         final String correo = (attrCorreo != null) ? attrCorreo.toString() : null;
-       final boolean estabaBloqueado = failed instanceof LockedException;
+        final boolean estabaBloqueado = failed instanceof LockedException;
 
         if (!estabaBloqueado && correo != null && !correo.isBlank()) {
-            usuarioRepo.findByCorreoUsuario(correo).ifPresent(this::registrarIntentoFallido);
+            usuarioRepo.findByCorreoUsuario(correo)
+                    .ifPresent(this::registrarIntentoFallido);
         }
 
         final Map<String, String> json = new HashMap<>();
+
         if (estabaBloqueado) {
-          json.put(KEY_MENSAJE, "Demasiados intentos. Espera unos minutos.");
-            response.setStatus(429); // Too Many Requests
+            json.put(KEY_MENSAJE, "Demasiados intentos espera unos minutos");
+            response.setStatus(429);
         } else {
-            json.put(KEY_MENSAJE, "Error en la autenticacion correo/contraseña incorrecto");
+            json.put(KEY_MENSAJE, "Error en la autenticacion correo contraseña incorrecto");
             response.setStatus(401);
         }
+
         json.put("error", failed.getMessage());
 
         response.setContentType("application/json;charset=UTF-8");
         response.getWriter().write(new ObjectMapper().writeValueAsString(json));
     }
 
+    /**
+     * Registra intentos fallidos de login y aplica bloqueo temporal si supera el límite permitido
+     */
     private void registrarIntentoFallido(final Usuario usuario) {
         final int intentos = (usuario.getIntentosFallidos() != null
                 ? usuario.getIntentosFallidos() : 0) + 1;
+
         usuario.setIntentosFallidos(intentos);
 
         if (intentos >= MAX_INTENTOS_FALLIDOS) {
             usuario.setBloqueadoHasta(LocalDateTime.now().plusMinutes(MINUTOS_BLOQUEO));
-            
             usuario.setIntentosFallidos(0);
         }
+
         usuarioRepo.save(usuario);
     }
 }
