@@ -21,12 +21,24 @@ import co.edu.unbosque.mundial_2026.repository.PartidoRepository;
 import co.edu.unbosque.mundial_2026.repository.RolRepository;
 import co.edu.unbosque.mundial_2026.repository.SeleccionRepository;
 import co.edu.unbosque.mundial_2026.service.PartidoService;
-
+/**
+ * Configuración de arranque de la aplicación que inicializa los datos base
+ * necesarios para el funcionamiento del sistema mediante {@link CommandLineRunner}
+ *
+ * <p>Cada bean se ejecuta en orden estricto al iniciar la aplicación y solo
+ * inserta datos si la tabla correspondiente está vacía, evitando duplicados</p>
+ */
 @Configuration
 public class AppConfig {
 
     private static final Logger logger = Logger.getLogger(AppConfig.class.getName());
 
+    /**
+     * Carga los roles del sistema si aún no existen en la base de datos
+     * Los roles son: ROLE_USUARIO, ROLE_ADMIN, ROLE_OPERADOR, ROLE_SOPORTE y ROLE_LEGAL
+     *
+     * @param rolRepository repositorio JPA de {@link Rol}
+     */
     @Bean
     @Order(0)
     public CommandLineRunner cargarRoles(RolRepository rolRepository) {
@@ -49,6 +61,13 @@ public class AppConfig {
         };
     }
 
+    /**
+     * Sincroniza los partidos del Mundial desde la API externa si la tabla
+     * de partidos está vacía
+     *
+     * @param partidoService    servicio que consume la API externa de partidos
+     * @param partidoRepository repositorio JPA de partidos para verificar si ya hay datos
+     */
     @Bean
     @Order(1)
     public CommandLineRunner cargarPartidos(PartidoService partidoService,
@@ -61,6 +80,14 @@ public class AppConfig {
         };
     }
 
+    /**
+     * Obtiene las selecciones participantes desde el servicio de partidos y las
+     * persiste en base de datos si la tabla está vacía — evita duplicados
+     * verificando el ID antes de guardar
+     *
+     * @param seleccionRepository repositorio JPA de {@link Seleccion}
+     * @param partidoService      servicio que provee la lista de equipos del mundial
+     */
     @Bean
     @Order(2)
     public CommandLineRunner cargarSelecciones(
@@ -86,6 +113,16 @@ public class AppConfig {
         };
     }
 
+    /**
+     * Carga los 14 estadios sede del Mundial 2026 junto con sus ciudades anfitrionas
+     * (México, Canadá y EE.UU.) si la tabla de ciudades está vacía
+     *
+     * <p>Usa un mapa ordenado estadio→ciudad para garantizar que cada ciudad
+     * se crea una sola vez aunque albergue varios estadios</p>
+     *
+     * @param ciudadRepository  repositorio JPA de {@link CiudadFavorita}
+     * @param estadioRepository repositorio JPA de {@link EstadioFavorito}
+     */
     @Bean
     @Order(3)
     public CommandLineRunner cargarCiudadesYEstadios(
@@ -143,6 +180,10 @@ public class AppConfig {
         };
     }
 
+    /**
+     * Configura el {@link ObjectMapper} de Jackson deshabilitando la serialización
+     * de fechas como timestamps y estableciendo UTC como zona horaria global
+     */
     @Bean
     public com.fasterxml.jackson.databind.ObjectMapper objectMapper() {
         com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
