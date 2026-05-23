@@ -39,7 +39,7 @@ jobs:
           -f backend/mundial_2026/pom.xml
           -Dsonar.cpd.exclusions=**/dto/**,**/entity/**
 
- frontend:
+  frontend:
     name: Analyze Frontend
     runs-on: ubuntu-latest
     steps:
