@@ -3,19 +3,54 @@ package co.edu.unbosque.mundial_2026.dto;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * DTO que representa una apuesta (polla) junto con la lista completa
+ * de sus participantes.
+ * <p>
+ * Se utiliza para devolver al cliente toda la información de una apuesta
+ * en una sola respuesta, incluyendo los datos de quiénes están inscritos.
+ * </p>
+ */
 public class ApuestaConParticipantesDTO {
 
+    /** Identificador único de la apuesta. */
     private Long id;
+
+    /** Nombre descriptivo de la apuesta. */
     private String nombre;
+
+    /** Estado actual de la apuesta (por ejemplo: ABIERTA, CERRADA, FINALIZADA). */
     private String estado;
+
+    /** Código de invitación que permite a otros usuarios unirse a la apuesta. */
     private String codigoInvitacion;
+
+    /** Fecha y hora límite hasta la cual se aceptan pronósticos. */
     private LocalDateTime fechaCierre;
+
+    /** Identificador del usuario que creó la apuesta. */
     private Long creadoPor;
+
+    /** Lista de participantes inscritos en la apuesta con sus datos de participación. */
     private List<ParticipacionDTO> participantes;
 
+    /**
+     * Constructor vacío requerido por frameworks de serialización.
+     */
     public ApuestaConParticipantesDTO() {
     }
 
+    /**
+     * Constructor completo para inicializar todos los campos de la apuesta.
+     *
+     * @param id               identificador único de la apuesta
+     * @param nombre           nombre de la apuesta
+     * @param estado           estado actual de la apuesta
+     * @param codigoInvitacion código para unirse a la apuesta
+     * @param fechaCierre      fecha y hora de cierre de la apuesta
+     * @param creadoPor        ID del usuario creador
+     * @param participantes    lista de participantes inscritos
+     */
     public ApuestaConParticipantesDTO(Long id, String nombre, String estado,
             String codigoInvitacion, LocalDateTime fechaCierre,
             Long creadoPor, List<ParticipacionDTO> participantes) {
@@ -28,58 +63,128 @@ public class ApuestaConParticipantesDTO {
         this.participantes = participantes;
     }
 
+    /**
+     * Obtiene el identificador único de la apuesta.
+     *
+     * @return ID de la apuesta
+     */
     public Long getId() {
         return id;
     }
 
+    /**
+     * Establece el identificador único de la apuesta.
+     *
+     * @param id ID de la apuesta
+     */
     public void setId(Long id) {
         this.id = id;
     }
 
+    /**
+     * Obtiene el nombre de la apuesta.
+     *
+     * @return nombre de la apuesta
+     */
     public String getNombre() {
         return nombre;
     }
 
+    /**
+     * Establece el nombre de la apuesta.
+     *
+     * @param nombre nombre de la apuesta
+     */
     public void setNombre(String nombre) {
         this.nombre = nombre;
     }
 
+    /**
+     * Obtiene el estado actual de la apuesta.
+     *
+     * @return estado de la apuesta
+     */
     public String getEstado() {
         return estado;
     }
 
+    /**
+     * Establece el estado actual de la apuesta.
+     *
+     * @param estado estado de la apuesta
+     */
     public void setEstado(String estado) {
         this.estado = estado;
     }
 
+    /**
+     * Obtiene el código de invitación de la apuesta.
+     *
+     * @return código de invitación
+     */
     public String getCodigoInvitacion() {
         return codigoInvitacion;
     }
 
+    /**
+     * Establece el código de invitación de la apuesta.
+     *
+     * @param codigoInvitacion código de invitación
+     */
     public void setCodigoInvitacion(String codigoInvitacion) {
         this.codigoInvitacion = codigoInvitacion;
     }
 
+    /**
+     * Obtiene la fecha y hora de cierre de la apuesta.
+     *
+     * @return fecha y hora de cierre
+     */
     public LocalDateTime getFechaCierre() {
         return fechaCierre;
     }
 
+    /**
+     * Establece la fecha y hora de cierre de la apuesta.
+     *
+     * @param fechaCierre fecha y hora de cierre
+     */
     public void setFechaCierre(LocalDateTime fechaCierre) {
         this.fechaCierre = fechaCierre;
     }
 
+    /**
+     * Obtiene el ID del usuario que creó la apuesta.
+     *
+     * @return ID del usuario creador
+     */
     public Long getCreadoPor() {
         return creadoPor;
     }
 
+    /**
+     * Establece el ID del usuario que creó la apuesta.
+     *
+     * @param creadoPor ID del usuario creador
+     */
     public void setCreadoPor(Long creadoPor) {
         this.creadoPor = creadoPor;
     }
 
+    /**
+     * Obtiene la lista de participantes inscritos en la apuesta.
+     *
+     * @return lista de participantes
+     */
     public List<ParticipacionDTO> getParticipantes() {
         return participantes;
     }
 
+    /**
+     * Establece la lista de participantes inscritos en la apuesta.
+     *
+     * @param participantes lista de participantes
+     */
     public void setParticipantes(List<ParticipacionDTO> participantes) {
         this.participantes = participantes;
     }
