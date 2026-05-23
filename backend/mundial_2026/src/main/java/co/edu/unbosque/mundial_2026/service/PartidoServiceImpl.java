@@ -9,6 +9,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 
 import java.util.logging.Logger;
 
@@ -17,6 +18,13 @@ import co.edu.unbosque.mundial_2026.dto.response.EquipoMundialDTO;
 import co.edu.unbosque.mundial_2026.dto.response.EquipoMundialResponseDTO;
 import co.edu.unbosque.mundial_2026.dto.response.JugadorDTO;
 import co.edu.unbosque.mundial_2026.dto.response.JugadorResponseDTO;
+import co.edu.unbosque.mundial_2026.dto.response.EquipoConEstadioDTO;
+import co.edu.unbosque.mundial_2026.dto.response.EquipoDTO;
+import co.edu.unbosque.mundial_2026.dto.response.EstadioDTO;
+import co.edu.unbosque.mundial_2026.dto.response.EstadoDTO;
+import co.edu.unbosque.mundial_2026.dto.response.InfoPartidoDTO;
+import co.edu.unbosque.mundial_2026.dto.response.LigaDTO;
+import co.edu.unbosque.mundial_2026.dto.response.MarcadorDTO;
 import co.edu.unbosque.mundial_2026.dto.response.PartidoDTO;
 import co.edu.unbosque.mundial_2026.dto.response.PartidoResponseDTO;
 import co.edu.unbosque.mundial_2026.dto.response.PosicionDTO;
@@ -91,11 +99,16 @@ public class PartidoServiceImpl implements PartidoService {
     @Transactional(readOnly = true)
     @Override
     public List<PartidoDTO> obtenerPartidos() {
-        final PartidoResponseDTO response = footballClient.get()
-                .uri(BASE_FIXTURES)
-                .retrieve()
-                .body(PartidoResponseDTO.class);
-        return response.getPartidos();
+        try {
+            final PartidoResponseDTO response = footballClient.get()
+                    .uri(BASE_FIXTURES)
+                    .retrieve()
+                    .body(PartidoResponseDTO.class);
+            return response.getPartidos();
+        } catch (RestClientException e) {
+            logger.warning("API Football no disponible en obtenerPartidos, usando BD local: " + e.getMessage());
+            return partidoRepository.findAll().stream().map(this::partidoADTO).toList();
+        }
     }
 
     /**
@@ -191,11 +204,18 @@ public class PartidoServiceImpl implements PartidoService {
     @Transactional(readOnly = true)
     @Override
     public List<PartidoDTO> obtenerPartidosPorFecha(String fecha) {
-        final PartidoResponseDTO response = footballClient.get()
-                .uri(BASE_FIXTURES + "&date=" + fecha)
-                .retrieve()
-                .body(PartidoResponseDTO.class);
-        return response.getPartidos();
+        try {
+            final PartidoResponseDTO response = footballClient.get()
+                    .uri(BASE_FIXTURES + "&date=" + fecha)
+                    .retrieve()
+                    .body(PartidoResponseDTO.class);
+            return response.getPartidos();
+        } catch (RestClientException e) {
+            logger.warning("API Football no disponible en obtenerPartidosPorFecha, usando BD local: " + e.getMessage());
+            return partidoRepository.findAll().stream()
+                    .filter(p -> p.getFecha() != null && p.getFecha().toLocalDate().toString().equals(fecha))
+                    .map(this::partidoADTO).toList();
+        }
     }
 
     /**
@@ -207,11 +227,19 @@ public class PartidoServiceImpl implements PartidoService {
     @Transactional(readOnly = true)
     @Override
     public List<PartidoDTO> obtenerPartidosEnVivo() {
-        final PartidoResponseDTO response = footballClient.get()
-                .uri("/fixtures?live=all&league=" + LIGA_MUNDIAL + SEASON_PARAM + TEMPORADA_MUNDIAL)
-                .retrieve()
-                .body(PartidoResponseDTO.class);
-        return response.getPartidos();
+        try {
+            final PartidoResponseDTO response = footballClient.get()
+                    .uri("/fixtures?live=all&league=" + LIGA_MUNDIAL + SEASON_PARAM + TEMPORADA_MUNDIAL)
+                    .retrieve()
+                    .body(PartidoResponseDTO.class);
+            return response.getPartidos();
+        } catch (RestClientException e) {
+            logger.warning("API Football no disponible en obtenerPartidosEnVivo, usando BD local: " + e.getMessage());
+            return partidoRepository.findAll().stream()
+                    .filter(p -> "1H".equals(p.getEstado()) || "2H".equals(p.getEstado())
+                            || "HT".equals(p.getEstado()) || "LIVE".equals(p.getEstado()))
+                    .map(this::partidoADTO).toList();
+        }
     }
 
     /**
@@ -370,6 +398,43 @@ public class PartidoServiceImpl implements PartidoService {
      * @param dto datos del partido provenientes de la API externa
      * @return entidad {@link Partido} lista para guardar
      */
+    private PartidoDTO partidoADTO(final Partido p) {
+        final InfoPartidoDTO info = new InfoPartidoDTO();
+        info.setId(p.getId());
+        info.setFecha(p.getFecha() != null ? p.getFecha().toString() + "Z" : null);
+        final EstadoDTO estado = new EstadoDTO();
+        estado.setCodigo(p.getEstado() != null ? p.getEstado() : "NS");
+        estado.setDescripcion(p.getEstado() != null ? p.getEstado() : "NS");
+        info.setEstado(estado);
+        final EstadioDTO estadio = new EstadioDTO();
+        estadio.setNombre(p.getEstadio() != null ? p.getEstadio() : "Por confirmar");
+        estadio.setCiudad(ESTADIO_CIUDAD.getOrDefault(p.getEstadio(), "Por confirmar"));
+        info.setEstadio(estadio);
+
+        final LigaDTO liga = new LigaDTO();
+        liga.setRonda(p.getRonda() != null ? p.getRonda() : "");
+        liga.setNombre("FIFA World Cup");
+
+        final EquipoDTO local = new EquipoDTO();
+        local.setNombre(p.getSeleccionLocal() != null ? p.getSeleccionLocal() : "Por confirmar");
+        final EquipoDTO visitante = new EquipoDTO();
+        visitante.setNombre(p.getSeleccionVisitante() != null ? p.getSeleccionVisitante() : "Por confirmar");
+        final EquipoConEstadioDTO equipos = new EquipoConEstadioDTO();
+        equipos.setLocal(local);
+        equipos.setVisitante(visitante);
+
+        final MarcadorDTO goles = new MarcadorDTO();
+        goles.setLocal(p.getGolesLocal());
+        goles.setVisitante(p.getGolesVisitante());
+
+        final PartidoDTO dto = new PartidoDTO();
+        dto.setInformacion(info);
+        dto.setLiga(liga);
+        dto.setEquipos(equipos);
+        dto.setGoles(goles);
+        return dto;
+    }
+
     private Partido procesarPartido(final PartidoDTO dto) {
         final Long partidoId = dto.getInformacion().getId();
         final Partido partido = partidoRepository.findById(partidoId).orElse(new Partido());

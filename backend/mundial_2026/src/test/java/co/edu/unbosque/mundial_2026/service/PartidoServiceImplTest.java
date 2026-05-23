@@ -54,7 +54,8 @@ import co.edu.unbosque.mundial_2026.entity.Usuario;
 import co.edu.unbosque.mundial_2026.exception.PartidoNotFoundException;
 import co.edu.unbosque.mundial_2026.repository.PartidoRepository;
 import co.edu.unbosque.mundial_2026.repository.SeleccionRepository;
-
+import org.springframework.web.client.RestClientException;
+import java.time.LocalDateTime;
 @ExtendWith(MockitoExtension.class)
 @SuppressWarnings({ "rawtypes", "unchecked" })
 class PartidoServiceImplTest {
@@ -166,6 +167,28 @@ private static final String CIUDAD_MEXICO = "Ciudad de Mexico";
 
             assertEquals(1, resultado.size());
         }
+        @Test
+void cuandoAPIFalla_retornaDesdeBD() {
+    when(footballClient.get()).thenThrow(new RestClientException("API no disponible"));
+
+    Partido p = new Partido();
+    p.setId(1001L);
+    p.setSeleccionLocal(BRASIL);
+    p.setSeleccionVisitante(ARGENTINA);
+    p.setEstadio(ESTADIO_AZTECA);
+    p.setEstado("FT");
+    p.setRonda("Group A");
+    p.setGolesLocal(2);
+    p.setGolesVisitante(1);
+    p.setFecha(LocalDateTime.of(2026, 6, 11, 20, 0));
+    when(partidoRepository.findAll()).thenReturn(List.of(p));
+
+    List<PartidoDTO> resultado = partidoService.obtenerPartidos();
+
+    assertEquals(1, resultado.size());
+    assertEquals(BRASIL, resultado.get(0).getEquipos().getLocal().getNombre());
+    assertEquals(ARGENTINA, resultado.get(0).getEquipos().getVisitante().getNombre());
+}
     }
 
     @Nested
@@ -312,6 +335,55 @@ private static final String CIUDAD_MEXICO = "Ciudad de Mexico";
 
             assertEquals(1, resultado.size());
         }
+        @Test
+void obtenerPartidosPorFecha_cuandoAPIFalla_retornaDesdeBD() {
+    when(footballClient.get()).thenThrow(new RestClientException("API no disponible"));
+
+    Partido coincide = new Partido();
+    coincide.setId(1002L);
+    coincide.setSeleccionLocal(BRASIL);
+    coincide.setSeleccionVisitante(ARGENTINA);
+    coincide.setEstadio(ESTADIO_AZTECA);
+    coincide.setEstado("NS");
+    coincide.setFecha(LocalDateTime.of(2026, 6, 11, 20, 0));
+
+    Partido noCoincide = new Partido();
+    noCoincide.setId(1005L);
+    noCoincide.setEstado("NS");
+    noCoincide.setFecha(LocalDateTime.of(2026, 6, 15, 18, 0));
+
+    when(partidoRepository.findAll()).thenReturn(List.of(coincide, noCoincide));
+
+    List<PartidoDTO> resultado = partidoService.obtenerPartidosPorFecha("2026-06-11");
+
+    assertEquals(1, resultado.size());
+    assertEquals(BRASIL, resultado.get(0).getEquipos().getLocal().getNombre());
+}
+
+@Test
+void obtenerPartidosEnVivo_cuandoAPIFalla_retornaEnVivoDesdeBD() {
+    when(footballClient.get()).thenThrow(new RestClientException("API no disponible"));
+
+    Partido vivo = new Partido();
+    vivo.setId(1003L);
+    vivo.setSeleccionLocal(BRASIL);
+    vivo.setSeleccionVisitante(ARGENTINA);
+    vivo.setEstadio(ESTADIO_AZTECA);
+    vivo.setEstado("1H");
+    vivo.setFecha(LocalDateTime.of(2026, 6, 11, 20, 0));
+
+    Partido terminado = new Partido();
+    terminado.setId(1004L);
+    terminado.setEstado("FT");
+    terminado.setFecha(LocalDateTime.of(2026, 6, 10, 18, 0));
+
+    when(partidoRepository.findAll()).thenReturn(List.of(vivo, terminado));
+
+    List<PartidoDTO> resultado = partidoService.obtenerPartidosEnVivo();
+
+    assertEquals(1, resultado.size());
+    assertEquals(BRASIL, resultado.get(0).getEquipos().getLocal().getNombre());
+}
     }
 
     @Nested
