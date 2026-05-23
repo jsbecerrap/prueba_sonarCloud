@@ -907,6 +907,7 @@ onClick={(e) => { e.preventDefault(); navigate("/profile", { state: { vista: "ed
           .map((type) => <MenuItem key={type} value={type}>{getEventLabel(type)}</MenuItem>)}
       </TextField>
     </Stack>
+    
 
     <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ mb: 2 }} alignItems="center">
       <TextField
