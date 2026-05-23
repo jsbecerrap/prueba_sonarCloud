@@ -36,6 +36,15 @@ import co.edu.unbosque.mundial_2026.repository.ItemOrdenRepository;
 import co.edu.unbosque.mundial_2026.repository.OrdenRepository;
 import co.edu.unbosque.mundial_2026.repository.VarianteProductoRepository;
 
+/**
+ * Implementación del servicio encargado de gestionar el carrito de compras y las órdenes
+ * de la tienda del Mundial 2026.
+ * Cubre el ciclo completo: agregar productos al carrito, consultar el estado actual,
+ * eliminar ítems, confirmar el pago con Stripe, cancelar el carrito y consultar el historial.
+ * Si un carrito lleva más de una hora inactivo sin ser pagado, se envía una notificación
+ * automática al usuario recordándole que tiene productos pendientes.
+ * Cada operación relevante queda registrada en auditoría
+ */
 @Service
 public class OrdenServiceImpl implements OrdenService {
 
@@ -52,7 +61,6 @@ public class OrdenServiceImpl implements OrdenService {
     private static final String TIPO_ORDEN = "Orden";
     private static final String PREFIJO_ORDEN = "ORDEN-";
     private static final String CARRITO_NO_ACTIVO = "No tienes un carrito activo";
-
 
     private final NotificacionService notificacionService;
 
@@ -76,10 +84,22 @@ public class OrdenServiceImpl implements OrdenService {
         Stripe.apiKey = stripeApiKey;
     }
 
+    /**
+     * Agrega un producto al carrito del usuario. Si el usuario no tiene un carrito activo,
+     * se crea uno nuevo en estado PENDIENTE. Si el producto ya está en el carrito con la
+     * misma variante, se suma la cantidad. Valida que el producto esté activo,
+     * que la variante pertenezca al producto y que haya stock suficiente.
+     * La operación queda registrada en auditoría
+     *
+     * @param correo correo del usuario
+     * @param dto    datos del ítem a agregar: id de producto, id de variante y cantidad
+     * @return {@link OrdenResponseDTO} con el estado actualizado del carrito
+     * @throws ProductoNotFoundException    si la variante o el producto no existen o el producto está inactivo
+     * @throws StockInsuficienteException   si no hay stock suficiente para la cantidad solicitada
+     */
     @Override
     @Transactional
     public OrdenResponseDTO agregarItem(String correo, AgregarItemDTO dto) {
-
         Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
         Long usuarioId = usuario.getId();
 
@@ -146,6 +166,13 @@ public class OrdenServiceImpl implements OrdenService {
         return toOrdenDTO(ordenActual, itemsRespuesta);
     }
 
+    /**
+     * Retorna el carrito activo (estado PENDIENTE) del usuario con todos sus ítems
+     *
+     * @param correo correo del usuario
+     * @return {@link OrdenResponseDTO} con el contenido actual del carrito
+     * @throws OrdenNotFoundException si el usuario no tiene un carrito activo
+     */
     @Override
     @Transactional(readOnly = true)
     public OrdenResponseDTO obtenerCarrito(String correo) {
@@ -156,6 +183,16 @@ public class OrdenServiceImpl implements OrdenService {
         return toOrdenDTO(orden, items);
     }
 
+    /**
+     * Elimina un ítem del carrito activo del usuario y ajusta el total de la orden.
+     * Si al eliminar el ítem el carrito queda vacío, la orden también se elimina
+     *
+     * @param correo correo del usuario
+     * @param itemId id del ítem a eliminar
+     * @return {@link OrdenResponseDTO} con el estado del carrito tras la eliminación
+     * @throws OrdenNotFoundException si el usuario no tiene un carrito activo
+     * @throws ItemNotFoundException  si el ítem no existe
+     */
     @Override
     @Transactional
     public OrdenResponseDTO eliminarItem(String correo, Long itemId) {
@@ -165,8 +202,7 @@ public class OrdenServiceImpl implements OrdenService {
         ItemOrden itemAEliminar = itemOrdenRepository.findById(itemId)
                 .orElseThrow(() -> new ItemNotFoundException("No existe ese item"));
         itemOrdenRepository.delete(itemAEliminar);
-        ordenActual
-                .setTotal(ordenActual.getTotal() - (itemAEliminar.getCantidad() * itemAEliminar.getPrecioUnitario()));
+        ordenActual.setTotal(ordenActual.getTotal() - (itemAEliminar.getCantidad() * itemAEliminar.getPrecioUnitario()));
         List<ItemOrden> itemsRestantes = itemOrdenRepository.findByOrdenIdConDetalles(ordenActual.getId());
         if (itemsRestantes.isEmpty()) {
             ordenRepository.delete(ordenActual);
@@ -176,6 +212,22 @@ public class OrdenServiceImpl implements OrdenService {
         return toOrdenDTO(ordenActual, itemsRestantes);
     }
 
+    /**
+     * Confirma y paga el carrito activo del usuario procesando el cobro a través de Stripe.
+     * Valida que el carrito no esté vacío, que el método de pago pertenezca al usuario
+     * y que haya stock suficiente para todos los ítems. Si el pago es exitoso, descuenta
+     * el stock de cada variante, marca la orden como PAGADA y notifica al usuario.
+     * Si Stripe falla, notifica al usuario del error y lanza excepción
+     *
+     * @param correo correo del usuario
+     * @param dto    datos de confirmación: id del método de pago a usar
+     * @return {@link OrdenResponseDTO} con la orden en estado PAGADA
+     * @throws OrdenNotFoundException       si no hay carrito activo
+     * @throws CarritoVacioException        si el carrito no tiene ítems
+     * @throws MetodoPagoInvalidoException  si el método de pago no pertenece al usuario
+     * @throws StockInsuficienteException   si algún producto se quedó sin stock antes del pago
+     * @throws PagoStripeException          si Stripe rechaza o falla al procesar el pago
+     */
     @Override
     @Transactional
     public OrdenResponseDTO confirmarOrden(String correo, ConfirmarOrdenDTO dto) {
@@ -239,6 +291,12 @@ public class OrdenServiceImpl implements OrdenService {
         return toOrdenDTO(ordenAPagar, items);
     }
 
+    /**
+     * Retorna el historial completo de órdenes del usuario excluyendo las que están en estado PENDIENTE
+     *
+     * @param correo correo del usuario
+     * @return lista de {@link OrdenResponseDTO} con todas las órdenes procesadas del usuario
+     */
     @Override
     @Transactional(readOnly = true)
     public List<OrdenResponseDTO> historial(String correo) {
@@ -252,6 +310,14 @@ public class OrdenServiceImpl implements OrdenService {
         return responseDTOs;
     }
 
+    /**
+     * Cancela el carrito activo del usuario eliminando todos sus ítems y la orden.
+     * La operación queda registrada en auditoría
+     *
+     * @param correo correo del usuario
+     * @return {@link OrdenResponseDTO} con los datos de la orden cancelada
+     * @throws OrdenNotFoundException si el usuario no tiene un carrito activo
+     */
     @Override
     @Transactional
     public OrdenResponseDTO cancelarOrden(String correo) {
@@ -270,6 +336,13 @@ public class OrdenServiceImpl implements OrdenService {
         return toOrdenDTO(orden, items);
     }
 
+    /**
+     * Convierte una entidad {@link ItemOrden} a su representación DTO de respuesta,
+     * incluyendo el subtotal calculado y el nombre de la categoría del producto
+     *
+     * @param item entidad del ítem a convertir
+     * @return {@link ItemOrdenResponseDTO} con los datos del ítem
+     */
     private ItemOrdenResponseDTO toItemDTO(ItemOrden item) {
         ItemOrdenResponseDTO response = new ItemOrdenResponseDTO();
         response.setId(item.getId());
@@ -285,6 +358,13 @@ public class OrdenServiceImpl implements OrdenService {
         return response;
     }
 
+    /**
+     * Convierte una entidad {@link Orden} y su lista de ítems a su representación DTO de respuesta
+     *
+     * @param orden orden a convertir
+     * @param items lista de ítems asociados a la orden
+     * @return {@link OrdenResponseDTO} con los datos completos de la orden
+     */
     private OrdenResponseDTO toOrdenDTO(Orden orden, List<ItemOrden> items) {
         OrdenResponseDTO response = new OrdenResponseDTO();
         response.setId(orden.getId());
@@ -304,6 +384,13 @@ public class OrdenServiceImpl implements OrdenService {
         return response;
     }
 
+    /**
+     * Retorna el historial liviano de órdenes pagadas o reembolsadas del usuario,
+     * con un formato resumido que incluye los ítems pero sin datos de auditoría ni estado completo
+     *
+     * @param correo correo del usuario
+     * @return lista de {@link OrdenHistorialDTO} con las órdenes pagadas y reembolsadas
+     */
     @Override
     @Transactional(readOnly = true)
     public List<OrdenHistorialDTO> historialLiviano(String correo) {
@@ -337,6 +424,12 @@ public class OrdenServiceImpl implements OrdenService {
         return resultado;
     }
 
+    /**
+     * Método ejecutado automáticamente cada 5 minutos (scheduled) que detecta carritos
+     * en estado PENDIENTE con más de una hora de inactividad que aún no han sido notificados.
+     * Por cada carrito abandonado con ítems, envía una notificación al usuario
+     * y marca la orden para no volver a notificarla
+     */
     @Transactional
     @org.springframework.scheduling.annotation.Scheduled(fixedRate = 300000)
     public void notificarCarritosAbandonados() {

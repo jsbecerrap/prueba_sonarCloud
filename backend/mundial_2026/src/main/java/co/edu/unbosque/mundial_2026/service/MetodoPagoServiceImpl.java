@@ -16,6 +16,16 @@ import co.edu.unbosque.mundial_2026.exception.MetodoPagoInvalidoException;
 import co.edu.unbosque.mundial_2026.exception.MetodoPagoNotFoundException;
 import co.edu.unbosque.mundial_2026.repository.MetodoPagoRepository;
 
+/**
+ * Implementación del servicio encargado de gestionar los métodos de pago
+ * asociados a cada usuario de la plataforma.
+ * Permite agregar, eliminar, actualizar y consultar métodos de pago,
+ * así como definir cuál es el método predeterminado.
+ * El primer método registrado queda automáticamente como default,
+ * y si el default es eliminado, el más reciente de los restantes toma su lugar.
+ * Los tipos válidos son: CARD, PSE, CASH y TRANSFER.
+ * Las operaciones relevantes quedan registradas en auditoría
+ */
 @Service
 public class MetodoPagoServiceImpl implements MetodoPagoService {
 
@@ -35,6 +45,15 @@ public class MetodoPagoServiceImpl implements MetodoPagoService {
         this.auditoriaService = auditoriaService;
     }
 
+    /**
+     * Agrega un nuevo método de pago al usuario. Si es el primero que registra,
+     * queda marcado automáticamente como default. La operación queda registrada en auditoría
+     *
+     * @param correo correo del usuario al que se le agrega el método
+     * @param dto    datos del método: tipo, etiqueta y detalles
+     * @return {@link MetodoPagoResponseDTO} con la información del método registrado
+     * @throws MetodoPagoInvalidoException si el tipo no está entre los valores permitidos
+     */
     @Transactional
     @Override
     public MetodoPagoResponseDTO agregar(String correo, MetodoPagoRequestDTO dto) {
@@ -67,6 +86,15 @@ public class MetodoPagoServiceImpl implements MetodoPagoService {
         return toDTO(metodo);
     }
 
+    /**
+     * Elimina un método de pago del usuario. Si el método eliminado era el default,
+     * el más reciente de los restantes queda como nuevo default automáticamente.
+     * La operación queda registrada en auditoría
+     *
+     * @param correo correo del usuario propietario del método
+     * @param id     id del método de pago a eliminar
+     * @throws MetodoPagoNotFoundException si el método no existe o no pertenece al usuario
+     */
     @Override
     @Transactional
     public void eliminar(String correo, Long id) {
@@ -103,6 +131,13 @@ public class MetodoPagoServiceImpl implements MetodoPagoService {
                 ENTIDAD_METODO_PAGO);
     }
 
+    /**
+     * Retorna todos los métodos de pago de un usuario, ordenados primero por default
+     * y luego por fecha de creación descendente
+     *
+     * @param correo correo del usuario a consultar
+     * @return lista de {@link MetodoPagoResponseDTO} con los métodos del usuario
+     */
     @Transactional(readOnly = true)
     @Override
     public List<MetodoPagoResponseDTO> listarPorCorreo(String correo) {
@@ -116,6 +151,14 @@ public class MetodoPagoServiceImpl implements MetodoPagoService {
         return dtos;
     }
 
+    /**
+     * Cambia el método de pago predeterminado del usuario. Desmarca todos los métodos
+     * actuales y asigna el default al que se indique por id
+     *
+     * @param correo        correo del usuario
+     * @param metodoPagoId  id del método que se desea marcar como default
+     * @throws MetodoPagoNotFoundException si el método indicado no pertenece al usuario
+     */
     @Override
     @Transactional
     public void setDefaultPorCorreo(String correo, Long metodoPagoId) {
@@ -135,6 +178,17 @@ public class MetodoPagoServiceImpl implements MetodoPagoService {
         metodoPagoRepository.saveAll(todos);
     }
 
+    /**
+     * Actualiza los campos de un método de pago existente. Solo modifica los campos
+     * que vengan con valor en el request; los que lleguen nulos o en blanco se ignoran
+     *
+     * @param correo correo del usuario propietario del método
+     * @param id     id del método a actualizar
+     * @param dto    campos a actualizar: tipo, etiqueta y/o detalles
+     * @return {@link MetodoPagoResponseDTO} con los datos actualizados
+     * @throws MetodoPagoNotFoundException si el método no existe o no pertenece al usuario
+     * @throws MetodoPagoInvalidoException si el nuevo tipo no está entre los valores permitidos
+     */
     @Override
     @Transactional
     public MetodoPagoResponseDTO actualizar(String correo, Long id, MetodoPagoRequestDTO dto) {
@@ -158,6 +212,14 @@ public class MetodoPagoServiceImpl implements MetodoPagoService {
         return toDTO(metodo);
     }
 
+    /**
+     * Retorna la entidad {@link MetodoPago} directamente desde la base de datos.
+     * Usado internamente por otros servicios que necesitan la entidad completa
+     *
+     * @param id id del método de pago a buscar
+     * @return entidad {@link MetodoPago} encontrada
+     * @throws MetodoPagoNotFoundException si el método no existe
+     */
     @Override
     @Transactional(readOnly = true)
     public MetodoPago obtenerEntidadPorId(final Long id) {
@@ -166,6 +228,13 @@ public class MetodoPagoServiceImpl implements MetodoPagoService {
                         "Método de pago no encontrado con id: " + id));
     }
 
+    /**
+     * Valida que el tipo de método de pago sea uno de los valores permitidos:
+     * CARD, PSE, CASH o TRANSFER
+     *
+     * @param tipo tipo a validar
+     * @throws MetodoPagoInvalidoException si el tipo es nulo o no está en la lista de valores válidos
+     */
     private void validarTipo(String tipo) {
         if (tipo == null || !TIPOS_VALIDOS.contains(tipo)) {
             throw new MetodoPagoInvalidoException(
@@ -173,6 +242,12 @@ public class MetodoPagoServiceImpl implements MetodoPagoService {
         }
     }
 
+    /**
+     * Convierte una entidad {@link MetodoPago} a su representación DTO de respuesta
+     *
+     * @param metodo entidad a convertir
+     * @return {@link MetodoPagoResponseDTO} con los datos del método de pago
+     */
     private MetodoPagoResponseDTO toDTO(MetodoPago metodo) {
         MetodoPagoResponseDTO dto = new MetodoPagoResponseDTO();
         dto.setId(String.valueOf(metodo.getId()));

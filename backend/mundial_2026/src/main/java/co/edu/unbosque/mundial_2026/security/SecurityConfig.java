@@ -83,31 +83,45 @@ public class SecurityConfig {
      * Configura la cadena de filtros de seguridad HTTP
      * define rutas públicas protegidas roles filtros JWT CORS y sesión stateless
      */
-    @Bean
-    public SecurityFilterChain filterChain(final HttpSecurity http,
-                                           final AuthenticationManager authManager) throws Exception {
+  @Bean
+public SecurityFilterChain filterChain(final HttpSecurity http,
+                                       final AuthenticationManager authManager) throws Exception {
 
-        return http.authorizeHttpRequests(authz -> authz
-                .requestMatchers(HttpMethod.GET, "/api/usuarios/listar").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/usuarios/registrar").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/auth/logout").authenticated()
-                .requestMatchers(HttpMethod.POST, API_ENTRADAS).authenticated()
-                .requestMatchers(HttpMethod.GET, API_ENTRADAS).authenticated()
-                .requestMatchers(HttpMethod.PATCH, API_ENTRADAS).authenticated()
-                .requestMatchers(HttpMethod.GET, API_PAYMENTS).authenticated()
-                .requestMatchers(HttpMethod.POST, API_PAYMENTS).authenticated()
-                .requestMatchers(HttpMethod.PATCH, API_PAYMENTS).authenticated()
-                .requestMatchers(HttpMethod.GET, API_AUDITORIA).hasRole("ADMIN")
-                .anyRequest().authenticated())
-                .addFilter(new JwtAuthenticationFilter(authManager, usuarioRepository))
-                .addFilter(new JwtValidationFilter(authManager, tokenBlacklist))
-                .csrf(config -> config.disable())
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .sessionManagement(management -> management
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .build();
-    }
-
+    return http.authorizeHttpRequests(authz -> authz
+            .requestMatchers(HttpMethod.GET, "/api/usuarios/listar").permitAll()
+            .requestMatchers(HttpMethod.POST, "/api/usuarios/registrar").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/productos/**").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/categorias").permitAll()
+            .requestMatchers(HttpMethod.POST, "/api/auth/logout").authenticated()
+            .requestMatchers(HttpMethod.POST, API_ENTRADAS).authenticated()
+            .requestMatchers(HttpMethod.GET, API_ENTRADAS).authenticated()
+            .requestMatchers(HttpMethod.PATCH, API_ENTRADAS).authenticated()
+            .requestMatchers(HttpMethod.DELETE, API_ENTRADAS).authenticated()
+            .requestMatchers(HttpMethod.PUT, API_ENTRADAS).authenticated()
+            .requestMatchers(HttpMethod.GET, API_PAYMENTS).authenticated()
+            .requestMatchers(HttpMethod.POST, API_PAYMENTS).authenticated()
+            .requestMatchers(HttpMethod.PATCH, API_PAYMENTS).authenticated()
+            .requestMatchers(HttpMethod.DELETE, API_PAYMENTS).authenticated()
+            .requestMatchers(HttpMethod.PUT, API_PAYMENTS).authenticated()
+            .requestMatchers(HttpMethod.GET, API_AUDITORIA).hasRole("ADMIN")
+            .requestMatchers(HttpMethod.DELETE, "/api/**").authenticated()
+            .requestMatchers(HttpMethod.PUT, "/api/**").authenticated()
+            .anyRequest().authenticated())
+            .addFilter(new JwtAuthenticationFilter(authManager, usuarioRepository))
+            .addFilter(new JwtValidationFilter(authManager, tokenBlacklist))
+            .csrf(config -> config.disable())
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .sessionManagement(management -> management
+                    .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .exceptionHandling(ex -> ex
+                    .authenticationEntryPoint((request, response, authException) -> {
+                        response.setStatus(401);
+                        response.setContentType("application/json");
+                        response.getWriter().write("{\"error\":\"No autenticado\"}");
+                    })
+            )
+            .build();
+}
     /**
      * Configuración CORS para permitir peticiones desde frontend locales y producción
      * define métodos permitidos headers y dominios autorizados

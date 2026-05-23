@@ -32,6 +32,14 @@ import co.edu.unbosque.mundial_2026.repository.ApuestaRepository;
 import co.edu.unbosque.mundial_2026.repository.ParticipacionRepository;
 import co.edu.unbosque.mundial_2026.repository.PronosticoRepository;
 
+/**
+ * Implementación del servicio encargado de gestionar toda la lógica de negocio
+ * relacionada con las pollas (apuestas) del Mundial 2026.
+ * Cubre el ciclo de vida completo de una polla: creación, unión de participantes,
+ * registro y edición de pronósticos, cierre, cálculo de puntos y generación del ranking.
+ * Cada operación relevante queda registrada en el sistema de auditoría
+ * y se envían notificaciones a los usuarios cuando corresponde
+ */
 @Service
 public class ApuestaServiceImpl implements ApuestaService {
 
@@ -68,6 +76,15 @@ public class ApuestaServiceImpl implements ApuestaService {
                 this.auditoriaService = auditoriaService;
         }
 
+        /**
+         * Crea una nueva polla con estado ABIERTA y genera automáticamente un código
+         * de invitación único. El usuario que la crea queda registrado como participante
+         * con 0 puntos y la operación se guarda en auditoría
+         *
+         * @param dto datos de la polla a crear, incluyendo nombre, fecha de cierre e id del usuario creador
+         * @return {@link ApuestaDTO} con la información de la polla recién creada
+         * @throws ApuestaCerradaException si la fecha de cierre proporcionada ya pasó
+         */
         @Transactional
         @Override
         public ApuestaDTO crearApuesta(ApuestaRequestDTO dto) {
@@ -103,6 +120,19 @@ public class ApuestaServiceImpl implements ApuestaService {
                                 apuesta.getCodigoInvitacion(), apuesta.getFechaCierre(), creadoPorId);
         }
 
+        /**
+         * Registra el pronóstico de un usuario para un partido dentro de una polla.
+         * Valida que la polla esté abierta, que el usuario sea participante de ella
+         * y que el partido no esté a 5 minutos o menos de comenzar.
+         * El pronóstico incluye el marcador esperado y el resultado (LOCAL, VISITANTE o EMPATE)
+         *
+         * @param dto datos del pronóstico: id de usuario, id de polla, id de partido, goles y resultado esperado
+         * @return {@link PronosticoDTO} con la información del pronóstico registrado
+         * @throws ApuestaNotFoundException      si la polla no existe
+         * @throws ApuestaCerradaException       si la polla no está en estado ABIERTA
+         * @throws ParticipacionNotFoundException si el usuario no pertenece a la polla
+         * @throws PartidoYaIniciadoException    si el partido está a 5 minutos o menos de iniciar
+         */
         @Transactional
         @Override
         public PronosticoDTO registrarPronostico(PronosticoRequestDTO dto) {
@@ -152,6 +182,17 @@ public class ApuestaServiceImpl implements ApuestaService {
                                 pronostico.getApuesta().getId(), pronostico.getPartido().getId());
         }
 
+        /**
+         * Permite a un usuario unirse a una polla existente usando el código de invitación.
+         * Si el código es válido y el usuario no está ya en la polla, se crea su participación
+         * con 0 puntos. Se notifica al creador de la polla y se registra en auditoría
+         *
+         * @param codigo     código de invitación único de la polla
+         * @param usuarioId  id del usuario que desea unirse
+         * @return {@link ApuestaDTO} con la información de la polla a la que se unió
+         * @throws CodigoInvalidoException      si el código no corresponde a ninguna polla
+         * @throws UsuarioYaEnApuestaException  si el usuario ya es participante de esa polla
+         */
         @Transactional
         @Override
         public ApuestaDTO unirseApuesta(String codigo, Long usuarioId) {
@@ -185,6 +226,18 @@ public class ApuestaServiceImpl implements ApuestaService {
                                 apuesta.getCodigoInvitacion(), apuesta.getFechaCierre(), creadoPorId);
         }
 
+        /**
+         * Edita un pronóstico existente. Valida que el pronóstico pertenezca al usuario
+         * que hace la solicitud y que la polla siga abierta. Guarda los valores anteriores
+         * en auditoría para tener trazabilidad del cambio realizado
+         *
+         * @param pronosticoId  id del pronóstico a editar
+         * @param dto           nuevos valores del pronóstico (goles y resultado esperado)
+         * @param correoUsuario correo del usuario que intenta editar, usado para verificar propiedad
+         * @return {@link PronosticoDTO} con los datos actualizados del pronóstico
+         * @throws PronosticoNotFoundException si el pronóstico no existe
+         * @throws ApuestaCerradaException     si el pronóstico no pertenece al usuario o la polla está cerrada
+         */
         @Transactional
         @Override
         public PronosticoDTO editarPronostico(Long pronosticoId, PronosticoRequestDTO dto, String correoUsuario) {
@@ -238,6 +291,16 @@ public class ApuestaServiceImpl implements ApuestaService {
                                 pronostico.getPartido().getId());
         }
 
+        /**
+         * Elimina un pronóstico existente. Verifica que pertenezca al usuario que solicita
+         * la eliminación y que la polla siga abierta. La operación queda registrada en auditoría
+         * con el nombre del partido y la polla afectados
+         *
+         * @param pronosticoId  id del pronóstico a eliminar
+         * @param correoUsuario correo del usuario que intenta eliminar, usado para verificar propiedad
+         * @throws PronosticoNotFoundException si el pronóstico no existe
+         * @throws ApuestaCerradaException     si el pronóstico no pertenece al usuario o la polla está cerrada
+         */
         @Transactional
         @Override
         public void eliminarPronostico(Long pronosticoId, String correoUsuario) {
@@ -269,6 +332,13 @@ public class ApuestaServiceImpl implements ApuestaService {
                                 ENTIDAD_PRONOSTICO);
         }
 
+        /**
+         * Retorna el ranking actual de participantes de una polla,
+         * ordenado de mayor a menor puntaje
+         *
+         * @param apuestaId id de la polla
+         * @return lista de {@link ParticipacionDTO} ordenada por puntos de forma descendente
+         */
         @Transactional(readOnly = true)
         @Override
         public List<ParticipacionDTO> obtenerRanking(Long apuestaId) {
@@ -278,6 +348,18 @@ public class ApuestaServiceImpl implements ApuestaService {
                                 .toList();
         }
 
+        /**
+         * Calcula y asigna los puntos finales a todos los pronósticos de una polla cerrada.
+         * Primero reinicia los puntos de todos los participantes, luego sincroniza los resultados
+         * reales de los partidos con la API externa, evalúa cada pronóstico usando la lógica
+         * de puntuación, actualiza el ranking final y notifica a cada participante su posición y puntos.
+         * Solo puede ejecutarse si la polla está en estado CERRADA
+         *
+         * @param apuestaId id de la polla a finalizar
+         * @return lista de {@link PronosticoDTO} con los puntos obtenidos por cada pronóstico
+         * @throws ApuestaNotFoundException si la polla no existe
+         * @throws EstadoInvalidoException  si la polla no está en estado CERRADA
+         */
         @Transactional
         @Override
         public List<PronosticoDTO> calcularPuntos(Long apuestaId) {
@@ -362,6 +444,14 @@ public class ApuestaServiceImpl implements ApuestaService {
                 return resultado;
         }
 
+        /**
+         * Determina el resultado real de un partido comparando los goles del local y visitante.
+         * Retorna "LOCAL" si ganó el equipo de casa, "VISITANTE" si ganó el de fuera,
+         * o "EMPATE" si terminaron iguales
+         *
+         * @param partido partido con los goles reales registrados
+         * @return cadena con el resultado: "LOCAL", "VISITANTE" o "EMPATE"
+         */
         private String determinarResultado(final Partido partido) {
                 if (partido.getGolesLocal() > partido.getGolesVisitante()) {
                         return "LOCAL";
@@ -372,6 +462,18 @@ public class ApuestaServiceImpl implements ApuestaService {
                 }
         }
 
+        /**
+         * Calcula los puntos obtenidos por un pronóstico comparándolo con el resultado real del partido.
+         * La lógica de puntuación es: 3 puntos si el marcador exacto coincide,
+         * 2 puntos si el resultado (LOCAL/VISITANTE/EMPATE) coincide,
+         * y 1 punto adicional si el total de goles pronosticados es igual al total real.
+         * Los criterios son acumulables, por lo que el máximo posible es 6 puntos
+         *
+         * @param partido      partido con los goles reales
+         * @param pronostico   pronóstico del usuario con los goles y resultado esperados
+         * @param resultadoReal resultado real calculado ("LOCAL", "VISITANTE" o "EMPATE")
+         * @return total de puntos obtenidos por el pronóstico
+         */
         private int calcularPuntosPronostico(final Partido partido, final Pronostico pronostico,
                         final String resultadoReal) {
                 int puntos = 0;
@@ -390,6 +492,15 @@ public class ApuestaServiceImpl implements ApuestaService {
                 return puntos;
         }
 
+        /**
+         * Cambia el estado de una polla de ABIERTA a CERRADA, impidiendo que se
+         * registren o editen pronósticos a partir de ese momento
+         *
+         * @param apuestaId id de la polla a cerrar
+         * @return {@link ApuestaDTO} con el estado actualizado a CERRADA
+         * @throws ApuestaNotFoundException si la polla no existe
+         * @throws ApuestaCerradaException  si la polla ya estaba cerrada
+         */
         @Transactional
         @Override
         public ApuestaDTO cerrarApuesta(Long apuestaId) {
@@ -406,6 +517,13 @@ public class ApuestaServiceImpl implements ApuestaService {
                                 apuesta.getCreadaPor().getId());
         }
 
+        /**
+         * Busca y retorna la información de una polla por su id
+         *
+         * @param apuestaId id de la polla a consultar
+         * @return {@link ApuestaDTO} con los datos de la polla
+         * @throws ApuestaNotFoundException si la polla no existe
+         */
         @Transactional(readOnly = true)
         @Override
         public ApuestaDTO obtenerApuesta(Long apuestaId) {
@@ -416,6 +534,13 @@ public class ApuestaServiceImpl implements ApuestaService {
                                 apuesta.getCreadaPor().getId());
         }
 
+        /**
+         * Retorna la lista de todos los participantes de una polla con sus puntos
+         * y posición en el ranking actual
+         *
+         * @param apuestaId id de la polla
+         * @return lista de {@link ParticipacionDTO} con la información de cada participante
+         */
         @Transactional(readOnly = true)
         @Override
         public List<ParticipacionDTO> listarParticipantes(Long apuestaId) {
@@ -425,6 +550,13 @@ public class ApuestaServiceImpl implements ApuestaService {
                                 .toList();
         }
 
+        /**
+         * Retorna todas las pollas en las que un usuario participa,
+         * ya sea como creador o como participante invitado
+         *
+         * @param usuarioId id del usuario
+         * @return lista de {@link ApuestaDTO} con las pollas del usuario
+         */
         @Transactional(readOnly = true)
         @Override
         public List<ApuestaDTO> listarApuestasPorUsuario(Long usuarioId) {
@@ -442,6 +574,13 @@ public class ApuestaServiceImpl implements ApuestaService {
                                 .toList();
         }
 
+        /**
+         * Busca y retorna un pronóstico específico por su id
+         *
+         * @param pronosticoId id del pronóstico a consultar
+         * @return {@link PronosticoDTO} con los datos del pronóstico
+         * @throws PronosticoNotFoundException si el pronóstico no existe
+         */
         @Transactional(readOnly = true)
         @Override
         public PronosticoDTO verificarPronostico(Long pronosticoId) {
@@ -453,6 +592,10 @@ public class ApuestaServiceImpl implements ApuestaService {
                                 pronostico.getApuesta().getId(), pronostico.getPartido().getId());
         }
 
+        /**
+         * Método ejecutado automáticamente (scheduled) que busca todas las pollas cerradas
+         * cuyo cálculo de puntos aún no ha sido realizado y los calcula
+         */
         @Transactional
         @Override
         public void calcularPuntosAutomatico() {
@@ -460,6 +603,10 @@ public class ApuestaServiceImpl implements ApuestaService {
                                 .forEach(apuesta -> calcularPuntos(apuesta.getId()));
         }
 
+        /**
+         * Método ejecutado automáticamente (scheduled) que cierra todas las pollas
+         * cuya fecha de cierre ya venció o está a 5 minutos de vencer
+         */
         @Transactional
         @Override
         public void cerrarApuestasVencidas() {
@@ -467,6 +614,13 @@ public class ApuestaServiceImpl implements ApuestaService {
                                 .forEach(apuesta -> cerrarApuesta(apuesta.getId()));
         }
 
+        /**
+         * Retorna todos los pronósticos que un usuario hizo dentro de una polla específica
+         *
+         * @param apuestaId id de la polla
+         * @param usuarioId id del usuario
+         * @return lista de {@link PronosticoDTO} con los pronósticos del usuario en esa polla
+         */
         @Transactional(readOnly = true)
         @Override
         public List<PronosticoDTO> misPronosticos(Long apuestaId, Long usuarioId) {
@@ -483,6 +637,16 @@ public class ApuestaServiceImpl implements ApuestaService {
                                 .toList();
         }
 
+        /**
+         * Calcula puntos parciales para los pronósticos de partidos que ya terminaron
+         * dentro de una polla que aún puede estar abierta. Solo procesa pronósticos
+         * que tengan resultado real disponible y que no hayan sido puntuados previamente.
+         * Actualiza el ranking al finalizar
+         *
+         * @param apuestaId id de la polla
+         * @return lista de {@link PronosticoDTO} con los pronósticos que fueron puntuados en esta ejecución
+         * @throws ApuestaNotFoundException si la polla no existe
+         */
         @Transactional
         @Override
         public List<PronosticoDTO> calcularPuntosParciales(Long apuestaId) {
@@ -535,6 +699,11 @@ public class ApuestaServiceImpl implements ApuestaService {
                 return resultado;
         }
 
+        /**
+         * Retorna todas las pollas registradas en el sistema sin ningún filtro
+         *
+         * @return lista de {@link ApuestaDTO} con todas las pollas existentes
+         */
         @Transactional(readOnly = true)
         @Override
         public List<ApuestaDTO> listarTodas() {
@@ -547,6 +716,14 @@ public class ApuestaServiceImpl implements ApuestaService {
                 return resultado;
         }
 
+        /**
+         * Elimina una polla junto con todos sus pronósticos y participaciones asociadas.
+         * La eliminación es en cascada: primero se borran los pronósticos, luego las participaciones
+         * y finalmente la polla
+         *
+         * @param apuestaId id de la polla a eliminar
+         * @throws ApuestaNotFoundException si la polla no existe
+         */
         @Transactional
         @Override
         public void eliminarApuesta(Long apuestaId) {
@@ -557,6 +734,14 @@ public class ApuestaServiceImpl implements ApuestaService {
                 apuestaRepository.delete(apuesta);
         }
 
+        /**
+         * Retorna las pollas de un usuario incluyendo la lista completa de participantes de cada una.
+         * Optimiza las consultas agrupando todas las participaciones de las pollas del usuario
+         * en una sola consulta, evitando el problema de N+1
+         *
+         * @param usuarioId id del usuario
+         * @return lista de {@link ApuestaConParticipantesDTO} con cada polla y sus participantes
+         */
         @Transactional(readOnly = true)
         @Override
         public List<ApuestaConParticipantesDTO> listarApuestasPorUsuarioCompleto(Long usuarioId) {
