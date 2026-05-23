@@ -18,6 +18,13 @@ import co.edu.unbosque.mundial_2026.dto.response.MetodoPagoResponseDTO;
 import co.edu.unbosque.mundial_2026.service.MetodoPagoService;
 import jakarta.validation.Valid;
 
+/**
+ * Controlador REST que expone los endpoints de gestión de métodos de pago —
+ * cada usuario solo puede ver y modificar sus propios métodos de pago,
+ * identificados automáticamente a través del token JWT
+ *
+ * <p>Base URL: {@code /payments}</p>
+ */
 @RestController
 @RequestMapping("/payments")
 public class MetodoPagoController {
@@ -28,12 +35,27 @@ public class MetodoPagoController {
         this.metodoPagoService = metodoPagoService;
     }
 
+    /**
+     * {@code GET /payments} — Lista todos los métodos de pago registrados
+     * por el usuario autenticado
+     *
+     * @param username correo del usuario autenticado extraído del token JWT
+     * @return lista de métodos de pago del usuario
+     */
     @GetMapping
     public ResponseEntity<List<MetodoPagoResponseDTO>> listar(
             @AuthenticationPrincipal String username) {
         return ResponseEntity.ok(metodoPagoService.listarPorCorreo(username));
     }
 
+    /**
+     * {@code POST /payments} — Agrega un nuevo método de pago al perfil del usuario —
+     * retorna HTTP 400 si los datos enviados no son válidos para crear el método de pago
+     *
+     * @param username correo del usuario autenticado extraído del token JWT
+     * @param dto      datos del método de pago a registrar
+     * @return método de pago creado, o HTTP 400 si no pudo crearse
+     */
     @PostMapping
     public ResponseEntity<MetodoPagoResponseDTO> agregar(
             @AuthenticationPrincipal String username,
@@ -45,6 +67,14 @@ public class MetodoPagoController {
         return ResponseEntity.ok(resultado);
     }
 
+    /**
+     * {@code PATCH /payments/{id}/default} — Establece un método de pago como predeterminado,
+     * desmarcando automáticamente el que estuviera activo previamente
+     *
+     * @param username correo del usuario autenticado extraído del token JWT
+     * @param id       ID del método de pago a marcar como predeterminado
+     * @return respuesta vacía con HTTP 204
+     */
     @PatchMapping("/{id}/default")
     public ResponseEntity<Void> setDefault(
             @AuthenticationPrincipal String username,
@@ -53,6 +83,14 @@ public class MetodoPagoController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * {@code DELETE /payments/{id}} — Elimina un método de pago del perfil del usuario
+     * validando que le pertenezca
+     *
+     * @param username correo del usuario autenticado extraído del token JWT
+     * @param id       ID del método de pago a eliminar
+     * @return respuesta vacía con HTTP 204
+     */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminar(
             @AuthenticationPrincipal String username,
@@ -61,6 +99,15 @@ public class MetodoPagoController {
         return ResponseEntity.noContent().build();
     }
 
+    /**
+     * {@code PATCH /payments/{id}} — Actualiza los datos de un método de pago existente
+     * del usuario autenticado
+     *
+     * @param username correo del usuario autenticado extraído del token JWT
+     * @param id       ID del método de pago a actualizar
+     * @param dto      nuevos datos del método de pago
+     * @return método de pago con los datos actualizados
+     */
     @PatchMapping("/{id}")
     public ResponseEntity<MetodoPagoResponseDTO> actualizar(
             @AuthenticationPrincipal String username,
