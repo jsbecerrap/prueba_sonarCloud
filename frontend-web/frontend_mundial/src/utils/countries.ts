@@ -50,7 +50,8 @@ export function getTeamFlag(team: Team) {
 }
 
 export function formatTeam(team: Team) {
-  return `${getTeamFlag(team)} ${team.name}${team.code ? ` (${team.code})` : ""}`;
+  const code = team.code ? ` (${team.code})` : "";
+  return `${getTeamFlag(team)} ${team.name}${code}`;
 }
 
 export function getCountryFlag(country: string) {

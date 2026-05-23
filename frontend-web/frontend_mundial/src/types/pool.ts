@@ -13,4 +13,5 @@ export interface Pool {
   fechaCierre?: string;
   creadoPor: number;
   members: PoolMember[];
+  matchIds?: string[];
 }

@@ -2,7 +2,10 @@
 export type UsuarioEventType =
   | "USUARIO_REGISTRADO"
   | "USUARIO_ELIMINADO"
-  | "USUARIO_ACTUALIZADO";
+  | "USUARIO_ACTUALIZADO"
+  | "AUTH_LOGIN"
+  | "AUTH_LOGOUT"
+  | "USER_REGISTERED";
 
 // ── Pollas / Apuestas ─────────────────────────────────────────────────────────
 export type ApuestaEventType =
@@ -22,7 +25,9 @@ export type EntradaEventType =
   | "ENTRADA_REEMBOLSADA"
   | "ENTRADA_REEMBOLSO_FALLIDO"
   | "ENTRADA_EXPIRADA"
-  | "ENTRADA_TRANSFERIDA";
+  | "ENTRADA_TRANSFERIDA"
+  | "TICKET_RESERVED"
+  | "TICKET_CANCELLED";
 
 // ── Órdenes / Tienda ──────────────────────────────────────────────────────────
 export type OrdenEventType =
@@ -46,12 +51,18 @@ export type CategoriaEventType =
 // ── Métodos de pago ───────────────────────────────────────────────────────────
 export type PagoEventType =
   | "METODO_PAGO_AGREGADO"
-  | "METODO_PAGO_ELIMINADO";
-
+  | "METODO_PAGO_ELIMINADO"
+  | "PAYMENT_CREATED"
+  | "PAYMENT_FAILED"
+  | "PAYMENT_CONFIRMED"
+  | "PAYMENT_REFUNDED";
 // ── Partidos ──────────────────────────────────────────────────────────────────
 export type PartidoEventType =
   | "PARTIDO_RESULTADO_ACTUALIZADO"
-  | "PARTIDOS_SINCRONIZADOS";
+  | "PARTIDOS_SINCRONIZADOS"
+  | "MATCH_STATUS_CHANGED"
+  | "MATCH_CREATED"
+  | "MATCH_RESULT_PUBLISHED";
 
 // ── Notificaciones (operador) ─────────────────────────────────────────────────
 export type NotificacionEventType =
@@ -116,8 +127,20 @@ export const EVENT_LABELS: Record<SystemEventType, string> = {
   METODO_PAGO_ELIMINADO:         "Método de pago eliminado",
   PARTIDO_RESULTADO_ACTUALIZADO: "Resultado de partido actualizado",
   PARTIDOS_SINCRONIZADOS:        "Partidos sincronizados",
-  NOTIFICACION_MASIVA:           "Notificación masiva",
+NOTIFICACION_MASIVA:           "Notificación masiva",
   NOTIFICACION_POR_PARTIDO:      "Notificación por partido",
+  AUTH_LOGIN:                    "Inicio de sesión",
+  AUTH_LOGOUT:                   "Cierre de sesión",
+  USER_REGISTERED:               "Usuario registrado (auth)",
+  TICKET_RESERVED:               "Entrada reservada",
+  TICKET_CANCELLED:              "Entrada cancelada",
+  PAYMENT_CREATED:               "Pago creado",
+  PAYMENT_FAILED:                "Pago fallido",
+  PAYMENT_CONFIRMED:             "Pago confirmado",
+  PAYMENT_REFUNDED:              "Pago reembolsado",
+  MATCH_STATUS_CHANGED:          "Estado de partido actualizado",
+  MATCH_CREATED:                 "Partido creado",
+  MATCH_RESULT_PUBLISHED:        "Resultado publicado",
 };
 
 // ── Modelo del evento ─────────────────────────────────────────────────────────

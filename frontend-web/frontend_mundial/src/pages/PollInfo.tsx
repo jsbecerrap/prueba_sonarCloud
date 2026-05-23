@@ -21,11 +21,6 @@ interface RankingItem {
   posicionRanking?: number;
 }
 
-interface UsuarioDTO {
-  id: number;
-  nombre: string;
-  apellido: string;
-}
 
 export default function PollInfo() {
   const { id } = useParams();

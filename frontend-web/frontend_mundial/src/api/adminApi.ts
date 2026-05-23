@@ -63,7 +63,7 @@ function sealPredictionsForMatch(matchId: string) {
 
 async function recalcAllPools() {
   for (const p of poolsMock) {
-    await recalcPoolPoints(p.id);
+    await recalcPoolPoints(String(p.id));
   }
 }
 
@@ -98,7 +98,7 @@ export async function adminRegistrarUsuario(payload: RegistrarUsuarioPayload): P
     return http.post<UsuarioSistema>("/api/usuarios/admin/registrar", payload);
   }
   await sleep(200);
-  return { id: Date.now(), ...payload };
+  return { id: Date.now(), ...payload, activo: true };
 }
 
 export async function adminEliminarUsuario(id: number): Promise<void> {

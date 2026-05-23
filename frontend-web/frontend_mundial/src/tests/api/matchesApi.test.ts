@@ -77,5 +77,8 @@ describe("mapStatus (via getMatches en modo real)", () => {
         goals: { home: 1, away: 0 },
       },
     ]);
+    const { getMatches } = await import("../../api/matchesApi");
+    const matches = await getMatches();
+    expect(matches[0].status).toBe("LIVE");
   });
 });
