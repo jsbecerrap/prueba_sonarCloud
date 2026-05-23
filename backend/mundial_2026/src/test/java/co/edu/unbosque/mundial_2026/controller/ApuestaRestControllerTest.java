@@ -33,6 +33,9 @@ class ApuestaRestControllerTest {
     private ApuestaRestController controller;
     private static final String USER_CORREO = "user@test.com";
 
+    /** 
+     * @return ApuestaRequestDTO
+     */
     private ApuestaRequestDTO apuestaRequestValido() {
         ApuestaRequestDTO dto = new ApuestaRequestDTO();
         dto.setNombre("Polla2026");
@@ -41,6 +44,9 @@ class ApuestaRestControllerTest {
         return dto;
     }
 
+    /** 
+     * @return PronosticoRequestDTO
+     */
     private PronosticoRequestDTO pronosticoRequestValido() {
         PronosticoRequestDTO dto = new PronosticoRequestDTO();
         dto.setResultadoPronosticado("LOCAL");

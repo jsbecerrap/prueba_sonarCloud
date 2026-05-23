@@ -39,13 +39,23 @@ jobs:
           -f backend/mundial_2026/pom.xml
           -Dsonar.cpd.exclusions=**/dto/**,**/entity/**
 
-  frontend:
+ frontend:
     name: Analyze Frontend
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
           fetch-depth: 0
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install dependencies
+        working-directory: frontend-web/frontend_mundial
+        run: npm install
+      - name: Run tests with coverage
+        working-directory: frontend-web/frontend_mundial
+        run: npx vitest run --coverage
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@fd88b7d7ccbaefd23d8f36f73b59db7a3d246602
         env:

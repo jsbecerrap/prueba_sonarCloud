@@ -27,6 +27,9 @@ class MetodoPagoControllerTest {
     private MetodoPagoController controller;
     private static final String USER_CORREO = "user@test.com";
 
+    /** 
+     * @return MetodoPagoRequestDTO
+     */
     private MetodoPagoRequestDTO requestValido() {
         MetodoPagoRequestDTO dto = new MetodoPagoRequestDTO();
         dto.setType("CARD");
@@ -35,6 +38,9 @@ class MetodoPagoControllerTest {
         return dto;
     }
 
+    /** 
+     * @return MetodoPagoResponseDTO
+     */
     private MetodoPagoResponseDTO responseDTO() {
         MetodoPagoResponseDTO dto = new MetodoPagoResponseDTO();
         dto.setId("mp-1");

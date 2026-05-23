@@ -31,6 +31,10 @@ class EntradaRestControllerTest {
 private static final String PAGADA = "PAGADA";
 private static final String PM_TEST = "pm_test";
 
+    /** 
+     * @param estado
+     * @return EntradaResponseDTO
+     */
     private EntradaResponseDTO responseDTO(String estado) {
         EntradaResponseDTO dto = new EntradaResponseDTO();
         dto.setId(1L);

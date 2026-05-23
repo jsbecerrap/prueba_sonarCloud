@@ -29,6 +29,9 @@ class CategoriaControllerTest {
     @InjectMocks
     private CategoriaController controller;
 
+    /** 
+     * @return CategoriaRequestDTO
+     */
     private CategoriaRequestDTO requestValido() {
         CategoriaRequestDTO dto = new CategoriaRequestDTO();
         dto.setNombre("Camisetas");

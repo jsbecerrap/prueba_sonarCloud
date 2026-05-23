@@ -47,6 +47,10 @@ lenient().when(authentication.getName()).thenReturn(USER_CORREO);
         SecurityContextHolder.clearContext();
     }
 
+    /** 
+     * @param id
+     * @return PartidoDTO
+     */
     private PartidoDTO partidoDTO(Long id) {
         InfoPartidoDTO info = new InfoPartidoDTO();
         info.setId(id);
