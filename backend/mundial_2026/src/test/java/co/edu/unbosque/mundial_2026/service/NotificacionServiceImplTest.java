@@ -284,7 +284,7 @@ private static final String BRAZIL = "Brazil";
         when(notificacionRepository.saveAll(any())).thenReturn(List.of());
         doNothing().when(eventoAuditoriaService).registrar(any(), any(), any(), any(), any());
 
-        service.notificarPorPartido(99L, INFO, TITULO_TEST, MENSAJE_TEST);
+       service.notificarPorPartido(1L, INFO, TITULO_TEST, MENSAJE_TEST);
 
         verify(notificacionRepository).saveAll(argThat(list -> ((List<?>) list).isEmpty()));
     }
