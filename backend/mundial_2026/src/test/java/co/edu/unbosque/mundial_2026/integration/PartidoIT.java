@@ -38,7 +38,8 @@ private static final String BEARER_PREFIX = "Bearer ";
     @MockitoBean
     private PartidoService partidoService;
 
-    void listarPartidos_sinToken_retorna401() throws Exception {
+  @Test
+void listarPartidos_sinToken_retorna401() throws Exception {
     mockMvc.perform(get(BASE_URL))
             .andExpect(status().isUnauthorized());
 }

@@ -52,7 +52,7 @@ class JwtAuthenticationFilterTest {
             throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest();
         String json = "{\"correoUsuario\":\"" + correo + "\",\"contrasena\":\"" + contrasena + "\"}";
-        request.setContent(json.getBytes());
+        request.setContent(json.getBytes(java.nio.charset.StandardCharsets.UTF_8));
         return request;
     }
 

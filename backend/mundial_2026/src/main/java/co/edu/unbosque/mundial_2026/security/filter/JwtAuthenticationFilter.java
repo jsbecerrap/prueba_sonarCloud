@@ -32,7 +32,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import static co.edu.unbosque.mundial_2026.security.TokenJwt.HEADER_AUTHORIZATION;
 import static co.edu.unbosque.mundial_2026.security.TokenJwt.PREFIX_TOKEN;
-
+@SuppressWarnings({"PMD.CyclomaticComplexity", "PMD.ExceptionAsFlowControl", "PMD.AvoidDeeplyNestedIfStmts"})
 /**
  * Filtro de autenticación JWT encargado de interceptar el login del sistema
  * valida credenciales controla intentos fallidos genera token y gestiona bloqueo de usuarios

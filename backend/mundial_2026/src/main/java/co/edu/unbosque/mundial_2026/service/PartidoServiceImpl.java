@@ -106,7 +106,9 @@ private static final String POR_CONFIRMAR = "Por confirmar";
                     .body(PartidoResponseDTO.class);
             return response.getPartidos();
         } catch (RestClientException e) {
-            logger.warning("API Football no disponible en obtenerPartidos, usando BD local: " + e.getMessage());
+            if (logger.isLoggable(java.util.logging.Level.WARNING)) {
+    logger.warning("API Football no disponible en obtenerPartidos, usando BD local: " + e.getMessage());
+}
             return partidoRepository.findAll().stream().map(this::partidoADTO).toList();
         }
     }
@@ -211,7 +213,9 @@ private static final String POR_CONFIRMAR = "Por confirmar";
                     .body(PartidoResponseDTO.class);
             return response.getPartidos();
         } catch (RestClientException e) {
-            logger.warning("API Football no disponible en obtenerPartidosPorFecha, usando BD local: " + e.getMessage());
+           if (logger.isLoggable(java.util.logging.Level.WARNING)) {
+    logger.warning("API Football no disponible en obtenerPartidosPorFecha, usando BD local: " + e.getMessage());
+}
             return partidoRepository.findAll().stream()
                     .filter(p -> p.getFecha() != null && p.getFecha().toLocalDate().toString().equals(fecha))
                     .map(this::partidoADTO).toList();
@@ -234,7 +238,9 @@ private static final String POR_CONFIRMAR = "Por confirmar";
                     .body(PartidoResponseDTO.class);
             return response.getPartidos();
         } catch (RestClientException e) {
-            logger.warning("API Football no disponible en obtenerPartidosEnVivo, usando BD local: " + e.getMessage());
+           if (logger.isLoggable(java.util.logging.Level.WARNING)) {
+    logger.warning("API Football no disponible en obtenerPartidosEnVivo, usando BD local: " + e.getMessage());
+}
             return partidoRepository.findAll().stream()
                     .filter(p -> "1H".equals(p.getEstado()) || "2H".equals(p.getEstado())
                             || "HT".equals(p.getEstado()) || "LIVE".equals(p.getEstado()))

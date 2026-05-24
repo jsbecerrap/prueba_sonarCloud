@@ -559,7 +559,9 @@ public class NotificacionServiceImpl implements NotificacionService {
                     .build();
             FirebaseMessaging.getInstance().send(message);
         } catch (FirebaseMessagingException e) {
-            log.warn("Fallo al enviar push a usuario {}: {}", usuario.getId(), e.getMessage());
+            if (log.isWarnEnabled()) {
+    log.warn("Fallo al enviar push a usuario {}: {}", usuario.getId(), e.getMessage());
+}
         }
     }
 

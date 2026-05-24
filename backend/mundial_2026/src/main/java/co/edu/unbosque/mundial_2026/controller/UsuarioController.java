@@ -39,14 +39,14 @@ import static co.edu.unbosque.mundial_2026.security.TokenJwt.PREFIX_TOKEN;
  */
 @RestController
 @RequestMapping("/api")
-public class UsuarioRestController {
+public class UsuarioController {
 
     private final UsuarioService service;
     private final TokenBlacklist tokenBlacklist;
     private static final String KEY_USUARIO = "usuario";
     private static final String ROL_ADMIN = "hasRole('ADMIN')";
 
-    public UsuarioRestController(final UsuarioService service,
+    public UsuarioController(final UsuarioService service,
             final TokenBlacklist tokenBlacklist) {
         this.service = service;
         this.tokenBlacklist = tokenBlacklist;

@@ -10,7 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import co.edu.unbosque.mundial_2026.entity.Usuario;
-
+@SuppressWarnings("PMD.AvoidDuplicateLiterals")
 /**
  * Repositorio encargado de la gestión y consulta de los usuarios registrados en el sistema
  */

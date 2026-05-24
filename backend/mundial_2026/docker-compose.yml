@@ -19,10 +19,10 @@ services:
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/mundial_2026
       SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: postgres
-      JWT_SECRET: QJoKMMkOnk6M9+f37cAbW4AmU/9DwQUE6pKAQXCkzGA=
-      API_FOOTBALL_URL: https://v3.football.api-sports.io
-      API_FOOTBALL_KEY: 6ba0efffd79d5e7f49ec8b02c14cccb3
+      DATABASE_PASSWORD: postgres
+      JWT_SECRET: ${JWT_SECRET}
+      API_FOOTBALL_KEY: ${API_FOOTBALL_KEY}
+      STRIPE_KEY: ${STRIPE_KEY}
     depends_on:
       - db
 

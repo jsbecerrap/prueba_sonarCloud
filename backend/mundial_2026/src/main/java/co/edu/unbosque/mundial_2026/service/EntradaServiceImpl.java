@@ -69,6 +69,10 @@ public class EntradaServiceImpl implements EntradaService {
     private static final String LOG_ENTRADAS = " entrada(s) — ";
     private static final String LOG_ZONA = " | Zona: ";
     private static final String LOG_VALOR = " | Valor: $";
+    private static final String LOG_VS = " vs ";
+    private static final int MAX_ENTRADAS_TRANSACCION=4;
+    private static final int MAX_ENTRADAS_DIARIAS=12;
+
 
     private final NotificacionService notificacionService;
 
@@ -157,7 +161,7 @@ public class EntradaServiceImpl implements EntradaService {
             throw new CupoNoDisponibleException("No hay cupo disponible para este partido");
         }
 
-        if (dto.getCantidad() > 4) {
+        if (dto.getCantidad() > MAX_ENTRADAS_TRANSACCION) {
             throw new LimiteSuperadoException("Máximo 4 entradas por transacción");
         }
 
@@ -173,7 +177,7 @@ public class EntradaServiceImpl implements EntradaService {
             }
         }
 
-        if (compradasHoy + dto.getCantidad() > 12) {
+        if (compradasHoy + dto.getCantidad() > MAX_ENTRADAS_DIARIAS) {
             throw new LimiteSuperadoException("Límite diario de 12 entradas alcanzado");
         }
 
@@ -228,7 +232,7 @@ public class EntradaServiceImpl implements EntradaService {
             "ENTRADA_RESERVADA",
             u.getNombre() + " " + u.getApellido() + LOG_ID + usuarioId + ") reservó "
             + dto.getCantidad() + LOG_ENTRADAS
-            + partido.getSeleccionLocal() + " vs " + partido.getSeleccionVisitante()
+            + partido.getSeleccionLocal() + LOG_VS + partido.getSeleccionVisitante()
             + LOG_ZONA + categoria + " | Sector: " + sector + " | Fila: " + fila
             + LOG_VALOR + entrada.getPrecio(),
             usuarioId,
@@ -236,7 +240,7 @@ public class EntradaServiceImpl implements EntradaService {
             TIPO_ENTRADA
         );
 
-        String nombrePartido = partido.getSeleccionLocal() + " vs " + partido.getSeleccionVisitante();
+        String nombrePartido = partido.getSeleccionLocal() + LOG_VS + partido.getSeleccionVisitante();
         notificacionService.notificarReservaCreada(u, nombrePartido);
 
         return toDTO(entrada);
@@ -296,7 +300,7 @@ public class EntradaServiceImpl implements EntradaService {
                 entrada.getUsuario().getNombre() + " " + entrada.getUsuario().getApellido()
                 + LOG_ID + entrada.getUsuario().getId() + ") confirmó pago de "
                 + entrada.getCantidad() + LOG_ENTRADAS
-                + entrada.getPartido().getSeleccionLocal() + " vs " + entrada.getPartido().getSeleccionVisitante()
+                + entrada.getPartido().getSeleccionLocal() + LOG_VS + entrada.getPartido().getSeleccionVisitante()
                 + LOG_ZONA + entrada.getCategoria()
                 + " | Valor total: $" + entrada.getPrecio()
                 + " | Ref. pago: " + intent.getId(),
@@ -304,7 +308,7 @@ public class EntradaServiceImpl implements EntradaService {
                 String.valueOf(entradaId),
                 TIPO_ENTRADA
             );
-            String nombrePartido = entrada.getPartido().getSeleccionLocal() + " vs " + entrada.getPartido().getSeleccionVisitante();
+            String nombrePartido = entrada.getPartido().getSeleccionLocal() + LOG_VS + entrada.getPartido().getSeleccionVisitante();
             notificacionService.notificarEntradaPagada(
                 entrada.getUsuario(),
                 nombrePartido,
@@ -318,7 +322,7 @@ public class EntradaServiceImpl implements EntradaService {
                 "ENTRADA_PAGO_FALLIDO",
                 "Pago fallido — " + entrada.getUsuario().getNombre() + " " + entrada.getUsuario().getApellido()
                 + LOG_ID + entrada.getUsuario().getId() + ") | "
-                + entrada.getPartido().getSeleccionLocal() + " vs " + entrada.getPartido().getSeleccionVisitante()
+                + entrada.getPartido().getSeleccionLocal() + LOG_VS + entrada.getPartido().getSeleccionVisitante()
                 + LOG_ZONA + entrada.getCategoria()
                 + LOG_VALOR + entrada.getPrecio()
                 + " | Error: " + e.getMessage(),
@@ -370,7 +374,7 @@ public class EntradaServiceImpl implements EntradaService {
             "ENTRADA_CANCELADA",
             u.getNombre() + " " + u.getApellido() + LOG_ID + usuarioId + ") canceló "
             + entrada.getCantidad() + LOG_ENTRADAS
-            + entrada.getPartido().getSeleccionLocal() + " vs " + entrada.getPartido().getSeleccionVisitante()
+            + entrada.getPartido().getSeleccionLocal() + LOG_VS + entrada.getPartido().getSeleccionVisitante()
             + LOG_ZONA + entrada.getCategoria() + " | Sector: " + entrada.getSector(),
             usuarioId,
             String.valueOf(entradaId),
@@ -448,7 +452,7 @@ public class EntradaServiceImpl implements EntradaService {
             "ENTRADA_TRANSFERIDA",
             u.getNombre() + " " + u.getApellido() + LOG_ID + usuarioId + ") transfirió "
             + entrada.getCantidad() + LOG_ENTRADAS
-            + entrada.getPartido().getSeleccionLocal() + " vs " + entrada.getPartido().getSeleccionVisitante()
+            + entrada.getPartido().getSeleccionLocal() + LOG_VS + entrada.getPartido().getSeleccionVisitante()
             + LOG_ZONA + entrada.getCategoria()
             + " | Destinatario: " + dto.getCorreoDestino(),
             usuarioId,
@@ -456,7 +460,7 @@ public class EntradaServiceImpl implements EntradaService {
             TIPO_ENTRADA
         );
 
-        String nombrePartido = entrada.getPartido().getSeleccionLocal() + " vs " + entrada.getPartido().getSeleccionVisitante();
+        String nombrePartido = entrada.getPartido().getSeleccionLocal() + LOG_VS + entrada.getPartido().getSeleccionVisitante();
         notificacionService.notificarEntradaTransferida(u, dto.getCorreoDestino(), nombrePartido);
         notificacionService.notificarEntradaRecibida(usuarioRecibe, u.getCorreoUsuario(), nombrePartido);
 
@@ -509,7 +513,7 @@ public class EntradaServiceImpl implements EntradaService {
                 "ENTRADA_REEMBOLSADA",
                 u.getNombre() + " " + u.getApellido() + LOG_ID + usuarioId + ") reembolsó "
                 + entrada.getCantidad() + LOG_ENTRADAS
-                + entrada.getPartido().getSeleccionLocal() + " vs " + entrada.getPartido().getSeleccionVisitante()
+                + entrada.getPartido().getSeleccionLocal() + LOG_VS + entrada.getPartido().getSeleccionVisitante()
                 + LOG_ZONA + entrada.getCategoria()
                 + " | Valor reembolsado: $" + entrada.getPrecio(),
                 usuarioId,
@@ -523,7 +527,7 @@ public class EntradaServiceImpl implements EntradaService {
                 "ENTRADA_REEMBOLSO_FALLIDO",
                 "Reembolso fallido — " + u.getNombre() + " " + u.getApellido()
                 + LOG_ID + usuarioId + ") | "
-                + entrada.getPartido().getSeleccionLocal() + " vs " + entrada.getPartido().getSeleccionVisitante()
+                + entrada.getPartido().getSeleccionLocal() + LOG_VS + entrada.getPartido().getSeleccionVisitante()
                 + LOG_ZONA + entrada.getCategoria()
                 + LOG_VALOR + entrada.getPrecio()
                 + " | Error: " + e.getMessage(),
@@ -590,13 +594,13 @@ public class EntradaServiceImpl implements EntradaService {
                 "Reserva expirada — " + entrada.getUsuario().getNombre() + " " + entrada.getUsuario().getApellido()
                 + LOG_ID + entrada.getUsuario().getId() + ") | "
                 + entrada.getCantidad() + LOG_ENTRADAS
-                + entrada.getPartido().getSeleccionLocal() + " vs " + entrada.getPartido().getSeleccionVisitante()
+                + entrada.getPartido().getSeleccionLocal() + LOG_VS + entrada.getPartido().getSeleccionVisitante()
                 + LOG_ZONA + entrada.getCategoria(),
                 entrada.getUsuario().getId(),
                 String.valueOf(entrada.getId()),
                 TIPO_ENTRADA
             );
-            String nombrePartido = entrada.getPartido().getSeleccionLocal() + " vs " + entrada.getPartido().getSeleccionVisitante();
+            String nombrePartido = entrada.getPartido().getSeleccionLocal() + LOG_VS + entrada.getPartido().getSeleccionVisitante();
             notificacionService.notificarReservaExpirada(entrada.getUsuario(), nombrePartido);
         }
     }
@@ -615,7 +619,7 @@ public class EntradaServiceImpl implements EntradaService {
         List<Entrada> porExpirar = entradaRepository.findByEstadoAndTtlReservaBetween(ESTADO_RESERVADA, en4Minutos, en6Minutos);
 
         for (Entrada entrada : porExpirar) {
-            String nombrePartido = entrada.getPartido().getSeleccionLocal() + " vs " + entrada.getPartido().getSeleccionVisitante();
+            String nombrePartido = entrada.getPartido().getSeleccionLocal() + LOG_VS + entrada.getPartido().getSeleccionVisitante();
             notificacionService.notificarReservaPorExpirar(entrada.getUsuario(), nombrePartido);
         }
     }

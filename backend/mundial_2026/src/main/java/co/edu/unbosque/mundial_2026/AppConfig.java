@@ -57,7 +57,9 @@ public class AppConfig {
                     rolRepository.save(rol);
                 }
             }
-            logger.log(Level.INFO, "Roles cargados: {0}", roles.length);
+           if (logger.isLoggable(Level.INFO)) {
+    logger.log(Level.INFO, "Roles cargados: {0}", roles.length);
+}
         };
     }
 
@@ -69,13 +71,16 @@ public class AppConfig {
      * @param partidoRepository repositorio JPA de partidos para verificar si ya hay datos
      */
     @Bean
-    @Order(1)
-    public CommandLineRunner cargarPartidos(PartidoService partidoService,
+@Order(1)
+@org.springframework.context.annotation.Profile("!test")
+public CommandLineRunner cargarPartidos(PartidoService partidoService,
             PartidoRepository partidoRepository) {
         return args -> {
             if (partidoRepository.count() == 0) {
                 int total = partidoService.sincronizarDesdeAPI();
-                logger.log(Level.INFO, "Partidos cargados: {0}", total);
+                if (logger.isLoggable(Level.INFO)) {
+                    logger.log(Level.INFO, "Partidos cargados: {0}", total);
+                }
             }
         };
     }
@@ -89,8 +94,9 @@ public class AppConfig {
      * @param partidoService      servicio que provee la lista de equipos del mundial
      */
     @Bean
-    @Order(2)
-    public CommandLineRunner cargarSelecciones(
+@Order(2)
+@org.springframework.context.annotation.Profile("!test")
+public CommandLineRunner cargarSelecciones(
             SeleccionRepository seleccionRepository,
             PartidoService partidoService) {
         return args -> {
@@ -108,7 +114,9 @@ public class AppConfig {
                         total++;
                     }
                 }
-                logger.log(Level.INFO, "Selecciones cargadas: {0}", total);
+                if (logger.isLoggable(Level.INFO)) {
+    logger.log(Level.INFO, "Selecciones cargadas: {0}", total);
+}
             }
         };
     }
@@ -174,8 +182,12 @@ public class AppConfig {
                     estadioRepository.save(estadio);
                 }
 
-                logger.log(Level.INFO, "Ciudades cargadas: {0}", ciudadesGuardadas.size());
-                logger.log(Level.INFO, "Estadios cargados: {0}", estadioCiudad.size());
+               if (logger.isLoggable(Level.INFO)) {
+    logger.log(Level.INFO, "Ciudades cargadas: {0}", ciudadesGuardadas.size());
+}
+if (logger.isLoggable(Level.INFO)) {
+    logger.log(Level.INFO, "Estadios cargados: {0}", estadioCiudad.size());
+}
             }
         };
     }

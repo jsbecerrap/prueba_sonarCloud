@@ -26,7 +26,7 @@ import co.edu.unbosque.mundial_2026.service.EntradaService;
 class EntradaRestControllerTest {
 
     @Mock private EntradaService entradaService;
-    @InjectMocks private EntradaRestController controller;
+    @InjectMocks private EntradaController controller;
     private static final String USER_CORREO = "user@test.com";
 private static final String PAGADA = "PAGADA";
 private static final String PM_TEST = "pm_test";

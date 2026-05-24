@@ -28,7 +28,7 @@ private static final String CARD = "CARD";
 private static final String VISA_DEBITO = "Visa Débito";
 private static final String TRANSFER = "TRANSFER";
 private static final String BANCOLOMBIA = "Bancolombia";
-
+private static final String PAYMENTS_ID_URL = "/payments/1";
 
     @Test
     void listar_conToken_retorna200() throws Exception {
@@ -159,14 +159,14 @@ private static final String BANCOLOMBIA = "Bancolombia";
     void eliminar_conToken_retorna204() throws Exception {
         doNothing().when(metodoPagoService).eliminar(USER_EMAIL, 1L);
 
-        mockMvc.perform(delete("/payments/1")
+        mockMvc.perform(delete(PAYMENTS_ID_URL)
                         .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isNoContent());
     }
 
     @Test
     void eliminar_sinToken_retorna401() throws Exception {
-        mockMvc.perform(delete("/payments/1"))
+        mockMvc.perform(delete(PAYMENTS_ID_URL))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -185,7 +185,7 @@ private static final String BANCOLOMBIA = "Bancolombia";
 
         when(metodoPagoService.actualizar(eq(USER_EMAIL), eq(1L), any())).thenReturn(response);
 
-        mockMvc.perform(patch("/payments/1")
+        mockMvc.perform(patch(PAYMENTS_ID_URL)
                         .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -200,7 +200,7 @@ private static final String BANCOLOMBIA = "Bancolombia";
         request.setType(TRANSFER);
         request.setLabel(BANCOLOMBIA);
 
-        mockMvc.perform(patch("/payments/1")
+        mockMvc.perform(patch(PAYMENTS_ID_URL)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized());
@@ -212,7 +212,7 @@ private static final String BANCOLOMBIA = "Bancolombia";
         request.setType(CARD);
         request.setLabel("AB");
 
-        mockMvc.perform(patch("/payments/1")
+        mockMvc.perform(patch(PAYMENTS_ID_URL)
                         .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))

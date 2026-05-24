@@ -44,8 +44,10 @@ public class PartidoScheduler {
                     "Partidos actualizados hoy: {0}", actualizados);
 
         } catch (Exception e) {
-            logger.log(java.util.logging.Level.WARNING,
-                    "Error actualizando partidos: {0}", e.getMessage());
+            if (logger.isLoggable(java.util.logging.Level.WARNING)) {
+    logger.log(java.util.logging.Level.WARNING,
+            "Error actualizando partidos: {0}", e.getMessage());
+}
         }
     }
 }

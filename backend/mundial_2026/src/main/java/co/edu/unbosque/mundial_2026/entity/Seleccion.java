@@ -110,10 +110,7 @@ public class Seleccion {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof Seleccion seleccion)) {
-            return false;
-        }
-        return Objects.equals(id, seleccion.id);
+        return (o instanceof Seleccion seleccion) && Objects.equals(id, seleccion.id);
     }
 
     /**

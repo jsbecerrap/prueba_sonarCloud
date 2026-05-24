@@ -252,7 +252,7 @@ public class OrdenServiceImpl implements OrdenService {
             }
         }
         try {
-            long totalCentavos = (long) (ordenAPagar.getTotal() * 100);
+           long totalCentavos = Math.round(ordenAPagar.getTotal() * 100);
             PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
                     .setAmount(totalCentavos)
                     .setCurrency("usd")
@@ -303,10 +303,9 @@ public class OrdenServiceImpl implements OrdenService {
         Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
         List<Orden> ordenes = ordenRepository.findByUsuarioIdAndEstadoNot(usuario.getId(), ESTADO_PENDIENTE);
         List<OrdenResponseDTO> responseDTOs = new ArrayList<>();
-        for (int i = 0; i < ordenes.size(); i++) {
-            Orden orden = ordenes.get(i);
-            responseDTOs.add(toOrdenDTO(orden, orden.getItems()));
-        }
+       for (Orden orden : ordenes) {
+    responseDTOs.add(toOrdenDTO(orden, orden.getItems()));
+}
         return responseDTOs;
     }
 

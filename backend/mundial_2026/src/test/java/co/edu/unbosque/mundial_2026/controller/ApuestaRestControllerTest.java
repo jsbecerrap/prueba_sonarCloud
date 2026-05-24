@@ -30,7 +30,7 @@ class ApuestaRestControllerTest {
     private ApuestaService apuestaService;
 
     @InjectMocks
-    private ApuestaRestController controller;
+    private ApuestaController controller;
     private static final String USER_CORREO = "user@test.com";
 
     /** 

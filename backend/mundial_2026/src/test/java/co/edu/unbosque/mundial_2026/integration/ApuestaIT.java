@@ -25,7 +25,8 @@ class ApuestaIT extends BaseIntegrationTest {
 
     @MockitoBean
     private ApuestaService apuestaService;
-
+private static final String BEARER = "Bearer ";
+private static final String API_APUESTAS_ID = "/api/apuestas/1";
     private static final String AUTH_HEADER = "Authorization";
     private static final String POLLA_MUNDIAL = "Polla Mundial";
     private static final String API_APUESTAS_CREAR = "/api/apuestas/crear";
@@ -42,7 +43,7 @@ class ApuestaIT extends BaseIntegrationTest {
         when(apuestaService.crearApuesta(any())).thenReturn(response);
 
         mockMvc.perform(post(API_APUESTAS_CREAR)
-                        .header(AUTH_HEADER, "Bearer " + tokenUsuario())
+                        .header(AUTH_HEADER, BEARER + tokenUsuario())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk());
@@ -69,7 +70,7 @@ class ApuestaIT extends BaseIntegrationTest {
         request.setUsuarioId(1L);
 
         mockMvc.perform(post(API_APUESTAS_CREAR)
-                        .header(AUTH_HEADER, "Bearer " + tokenUsuario())
+                        .header(AUTH_HEADER, BEARER + tokenUsuario())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -83,7 +84,7 @@ class ApuestaIT extends BaseIntegrationTest {
         request.setUsuarioId(1L);
 
         mockMvc.perform(post(API_APUESTAS_CREAR)
-                        .header(AUTH_HEADER, "Bearer " + tokenUsuario())
+                        .header(AUTH_HEADER, BEARER + tokenUsuario())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -97,7 +98,7 @@ class ApuestaIT extends BaseIntegrationTest {
         request.setUsuarioId(1L);
 
         mockMvc.perform(post(API_APUESTAS_CREAR)
-                        .header(AUTH_HEADER, "Bearer " + tokenUsuario())
+                        .header(AUTH_HEADER, BEARER + tokenUsuario())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -110,7 +111,7 @@ class ApuestaIT extends BaseIntegrationTest {
         request.setFechaCierre(LocalDateTime.now().plusDays(10));
 
         mockMvc.perform(post(API_APUESTAS_CREAR)
-                        .header(AUTH_HEADER, "Bearer " + tokenUsuario())
+                        .header(AUTH_HEADER, BEARER + tokenUsuario())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -121,7 +122,7 @@ class ApuestaIT extends BaseIntegrationTest {
         when(apuestaService.unirseApuesta(eq("CODIGO123"), eq(1L))).thenReturn(new ApuestaDTO());
 
         mockMvc.perform(post("/api/apuestas/unirse/1")
-                        .header(AUTH_HEADER, "Bearer " + tokenUsuario())
+                        .header(AUTH_HEADER, BEARER + tokenUsuario())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("\"CODIGO123\""))
                 .andExpect(status().isOk());
@@ -130,7 +131,7 @@ class ApuestaIT extends BaseIntegrationTest {
     @Test
     void unirse_codigoFormatoInvalido_retorna400() throws Exception {
         mockMvc.perform(post("/api/apuestas/unirse/1")
-                        .header(AUTH_HEADER, "Bearer " + tokenUsuario())
+                        .header(AUTH_HEADER, BEARER + tokenUsuario())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("\"co\""))
                 .andExpect(status().isBadRequest());
@@ -157,7 +158,7 @@ class ApuestaIT extends BaseIntegrationTest {
         when(apuestaService.registrarPronostico(any())).thenReturn(new PronosticoDTO());
 
         mockMvc.perform(post(API_APUESTAS_PRONOSTICO)
-                        .header(AUTH_HEADER, "Bearer " + tokenUsuario())
+                        .header(AUTH_HEADER, BEARER + tokenUsuario())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk());
@@ -171,7 +172,7 @@ class ApuestaIT extends BaseIntegrationTest {
         request.setGolesVisitantePronosticados(1);
 
         mockMvc.perform(post(API_APUESTAS_PRONOSTICO)
-                        .header(AUTH_HEADER, "Bearer " + tokenUsuario())
+                        .header(AUTH_HEADER, BEARER + tokenUsuario())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -185,7 +186,7 @@ class ApuestaIT extends BaseIntegrationTest {
         request.setGolesVisitantePronosticados(0);
 
         mockMvc.perform(post(API_APUESTAS_PRONOSTICO)
-                        .header(AUTH_HEADER, "Bearer " + tokenUsuario())
+                        .header(AUTH_HEADER, BEARER + tokenUsuario())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -204,7 +205,7 @@ class ApuestaIT extends BaseIntegrationTest {
         when(apuestaService.obtenerRanking(1L)).thenReturn(List.of(new ParticipacionDTO()));
 
         mockMvc.perform(get("/api/apuestas/ranking/1")
-                        .header(AUTH_HEADER, "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER + tokenUsuario()))
                 .andExpect(status().isOk());
     }
 
@@ -219,14 +220,14 @@ class ApuestaIT extends BaseIntegrationTest {
         when(apuestaService.cerrarApuesta(1L)).thenReturn(new ApuestaDTO());
 
         mockMvc.perform(post("/api/apuestas/cerrar/1")
-                        .header(AUTH_HEADER, "Bearer " + tokenAdmin()))
+                        .header(AUTH_HEADER, BEARER + tokenAdmin()))
                 .andExpect(status().isOk());
     }
 
     @Test
     void cerrar_conRolUser_retorna403() throws Exception {
         mockMvc.perform(post("/api/apuestas/cerrar/1")
-                        .header(AUTH_HEADER, "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER + tokenUsuario()))
                 .andExpect(status().isForbidden());
     }
 
@@ -241,14 +242,14 @@ class ApuestaIT extends BaseIntegrationTest {
         when(apuestaService.calcularPuntos(1L)).thenReturn(List.of());
 
         mockMvc.perform(get("/api/apuestas/puntos/1")
-                        .header(AUTH_HEADER, "Bearer " + tokenAdmin()))
+                        .header(AUTH_HEADER, BEARER + tokenAdmin()))
                 .andExpect(status().isOk());
     }
 
     @Test
     void calcularPuntos_conRolUser_retorna403() throws Exception {
         mockMvc.perform(get("/api/apuestas/puntos/1")
-                        .header(AUTH_HEADER, "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER + tokenUsuario()))
                 .andExpect(status().isForbidden());
     }
 
@@ -257,7 +258,7 @@ class ApuestaIT extends BaseIntegrationTest {
         when(apuestaService.listarApuestasPorUsuario(1L)).thenReturn(List.of());
 
         mockMvc.perform(get("/api/apuestas/usuario/1")
-                        .header(AUTH_HEADER, "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER + tokenUsuario()))
                 .andExpect(status().isOk());
     }
 
@@ -271,14 +272,14 @@ class ApuestaIT extends BaseIntegrationTest {
     void obtenerApuesta_conToken_retorna200() throws Exception {
         when(apuestaService.obtenerApuesta(1L)).thenReturn(new ApuestaDTO());
 
-        mockMvc.perform(get("/api/apuestas/1")
-                        .header(AUTH_HEADER, "Bearer " + tokenUsuario()))
+        mockMvc.perform(get(API_APUESTAS_ID)
+                        .header(AUTH_HEADER, BEARER + tokenUsuario()))
                 .andExpect(status().isOk());
     }
 
     @Test
     void obtenerApuesta_sinToken_retorna401() throws Exception {
-        mockMvc.perform(get("/api/apuestas/1"))
+        mockMvc.perform(get(API_APUESTAS_ID))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -287,7 +288,7 @@ class ApuestaIT extends BaseIntegrationTest {
         when(apuestaService.listarParticipantes(1L)).thenReturn(List.of());
 
         mockMvc.perform(get("/api/apuestas/participantes/1")
-                        .header(AUTH_HEADER, "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER + tokenUsuario()))
                 .andExpect(status().isOk());
     }
 
@@ -302,7 +303,7 @@ class ApuestaIT extends BaseIntegrationTest {
         when(apuestaService.verificarPronostico(1L)).thenReturn(new PronosticoDTO());
 
         mockMvc.perform(get("/api/apuestas/verificar/1")
-                        .header(AUTH_HEADER, "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER + tokenUsuario()))
                 .andExpect(status().isOk());
     }
 
@@ -317,7 +318,7 @@ class ApuestaIT extends BaseIntegrationTest {
         when(apuestaService.misPronosticos(1L, 1L)).thenReturn(List.of());
 
         mockMvc.perform(get("/api/apuestas/mis-pronosticos/1/1")
-                        .header(AUTH_HEADER, "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER + tokenUsuario()))
                 .andExpect(status().isOk());
     }
 
@@ -338,7 +339,7 @@ class ApuestaIT extends BaseIntegrationTest {
                 .thenReturn(new PronosticoDTO());
 
         mockMvc.perform(put(API_APUESTAS_PRONOSTICO + "/1")
-                        .header(AUTH_HEADER, "Bearer " + tokenUsuario())
+                        .header(AUTH_HEADER, BEARER + tokenUsuario())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk());
@@ -352,7 +353,7 @@ class ApuestaIT extends BaseIntegrationTest {
         request.setGolesVisitantePronosticados(1);
 
         mockMvc.perform(put(API_APUESTAS_PRONOSTICO + "/1")
-                        .header(AUTH_HEADER, "Bearer " + tokenUsuario())
+                        .header(AUTH_HEADER, BEARER + tokenUsuario())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -371,7 +372,7 @@ class ApuestaIT extends BaseIntegrationTest {
         doNothing().when(apuestaService).eliminarPronostico(1L, USER_EMAIL);
 
         mockMvc.perform(delete(API_APUESTAS_PRONOSTICO + "/1")
-                        .header(AUTH_HEADER, "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER + tokenUsuario()))
                 .andExpect(status().isNoContent());
     }
 
@@ -386,7 +387,7 @@ class ApuestaIT extends BaseIntegrationTest {
         when(apuestaService.calcularPuntosParciales(1L)).thenReturn(List.of());
 
         mockMvc.perform(get("/api/apuestas/puntos-parciales/1")
-                        .header(AUTH_HEADER, "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER + tokenUsuario()))
                 .andExpect(status().isOk());
     }
 
@@ -401,14 +402,14 @@ class ApuestaIT extends BaseIntegrationTest {
         when(apuestaService.listarTodas()).thenReturn(List.of());
 
         mockMvc.perform(get("/api/apuestas/todas")
-                        .header(AUTH_HEADER, "Bearer " + tokenAdmin()))
+                        .header(AUTH_HEADER, BEARER + tokenAdmin()))
                 .andExpect(status().isOk());
     }
 
     @Test
     void listarTodas_conRolUser_retorna403() throws Exception {
         mockMvc.perform(get("/api/apuestas/todas")
-                        .header(AUTH_HEADER, "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER + tokenUsuario()))
                 .andExpect(status().isForbidden());
     }
 
@@ -422,21 +423,21 @@ class ApuestaIT extends BaseIntegrationTest {
     void eliminarApuesta_conRolAdmin_retorna204() throws Exception {
         doNothing().when(apuestaService).eliminarApuesta(1L);
 
-        mockMvc.perform(delete("/api/apuestas/1")
-                        .header(AUTH_HEADER, "Bearer " + tokenAdmin()))
+        mockMvc.perform(delete(API_APUESTAS_ID)
+                        .header(AUTH_HEADER, BEARER + tokenAdmin()))
                 .andExpect(status().isNoContent());
     }
 
     @Test
     void eliminarApuesta_conRolUser_retorna403() throws Exception {
-        mockMvc.perform(delete("/api/apuestas/1")
-                        .header(AUTH_HEADER, "Bearer " + tokenUsuario()))
+        mockMvc.perform(delete(API_APUESTAS_ID)
+                        .header(AUTH_HEADER, BEARER + tokenUsuario()))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void eliminarApuesta_sinToken_retorna401() throws Exception {
-        mockMvc.perform(delete("/api/apuestas/1"))
+        mockMvc.perform(delete(API_APUESTAS_ID))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -445,7 +446,7 @@ class ApuestaIT extends BaseIntegrationTest {
         when(apuestaService.listarApuestasPorUsuarioCompleto(1L)).thenReturn(List.of(new ApuestaConParticipantesDTO()));
 
         mockMvc.perform(get("/api/apuestas/usuario/1/completo")
-                        .header(AUTH_HEADER, "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER + tokenUsuario()))
                 .andExpect(status().isOk());
     }
 

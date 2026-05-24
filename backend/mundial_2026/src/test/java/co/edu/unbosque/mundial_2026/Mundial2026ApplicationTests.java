@@ -10,5 +10,6 @@ class Mundial2026ApplicationTests {
 
     @Test
     void contextLoads() {
+        //verifica que spring se carge correctamente(contexto)
     }
 }

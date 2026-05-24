@@ -32,11 +32,11 @@ import co.edu.unbosque.mundial_2026.service.EntradaService;
  */
 @RestController
 @RequestMapping("/api/entradas")
-public class EntradaRestController {
+public class EntradaController {
 
     private final EntradaService entradaService;
 
-    public EntradaRestController(EntradaService entradaService) {
+    public EntradaController(EntradaService entradaService) {
         this.entradaService = entradaService;
     }
 

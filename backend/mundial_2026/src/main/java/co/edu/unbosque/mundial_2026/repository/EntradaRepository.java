@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import co.edu.unbosque.mundial_2026.entity.Entrada;
-
+@SuppressWarnings("PMD.AvoidDuplicateLiterals")
 /**
  * Repositorio para la gestión y persistencia de las entradas del mundial incluyendo consultas complejas de agregación y reportes de ventas
  */

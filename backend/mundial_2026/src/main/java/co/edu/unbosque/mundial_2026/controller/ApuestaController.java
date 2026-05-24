@@ -34,7 +34,7 @@ import jakarta.validation.Valid;
  */
 @RestController
 @RequestMapping("/api/apuestas")
-public class ApuestaRestController {
+public class ApuestaController {
 
     /**
      * Patrón de validación del código de invitación — acepta UUID estándar
@@ -47,7 +47,7 @@ public class ApuestaRestController {
     private static final String ROL_ADMIN = "hasRole('ADMIN')";
     private final ApuestaService apuestaService;
 
-    public ApuestaRestController(ApuestaService apuestaService) {
+    public ApuestaController(ApuestaService apuestaService) {
         this.apuestaService = apuestaService;
     }
 

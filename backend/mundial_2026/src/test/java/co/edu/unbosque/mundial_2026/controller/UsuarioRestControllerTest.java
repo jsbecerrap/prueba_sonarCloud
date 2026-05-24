@@ -34,7 +34,7 @@ class UsuarioRestControllerTest {
 
     @Mock private UsuarioService service;
     @Mock private TokenBlacklist tokenBlacklist;
-    @InjectMocks private UsuarioRestController controller;
+    @InjectMocks private UsuarioController controller;
 
     @Mock private SecurityContext securityContext;
     @Mock private Authentication authentication;
