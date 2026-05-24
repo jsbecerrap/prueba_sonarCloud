@@ -300,7 +300,7 @@ function SectionHeader({ title, subtitle, icon, accent = ACCENT_GREEN }: Section
   );
 }
 
-function PanelCard({ children, accent }: { children: React.ReactNode; accent?: string }) {
+function PanelCard({ children, accent }: { readonly children: React.ReactNode; readonly accent?: string }) {
   return (
     <Paper
       elevation={0}
@@ -325,9 +325,9 @@ function PanelTitle({
   icon,
   accent,
 }: {
-  children: React.ReactNode;
-  icon?: React.ReactNode;
-  accent?: string;
+  readonly children: React.ReactNode;
+  readonly icon?: React.ReactNode;
+  readonly accent?: string;
 }) {
   return (
     <Stack
@@ -375,7 +375,7 @@ const tableBodySx = {
   },
 };
 
-function RankCell({ index }: { index: number }) {
+function RankCell({ index }: { readonly index: number }) {
   if (index === 0) {
     return <EmojiEventsIcon sx={{ color: ACCENT_GOLD, fontSize: 20, verticalAlign: "middle" }} />;
   }
@@ -400,7 +400,7 @@ function RankCell({ index }: { index: number }) {
   );
 }
 
-function MoneyText({ value }: { value: number }) {
+function MoneyText({ value }: { readonly value: number }) {
   return (
     <Typography variant="body2" sx={{ color: ACCENT_GREEN, fontWeight: 700 }}>
       {formatCOP(value)}
