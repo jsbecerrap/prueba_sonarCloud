@@ -56,7 +56,7 @@ public class PartidoServiceImpl implements PartidoService {
     private final UsuarioService usuarioService;
     private final SeleccionRepository seleccionRepository;
     private static final java.util.Map<String, String> ESTADIO_CIUDAD = new java.util.HashMap<>();
-
+private static final String POR_CONFIRMAR = "Por confirmar";
     static {
         ESTADIO_CIUDAD.put("Estadio Azteca", "Ciudad de Mexico");
         ESTADIO_CIUDAD.put("Estadio Akron", "Guadalajara");
@@ -407,8 +407,8 @@ public class PartidoServiceImpl implements PartidoService {
         estado.setDescripcion(p.getEstado() != null ? p.getEstado() : "NS");
         info.setEstado(estado);
         final EstadioDTO estadio = new EstadioDTO();
-        estadio.setNombre(p.getEstadio() != null ? p.getEstadio() : "Por confirmar");
-        estadio.setCiudad(ESTADIO_CIUDAD.getOrDefault(p.getEstadio(), "Por confirmar"));
+        estadio.setNombre(p.getEstadio() != null ? p.getEstadio() : POR_CONFIRMAR);
+        estadio.setCiudad(ESTADIO_CIUDAD.getOrDefault(p.getEstadio(), POR_CONFIRMAR));
         info.setEstadio(estadio);
 
         final LigaDTO liga = new LigaDTO();
@@ -416,9 +416,9 @@ public class PartidoServiceImpl implements PartidoService {
         liga.setNombre("FIFA World Cup");
 
         final EquipoDTO local = new EquipoDTO();
-        local.setNombre(p.getSeleccionLocal() != null ? p.getSeleccionLocal() : "Por confirmar");
+        local.setNombre(p.getSeleccionLocal() != null ? p.getSeleccionLocal() : POR_CONFIRMAR);
         final EquipoDTO visitante = new EquipoDTO();
-        visitante.setNombre(p.getSeleccionVisitante() != null ? p.getSeleccionVisitante() : "Por confirmar");
+        visitante.setNombre(p.getSeleccionVisitante() != null ? p.getSeleccionVisitante() : POR_CONFIRMAR);
         final EquipoConEstadioDTO equipos = new EquipoConEstadioDTO();
         equipos.setLocal(local);
         equipos.setVisitante(visitante);
@@ -504,7 +504,7 @@ public class PartidoServiceImpl implements PartidoService {
     /**
      * Retorna todos los partidos almacenados en la base de datos con su capacidad disponible
      * y la ciudad correspondiente según el mapa de estadios.
-     * Si la ciudad no está mapeada, se muestra "Por confirmar"
+     * Si la ciudad no está mapeada, se muestra POR_CONFIRMAR
      *
      * @return lista de {@link PartidoCapacidadDTO} con cada partido y sus cupos disponibles
      */
@@ -519,7 +519,7 @@ public class PartidoServiceImpl implements PartidoService {
             dto.setLocal(p.getSeleccionLocal());
             dto.setVisitante(p.getSeleccionVisitante());
             dto.setEstadio(p.getEstadio());
-            dto.setCiudad(ESTADIO_CIUDAD.getOrDefault(p.getEstadio(), "Por confirmar"));
+            dto.setCiudad(ESTADIO_CIUDAD.getOrDefault(p.getEstadio(), POR_CONFIRMAR));
             dto.setCapacidadDisponible(p.getCapacidadDisponible() != null ? p.getCapacidadDisponible() : 60000);
             dto.setRonda(p.getRonda());
             dtos.add(dto);

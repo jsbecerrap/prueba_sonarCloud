@@ -27,8 +27,8 @@ class OrdenControllerTest {
     @Mock private OrdenService ordenService;
     @InjectMocks private OrdenController controller;
     private static final String USER_CORREO = "user@test.com";
-private static final String PENDIENTE = "PENDIENTE";
-private static final String PAGADA = "PAGADA";
+    private static final String PENDIENTE = "PENDIENTE";
+    private static final String PAGADA = "PAGADA";
 
     private OrdenResponseDTO responseDTO(String estado) {
         OrdenResponseDTO dto = new OrdenResponseDTO();
@@ -67,23 +67,26 @@ private static final String PAGADA = "PAGADA";
 
     @Test
     void agregar_varianteNoEncontrada_propagaExcepcion() {
+        AgregarItemDTO dto = agregarItemDTO();
         when(ordenService.agregarItem(any(), any())).thenThrow(new ProductoNotFoundException("variante no encontrada"));
 
-        assertThrows(ProductoNotFoundException.class, () -> controller.agregar(USER_CORREO, agregarItemDTO()));
+        assertThrows(ProductoNotFoundException.class, () -> controller.agregar(USER_CORREO, dto));
     }
 
     @Test
     void agregar_stockInsuficiente_propagaExcepcion() {
+        AgregarItemDTO dto = agregarItemDTO();
         when(ordenService.agregarItem(any(), any())).thenThrow(new StockInsuficienteException("sin stock"));
 
-        assertThrows(StockInsuficienteException.class, () -> controller.agregar(USER_CORREO, agregarItemDTO()));
+        assertThrows(StockInsuficienteException.class, () -> controller.agregar(USER_CORREO, dto));
     }
 
     @Test
     void agregar_productoInactivo_propagaExcepcion() {
+        AgregarItemDTO dto = agregarItemDTO();
         when(ordenService.agregarItem(any(), any())).thenThrow(new ProductoNotFoundException("producto inactivo"));
 
-        assertThrows(ProductoNotFoundException.class, () -> controller.agregar(USER_CORREO, agregarItemDTO()));
+        assertThrows(ProductoNotFoundException.class, () -> controller.agregar(USER_CORREO, dto));
     }
 
     @Test
@@ -142,37 +145,42 @@ private static final String PAGADA = "PAGADA";
 
     @Test
     void confirmar_carritoVacio_propagaExcepcion() {
+        ConfirmarOrdenDTO dto = confirmarDTO();
         when(ordenService.confirmarOrden(any(), any())).thenThrow(new CarritoVacioException("carrito vacío"));
 
-        assertThrows(CarritoVacioException.class, () -> controller.confirmar(USER_CORREO, confirmarDTO()));
+        assertThrows(CarritoVacioException.class, () -> controller.confirmar(USER_CORREO, dto));
     }
 
     @Test
     void confirmar_metodoPagoInvalido_propagaExcepcion() {
+        ConfirmarOrdenDTO dto = confirmarDTO();
         when(ordenService.confirmarOrden(any(), any())).thenThrow(new MetodoPagoInvalidoException("método inválido"));
 
-        assertThrows(MetodoPagoInvalidoException.class, () -> controller.confirmar(USER_CORREO, confirmarDTO()));
+        assertThrows(MetodoPagoInvalidoException.class, () -> controller.confirmar(USER_CORREO, dto));
     }
 
     @Test
     void confirmar_stockInsuficiente_propagaExcepcion() {
+        ConfirmarOrdenDTO dto = confirmarDTO();
         when(ordenService.confirmarOrden(any(), any())).thenThrow(new StockInsuficienteException("sin stock"));
 
-        assertThrows(StockInsuficienteException.class, () -> controller.confirmar(USER_CORREO, confirmarDTO()));
+        assertThrows(StockInsuficienteException.class, () -> controller.confirmar(USER_CORREO, dto));
     }
 
     @Test
     void confirmar_pagoStripe_propagaExcepcion() {
+        ConfirmarOrdenDTO dto = confirmarDTO();
         when(ordenService.confirmarOrden(any(), any())).thenThrow(new PagoStripeException("stripe error"));
 
-        assertThrows(PagoStripeException.class, () -> controller.confirmar(USER_CORREO, confirmarDTO()));
+        assertThrows(PagoStripeException.class, () -> controller.confirmar(USER_CORREO, dto));
     }
 
     @Test
     void confirmar_sinCarrito_propagaExcepcion() {
+        ConfirmarOrdenDTO dto = confirmarDTO();
         when(ordenService.confirmarOrden(any(), any())).thenThrow(new OrdenNotFoundException("sin carrito"));
 
-        assertThrows(OrdenNotFoundException.class, () -> controller.confirmar(USER_CORREO, confirmarDTO()));
+        assertThrows(OrdenNotFoundException.class, () -> controller.confirmar(USER_CORREO, dto));
     }
 
     @Test
@@ -214,6 +222,7 @@ private static final String PAGADA = "PAGADA";
         assertThrows(OrdenNotFoundException.class, () -> controller.cancelar(USER_CORREO));
     }
 
+    
     @Test
     void historialLiviano_conOrdenes_retornaOk() {
         OrdenHistorialDTO dto = new OrdenHistorialDTO();
