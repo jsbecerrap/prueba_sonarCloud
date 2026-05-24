@@ -33,6 +33,8 @@ class NotificacionIT extends BaseIntegrationTest {
     private static final String URL_CONTEO = "/api/notificaciones/sin-leer/conteo";
     private static final Long USUARIO_ID = 1L;
 
+    private static final String AUTH_HEADER = "Authorization";
+private static final String BEARER_PREFIX = "Bearer ";
     @MockitoBean
     private NotificacionService notificacionService;
 
@@ -61,7 +63,7 @@ class NotificacionIT extends BaseIntegrationTest {
                 .thenReturn(new PageImpl<>(List.of(new NotificacionDTO())));
 
         mockMvc.perform(get(BASE_URL)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isOk());
     }
 
@@ -78,7 +80,7 @@ class NotificacionIT extends BaseIntegrationTest {
                 .thenReturn(new PageImpl<>(List.of()));
 
         mockMvc.perform(get(BASE_URL + "?page=1&size=10")
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isOk());
     }
 
@@ -87,7 +89,7 @@ class NotificacionIT extends BaseIntegrationTest {
         doNothing().when(notificacionService).marcarLeida(1L);
 
         mockMvc.perform(put(URL_LEIDA)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isNoContent());
     }
 
@@ -103,7 +105,7 @@ class NotificacionIT extends BaseIntegrationTest {
         doNothing().when(notificacionService).marcarTodasLeidas(USUARIO_ID);
 
         mockMvc.perform(put(URL_TODAS_LEIDAS)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isNoContent());
     }
 
@@ -118,7 +120,7 @@ class NotificacionIT extends BaseIntegrationTest {
         doNothing().when(notificacionService).enviarNotificacion(any());
 
         mockMvc.perform(post(URL_ENVIAR)
-                        .header("Authorization", "Bearer " + tokenAdmin())
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenAdmin())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(notificacionRequest())))
                 .andExpect(status().isNoContent());
@@ -127,7 +129,7 @@ class NotificacionIT extends BaseIntegrationTest {
     @Test
     void enviarIndividual_conRolUser_retorna403() throws Exception {
         mockMvc.perform(post(URL_ENVIAR)
-                        .header("Authorization", "Bearer " + tokenUsuario())
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(notificacionRequest())))
                 .andExpect(status().isForbidden());
@@ -146,7 +148,7 @@ class NotificacionIT extends BaseIntegrationTest {
         doNothing().when(notificacionService).enviarMasiva(any());
 
         mockMvc.perform(post(URL_MASIVA)
-                        .header("Authorization", "Bearer " + tokenAdmin())
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenAdmin())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new NotificacionMasivaRequestDTO())))
                 .andExpect(status().isNoContent());
@@ -155,7 +157,7 @@ class NotificacionIT extends BaseIntegrationTest {
     @Test
     void enviarMasiva_conRolUser_retorna403() throws Exception {
         mockMvc.perform(post(URL_MASIVA)
-                        .header("Authorization", "Bearer " + tokenUsuario())
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isForbidden());
@@ -174,7 +176,7 @@ class NotificacionIT extends BaseIntegrationTest {
         doNothing().when(notificacionService).notificarPorPartido(any(), any(), any(), any());
 
         mockMvc.perform(post(URL_PARTIDO)
-                        .header("Authorization", "Bearer " + tokenAdmin())
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenAdmin())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(notificacionRequest())))
                 .andExpect(status().isNoContent());
@@ -183,7 +185,7 @@ class NotificacionIT extends BaseIntegrationTest {
     @Test
     void notificarPorPartido_conRolUser_retorna403() throws Exception {
         mockMvc.perform(post(URL_PARTIDO)
-                        .header("Authorization", "Bearer " + tokenUsuario())
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(notificacionRequest())))
                 .andExpect(status().isForbidden());
@@ -206,7 +208,7 @@ class NotificacionIT extends BaseIntegrationTest {
         mockMvc.perform(get(URL_BUSCAR)
                         .param("desde", "2026-01-01")
                         .param("hasta", "2026-12-31")
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isOk());
     }
 
@@ -224,7 +226,7 @@ class NotificacionIT extends BaseIntegrationTest {
         when(notificacionService.listarPorUsuario(USUARIO_ID)).thenReturn(List.of());
 
         mockMvc.perform(get(URL_CONTEO)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.total").value(0));
     }

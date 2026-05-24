@@ -59,6 +59,7 @@ private static final String IMG_JPG = "img.jpg";
     private Categoria categoria;
     private Producto producto;
     private VarianteProducto variante;
+    
 
     @BeforeEach
     void setUp() {

@@ -45,7 +45,8 @@ private static final String M_NO_ENCONTRADO = "no encontrado";
 private static final String MENSAJE = "mensaje";
 private static final String CORREO_CAMBIO = "correocambio";
 private static final String AUTHORIZATION = "Authorization";
-
+private static final String USUARIO_KEY = "usuario";
+private static final String NUEVO_CORREO = "nuevo@test.com";
 
     @BeforeEach
 void setUpSecurityContext() {
@@ -189,7 +190,7 @@ void setUpSecurityContext() {
     void actualizarPerfil_sinCambioDeCorrco_retornaOkConDTO() {
         Map<String, Object> resultado = new HashMap<>();
         resultado.put(CORREO_CAMBIO, false);
-        resultado.put("usuario", responseDTO(1L, USER_CORREO));
+        resultado.put(USUARIO_KEY, responseDTO(1L, USER_CORREO));
         when(service.actualizarPerfil(eq(USER_CORREO), any())).thenReturn(resultado);
 
         MockHttpServletRequest request = new MockHttpServletRequest();
@@ -204,13 +205,13 @@ void setUpSecurityContext() {
     void actualizarPerfil_conCambioDeCorreo_invalidaTokenYRetornaMensaje() {
         Map<String, Object> resultado = new HashMap<>();
         resultado.put(CORREO_CAMBIO, true);
-        resultado.put("usuario", responseDTO(1L, "nuevo@test.com"));
+        resultado.put(USUARIO_KEY, responseDTO(1L, NUEVO_CORREO));
         when(service.actualizarPerfil(eq(USER_CORREO), any())).thenReturn(resultado);
 
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.addHeader(AUTHORIZATION, "Bearer token-valido");
 
-        ResponseEntity<Object> res = controller.actualizarPerfil(actualizarDTO("nuevo@test.com"), request);
+        ResponseEntity<Object> res = controller.actualizarPerfil(actualizarDTO(NUEVO_CORREO), request);
 
         assertEquals(200, res.getStatusCode().value());
         @SuppressWarnings("unchecked")
@@ -224,12 +225,12 @@ void setUpSecurityContext() {
     void actualizarPerfil_conCambioDeCorreo_sinHeader_noInvalidaToken() {
         Map<String, Object> resultado = new HashMap<>();
         resultado.put(CORREO_CAMBIO, true);
-        resultado.put("usuario", responseDTO(1L, "nuevo@test.com"));
+        resultado.put(USUARIO_KEY, responseDTO(1L, NUEVO_CORREO));
         when(service.actualizarPerfil(eq(USER_CORREO), any())).thenReturn(resultado);
 
         MockHttpServletRequest request = new MockHttpServletRequest();
 
-        ResponseEntity<Object> res = controller.actualizarPerfil(actualizarDTO("nuevo@test.com"), request);
+        ResponseEntity<Object> res = controller.actualizarPerfil(actualizarDTO(NUEVO_CORREO), request);
 
         assertEquals(200, res.getStatusCode().value());
         verifyNoInteractions(tokenBlacklist);
@@ -239,13 +240,13 @@ void setUpSecurityContext() {
     void actualizarPerfil_conCambioDeCorreo_headerSinPrefijo_noInvalidaToken() {
         Map<String, Object> resultado = new HashMap<>();
         resultado.put(CORREO_CAMBIO, true);
-        resultado.put("usuario", responseDTO(1L, "nuevo@test.com"));
+        resultado.put(USUARIO_KEY, responseDTO(1L, NUEVO_CORREO));
         when(service.actualizarPerfil(eq(USER_CORREO), any())).thenReturn(resultado);
 
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.addHeader(AUTHORIZATION, "token-sin-prefijo");
 
-        ResponseEntity<Object> res = controller.actualizarPerfil(actualizarDTO("nuevo@test.com"), request);
+        ResponseEntity<Object> res = controller.actualizarPerfil(actualizarDTO(NUEVO_CORREO), request);
 
         assertEquals(200, res.getStatusCode().value());
         verifyNoInteractions(tokenBlacklist);

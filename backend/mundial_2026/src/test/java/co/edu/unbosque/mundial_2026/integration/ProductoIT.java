@@ -29,6 +29,8 @@ class ProductoIT extends BaseIntegrationTest {
     private static final String URL_ACTIVAR_LOTE = "/api/productos/activar-lote";
     private static final String NOMBRE_VALIDO = "Camiseta Argentina";
 
+    private static final String AUTH_HEADER = "Authorization";
+private static final String BEARER_PREFIX = "Bearer ";
     @MockitoBean
     private ProductoService productoService;
 
@@ -50,7 +52,7 @@ class ProductoIT extends BaseIntegrationTest {
         when(productoService.crear(any())).thenReturn(new ProductoResponseDTO());
 
         mockMvc.perform(post(BASE_URL)
-                        .header("Authorization", "Bearer " + tokenAdmin())
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenAdmin())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestValido())))
                 .andExpect(status().isCreated());
@@ -59,7 +61,7 @@ class ProductoIT extends BaseIntegrationTest {
     @Test
     void crear_conRolUser_retorna403() throws Exception {
         mockMvc.perform(post(BASE_URL)
-                        .header("Authorization", "Bearer " + tokenUsuario())
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestValido())))
                 .andExpect(status().isForbidden());
@@ -81,7 +83,7 @@ class ProductoIT extends BaseIntegrationTest {
         dto.setCategoriaId(1L);
 
         mockMvc.perform(post(BASE_URL)
-                        .header("Authorization", "Bearer " + tokenAdmin())
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenAdmin())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest());
@@ -94,7 +96,7 @@ class ProductoIT extends BaseIntegrationTest {
         dto.setCategoriaId(1L);
 
         mockMvc.perform(post(BASE_URL)
-                        .header("Authorization", "Bearer " + tokenAdmin())
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenAdmin())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest());
@@ -107,7 +109,7 @@ class ProductoIT extends BaseIntegrationTest {
         dto.setPrecio(50.0);
 
         mockMvc.perform(post(BASE_URL)
-                        .header("Authorization", "Bearer " + tokenAdmin())
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenAdmin())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest());
@@ -118,7 +120,7 @@ class ProductoIT extends BaseIntegrationTest {
         when(productoService.actualizar(eq(1L), any())).thenReturn(new ProductoResponseDTO());
 
         mockMvc.perform(put(URL_ID)
-                        .header("Authorization", "Bearer " + tokenAdmin())
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenAdmin())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new ProductoActualizarRequestDTO())))
                 .andExpect(status().isOk());
@@ -127,7 +129,7 @@ class ProductoIT extends BaseIntegrationTest {
     @Test
     void actualizar_conRolUser_retorna403() throws Exception {
         mockMvc.perform(put(URL_ID)
-                        .header("Authorization", "Bearer " + tokenUsuario())
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new ProductoActualizarRequestDTO())))
                 .andExpect(status().isForbidden());
@@ -146,14 +148,14 @@ class ProductoIT extends BaseIntegrationTest {
         doNothing().when(productoService).eliminar(1L);
 
         mockMvc.perform(delete(URL_ID)
-                        .header("Authorization", "Bearer " + tokenAdmin()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenAdmin()))
                 .andExpect(status().isNoContent());
     }
 
     @Test
     void eliminar_conRolUser_retorna403() throws Exception {
         mockMvc.perform(delete(URL_ID)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isForbidden());
     }
 
@@ -168,14 +170,14 @@ class ProductoIT extends BaseIntegrationTest {
         doNothing().when(productoService).reactivar(1L);
 
         mockMvc.perform(patch(URL_REACTIVAR)
-                        .header("Authorization", "Bearer " + tokenAdmin()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenAdmin()))
                 .andExpect(status().isNoContent());
     }
 
     @Test
     void reactivar_conRolUser_retorna403() throws Exception {
         mockMvc.perform(patch(URL_REACTIVAR)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isForbidden());
     }
 
@@ -190,14 +192,14 @@ class ProductoIT extends BaseIntegrationTest {
         when(productoService.listarTodos(false)).thenReturn(List.of());
 
         mockMvc.perform(get(URL_ADMIN_TODOS)
-                        .header("Authorization", "Bearer " + tokenAdmin()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenAdmin()))
                 .andExpect(status().isOk());
     }
 
     @Test
     void listarTodosAdmin_conRolUser_retorna403() throws Exception {
         mockMvc.perform(get(URL_ADMIN_TODOS)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isForbidden());
     }
 
@@ -246,7 +248,7 @@ class ProductoIT extends BaseIntegrationTest {
         doNothing().when(productoService).activarLote(any());
 
         mockMvc.perform(patch(URL_ACTIVAR_LOTE)
-                        .header("Authorization", "Bearer " + tokenAdmin())
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenAdmin())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isNoContent());
@@ -255,7 +257,7 @@ class ProductoIT extends BaseIntegrationTest {
     @Test
     void activarLote_conRolUser_retorna403() throws Exception {
         mockMvc.perform(patch(URL_ACTIVAR_LOTE)
-                        .header("Authorization", "Bearer " + tokenUsuario())
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
                 .andExpect(status().isForbidden());

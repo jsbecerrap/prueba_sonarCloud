@@ -65,7 +65,9 @@ private static final String ARGENTINA = "Argentina";
 private static final String ESTADIO_AZTECA = "Estadio Azteca";
 private static final String FECHA = "2026-06-11T20:00:00+00:00";
 private static final String CIUDAD_MEXICO = "Ciudad de Mexico";
-    @Mock
+private static final String FECHA_PARTIDO = "2026-06-11";
+private static final String GRUPO_A = "Group A";  
+@Mock
     private RestClient footballClient;
 
     @Mock
@@ -105,7 +107,7 @@ private static final String CIUDAD_MEXICO = "Ciudad de Mexico";
         usuario.setCiudadFavoritas(new ArrayList<>());
 
         partidoDTO = construirPartidoDTO(1001L, BRASIL, ARGENTINA, ESTADIO_AZTECA,
-                FECHA, "FT", "Group A", 2, 1);
+                FECHA, "FT", GRUPO_A, 2, 1);
     }
 
     private PartidoDTO construirPartidoDTO(Long id, String local, String visitante,
@@ -177,7 +179,7 @@ void cuandoAPIFalla_retornaDesdeBD() {
     p.setSeleccionVisitante(ARGENTINA);
     p.setEstadio(ESTADIO_AZTECA);
     p.setEstado("FT");
-    p.setRonda("Group A");
+    p.setRonda(GRUPO_A);
     p.setGolesLocal(2);
     p.setGolesVisitante(1);
     p.setFecha(LocalDateTime.of(2026, 6, 11, 20, 0));
@@ -319,7 +321,7 @@ void cuandoAPIFalla_retornaDesdeBD() {
 
             prepararRestClient(response);
 
-            List<PartidoDTO> resultado = partidoService.obtenerPartidosPorFecha("2026-06-11");
+            List<PartidoDTO> resultado = partidoService.obtenerPartidosPorFecha(FECHA_PARTIDO);
 
             assertEquals(1, resultado.size());
         }
@@ -354,7 +356,7 @@ void obtenerPartidosPorFecha_cuandoAPIFalla_retornaDesdeBD() {
 
     when(partidoRepository.findAll()).thenReturn(List.of(coincide, noCoincide));
 
-    List<PartidoDTO> resultado = partidoService.obtenerPartidosPorFecha("2026-06-11");
+    List<PartidoDTO> resultado = partidoService.obtenerPartidosPorFecha(FECHA_PARTIDO);
 
     assertEquals(1, resultado.size());
     assertEquals(BRASIL, resultado.get(0).getEquipos().getLocal().getNombre());
@@ -398,7 +400,7 @@ void obtenerPartidosEnVivo_cuandoAPIFalla_retornaEnVivoDesdeBD() {
             prepararRestClient(response);
             when(partidoRepository.findById(1001L)).thenReturn(Optional.empty());
 
-            int resultado = partidoService.sincronizarPorFechaYLiga("2026-06-11", 1, 2026);
+            int resultado = partidoService.sincronizarPorFechaYLiga(FECHA_PARTIDO, 1, 2026);
 
             assertEquals(1, resultado);
             verify(partidoRepository).saveAll(any());
@@ -415,7 +417,7 @@ void obtenerPartidosEnVivo_cuandoAPIFalla_retornaEnVivoDesdeBD() {
             prepararRestClient(response);
             when(partidoRepository.findById(1001L)).thenReturn(Optional.of(existente));
 
-            int resultado = partidoService.sincronizarPorFechaYLiga("2026-06-11", 1, 2026);
+            int resultado = partidoService.sincronizarPorFechaYLiga(FECHA_PARTIDO, 1, 2026);
 
             assertEquals(1, resultado);
         }
@@ -423,7 +425,7 @@ void obtenerPartidosEnVivo_cuandoAPIFalla_retornaEnVivoDesdeBD() {
         @Test
         void cuandoPartidoSinGoles_noEstableceMarcadores() {
             PartidoDTO sinGoles = construirPartidoDTO(2001L, BRASIL, ARGENTINA,
-                    ESTADIO_AZTECA, FECHA, "NS", "Group A", null, null);
+                    ESTADIO_AZTECA, FECHA, "NS", GRUPO_A, null, null);
             sinGoles.setGoles(null);
 
             PartidoResponseDTO response = new PartidoResponseDTO();
@@ -432,7 +434,7 @@ void obtenerPartidosEnVivo_cuandoAPIFalla_retornaEnVivoDesdeBD() {
             prepararRestClient(response);
             when(partidoRepository.findById(2001L)).thenReturn(Optional.empty());
 
-            int resultado = partidoService.sincronizarPorFechaYLiga("2026-06-11", 1, 2026);
+            int resultado = partidoService.sincronizarPorFechaYLiga(FECHA_PARTIDO, 1, 2026);
 
             assertEquals(1, resultado);
         }
@@ -693,7 +695,7 @@ void obtenerPartidosEnVivo_cuandoAPIFalla_retornaEnVivoDesdeBD() {
             p.setSeleccionVisitante(ARGENTINA);
             p.setEstadio(ESTADIO_AZTECA);
             p.setCapacidadDisponible(50000);
-            p.setRonda("Group A");
+            p.setRonda(GRUPO_A);
 
             when(partidoRepository.findAll()).thenReturn(List.of(p));
 

@@ -29,6 +29,7 @@ public abstract class BaseIntegrationTest {
     private static final String JWT_SECRET_TEST = "dGVzdHNlY3JldGtleXRlc3RzZWNyZXRrZXl0ZXN0c2VjcmV0a2V5dGVzdA==";
     protected static final String USER_EMAIL = "user@test.com";
     protected static final String ADMIN_EMAIL = "admin@test.com";
+    
 
     @BeforeAll
     static void initJwt() {

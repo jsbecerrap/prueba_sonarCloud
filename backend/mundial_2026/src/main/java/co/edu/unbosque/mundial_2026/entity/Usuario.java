@@ -114,12 +114,13 @@ public class Usuario {
      * Ciudades favoritas del usuario.
      */
     @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-        name = "usuarios_ciudadesFavoritas",
-        joinColumns = @JoinColumn(name = USUARIO_ID),
-        inverseJoinColumns = @JoinColumn(name = "ciudad_id"),
-        uniqueConstraints = @UniqueConstraint(columnNames = { USUARIO_ID, "ciudad_id" })
-    )
+@JoinTable(
+    name = "usuarios_ciudad_favoritas",
+    joinColumns = @JoinColumn(name = "usuario_id"),
+    inverseJoinColumns = @JoinColumn(name = "ciudad_id"),
+    uniqueConstraints = @UniqueConstraint(columnNames = { "usuario_id", "ciudad_id" })
+)
+
     private List<CiudadFavorita> ciudadFavoritas;
 
     /**

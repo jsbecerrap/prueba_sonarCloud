@@ -42,6 +42,9 @@ class UsuarioIT extends BaseIntegrationTest {
     private static final String CORREO_VALIDO = "nuevo@test.com";
     private static final String CONTRASENA_VALIDA = "Contrasena1!";
 
+ private static final String AUTH_HEADER = "Authorization";
+private static final String BEARER_PREFIX = "Bearer ";
+private static final String IDS_JSON = "[1,2]";
     @MockitoBean
     private UsuarioService service;
 
@@ -62,14 +65,14 @@ class UsuarioIT extends BaseIntegrationTest {
         when(service.listarTodos()).thenReturn(List.of(new UsuarioResponseDTO()));
 
         mockMvc.perform(get(URL_LISTAR)
-                        .header("Authorization", "Bearer " + tokenAdmin()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenAdmin()))
                 .andExpect(status().isOk());
     }
 
     @Test
     void listarTodos_conRolUser_retorna403() throws Exception {
         mockMvc.perform(get(URL_LISTAR)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isForbidden());
     }
 
@@ -84,14 +87,14 @@ class UsuarioIT extends BaseIntegrationTest {
         when(service.obtenerUsuario(1L)).thenReturn(new UsuarioResponseDTO());
 
         mockMvc.perform(get(URL_USUARIO_ID)
-                        .header("Authorization", "Bearer " + tokenAdmin()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenAdmin()))
                 .andExpect(status().isOk());
     }
 
     @Test
     void obtenerUsuario_conRolUser_retorna403() throws Exception {
         mockMvc.perform(get(URL_USUARIO_ID)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isForbidden());
     }
 
@@ -106,7 +109,7 @@ class UsuarioIT extends BaseIntegrationTest {
         when(service.obtenerPorCorreo(USER_EMAIL)).thenReturn(new UsuarioResponseDTO());
 
         mockMvc.perform(get(URL_PERFIL)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isOk());
     }
 
@@ -197,14 +200,14 @@ class UsuarioIT extends BaseIntegrationTest {
         doNothing().when(service).eliminarUsuario(1L);
 
         mockMvc.perform(delete(URL_USUARIO_ID)
-                        .header("Authorization", "Bearer " + tokenAdmin()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenAdmin()))
                 .andExpect(status().isNoContent());
     }
 
     @Test
     void eliminarUsuario_conRolUser_retorna403() throws Exception {
         mockMvc.perform(delete(URL_USUARIO_ID)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isForbidden());
     }
 
@@ -225,7 +228,7 @@ class UsuarioIT extends BaseIntegrationTest {
         dto.setNombre("NuevoNombre");
 
         mockMvc.perform(put(URL_PERFIL)
-                        .header("Authorization", "Bearer " + tokenUsuario())
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk());
@@ -242,7 +245,7 @@ class UsuarioIT extends BaseIntegrationTest {
         dto.setCorreoNuevo("otro@test.com");
 
         mockMvc.perform(put(URL_PERFIL)
-                        .header("Authorization", "Bearer " + tokenUsuario())
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
@@ -260,7 +263,7 @@ class UsuarioIT extends BaseIntegrationTest {
     @Test
     void logout_conToken_retorna200() throws Exception {
         mockMvc.perform(post(URL_LOGOUT)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.mensaje").value("Sesión cerrada correctamente"));
     }
@@ -276,7 +279,7 @@ class UsuarioIT extends BaseIntegrationTest {
         when(service.seleccionesUsuario(USER_EMAIL)).thenReturn(List.of(new PreferenciaDTO(1L, "Test")));
 
         mockMvc.perform(get(URL_SELECCIONES_FAV)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isOk());
     }
 
@@ -291,7 +294,7 @@ class UsuarioIT extends BaseIntegrationTest {
         doNothing().when(service).eliminarSeleccion(USER_EMAIL, 1L);
 
         mockMvc.perform(delete(URL_SELECCION_ID)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isNoContent());
     }
 
@@ -306,7 +309,7 @@ class UsuarioIT extends BaseIntegrationTest {
         when(service.estadiosUsuario(USER_EMAIL)).thenReturn(List.of());
 
         mockMvc.perform(get(URL_ESTADIOS_FAV)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isOk());
     }
 
@@ -321,7 +324,7 @@ class UsuarioIT extends BaseIntegrationTest {
         doNothing().when(service).eliminarEstadio(USER_EMAIL, 1L);
 
         mockMvc.perform(delete(URL_ESTADIO_ID)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isNoContent());
     }
 
@@ -336,7 +339,7 @@ class UsuarioIT extends BaseIntegrationTest {
         when(service.ciudadesUsuario(USER_EMAIL)).thenReturn(List.of());
 
         mockMvc.perform(get(URL_CIUDADES_FAV)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isOk());
     }
 
@@ -351,7 +354,7 @@ class UsuarioIT extends BaseIntegrationTest {
         doNothing().when(service).eliminarCiudad(USER_EMAIL, 1L);
 
         mockMvc.perform(delete(URL_CIUDAD_ID)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isNoContent());
     }
 
@@ -366,7 +369,7 @@ class UsuarioIT extends BaseIntegrationTest {
         when(service.listarEstadios()).thenReturn(List.of(new PreferenciaDTO(1L, "Test")));
 
         mockMvc.perform(get(URL_ESTADIOS_CATALOGO)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isOk());
     }
 
@@ -381,7 +384,7 @@ class UsuarioIT extends BaseIntegrationTest {
         when(service.listarCiudades()).thenReturn(List.of(new PreferenciaDTO(1L, "Test")));
 
         mockMvc.perform(get(URL_CIUDADES_CATALOGO)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isOk());
     }
 
@@ -396,7 +399,7 @@ class UsuarioIT extends BaseIntegrationTest {
         doNothing().when(service).actualizarFcmToken(eq(USER_EMAIL), any());
 
         mockMvc.perform(put(URL_FCM_TOKEN)
-                        .header("Authorization", "Bearer " + tokenUsuario())
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"fcmToken\":\"token-dispositivo-123\"}"))
                 .andExpect(status().isNoContent());
@@ -415,7 +418,7 @@ class UsuarioIT extends BaseIntegrationTest {
         doNothing().when(service).agregarSeleccion(eq(USER_EMAIL), any());
 
         mockMvc.perform(put(URL_SELECCIONES_FAV)
-                        .header("Authorization", "Bearer " + tokenUsuario())
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("[1,2,3]"))
                 .andExpect(status().isNoContent());
@@ -434,9 +437,9 @@ class UsuarioIT extends BaseIntegrationTest {
         doNothing().when(service).agregarEstadio(eq(USER_EMAIL), any());
 
         mockMvc.perform(put(URL_ESTADIOS_FAV)
-                        .header("Authorization", "Bearer " + tokenUsuario())
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("[1,2]"))
+                        .content(IDS_JSON))
                 .andExpect(status().isNoContent());
     }
 
@@ -444,7 +447,7 @@ class UsuarioIT extends BaseIntegrationTest {
     void agregarEstadios_sinToken_retorna401() throws Exception {
         mockMvc.perform(put(URL_ESTADIOS_FAV)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("[1,2]"))
+                        .content(IDS_JSON))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -453,9 +456,9 @@ class UsuarioIT extends BaseIntegrationTest {
         doNothing().when(service).agregarCiudad(eq(USER_EMAIL), any());
 
         mockMvc.perform(put(URL_CIUDADES_FAV)
-                        .header("Authorization", "Bearer " + tokenUsuario())
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("[1,2]"))
+                        .content(IDS_JSON))
                 .andExpect(status().isNoContent());
     }
 
@@ -463,7 +466,7 @@ class UsuarioIT extends BaseIntegrationTest {
     void agregarCiudades_sinToken_retorna401() throws Exception {
         mockMvc.perform(put(URL_CIUDADES_FAV)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("[1,2]"))
+                        .content(IDS_JSON))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -475,7 +478,7 @@ class UsuarioIT extends BaseIntegrationTest {
         when(service.obtenerUsuario(1L)).thenReturn(u);
 
         mockMvc.perform(get(URL_NOMBRE_USUARIO)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.nombre").value("Juan"))
                 .andExpect(jsonPath("$.apellido").value("García"));
@@ -492,7 +495,7 @@ class UsuarioIT extends BaseIntegrationTest {
         when(service.registrarUsuarioComoAdmin(any())).thenReturn(new UsuarioResponseDTO());
 
         mockMvc.perform(post(URL_ADMIN_REGISTRAR)
-                        .header("Authorization", "Bearer " + tokenAdmin())
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenAdmin())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(registroValido())))
                 .andExpect(status().isCreated());
@@ -501,7 +504,7 @@ class UsuarioIT extends BaseIntegrationTest {
     @Test
     void registrarPorAdmin_conRolUser_retorna403() throws Exception {
         mockMvc.perform(post(URL_ADMIN_REGISTRAR)
-                        .header("Authorization", "Bearer " + tokenUsuario())
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(registroValido())))
                 .andExpect(status().isForbidden());

@@ -27,6 +27,8 @@ class OrdenIT extends BaseIntegrationTest {
     private static final String URL_CANCELAR = "/api/ordenes/carrito";
     private static final String URL_HISTORIAL_LIVIANO = "/api/ordenes/historial/liviano";
 
+    private static final String AUTH_HEADER = "Authorization";
+private static final String BEARER_PREFIX = "Bearer ";
     @MockitoBean
     private OrdenService ordenService;
 
@@ -49,7 +51,7 @@ class OrdenIT extends BaseIntegrationTest {
         when(ordenService.agregarItem(eq(USER_EMAIL), any())).thenReturn(new OrdenResponseDTO());
 
         mockMvc.perform(post(URL_AGREGAR)
-                        .header("Authorization", "Bearer " + tokenUsuario())
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(itemValido())))
                 .andExpect(status().isOk());
@@ -70,7 +72,7 @@ class OrdenIT extends BaseIntegrationTest {
         dto.setVarianteId(1L);
 
         mockMvc.perform(post(URL_AGREGAR)
-                        .header("Authorization", "Bearer " + tokenUsuario())
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest());
@@ -84,7 +86,7 @@ class OrdenIT extends BaseIntegrationTest {
         dto.setVarianteId(1L);
 
         mockMvc.perform(post(URL_AGREGAR)
-                        .header("Authorization", "Bearer " + tokenUsuario())
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest());
@@ -97,7 +99,7 @@ class OrdenIT extends BaseIntegrationTest {
         dto.setCantidad(1);
 
         mockMvc.perform(post(URL_AGREGAR)
-                        .header("Authorization", "Bearer " + tokenUsuario())
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest());
@@ -108,7 +110,7 @@ class OrdenIT extends BaseIntegrationTest {
         when(ordenService.obtenerCarrito(USER_EMAIL)).thenReturn(new OrdenResponseDTO());
 
         mockMvc.perform(get(URL_CARRITO)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isOk());
     }
 
@@ -123,7 +125,7 @@ class OrdenIT extends BaseIntegrationTest {
         when(ordenService.eliminarItem(eq(USER_EMAIL), eq(1L))).thenReturn(new OrdenResponseDTO());
 
         mockMvc.perform(delete(URL_ITEM)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isOk());
     }
 
@@ -138,7 +140,7 @@ class OrdenIT extends BaseIntegrationTest {
         when(ordenService.confirmarOrden(eq(USER_EMAIL), any())).thenReturn(new OrdenResponseDTO());
 
         mockMvc.perform(post(URL_CONFIRMAR)
-                        .header("Authorization", "Bearer " + tokenUsuario())
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(confirmarValido())))
                 .andExpect(status().isOk());
@@ -149,7 +151,7 @@ class OrdenIT extends BaseIntegrationTest {
         ConfirmarOrdenDTO dto = new ConfirmarOrdenDTO();
 
         mockMvc.perform(post(URL_CONFIRMAR)
-                        .header("Authorization", "Bearer " + tokenUsuario())
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest());
@@ -168,7 +170,7 @@ class OrdenIT extends BaseIntegrationTest {
         when(ordenService.historial(USER_EMAIL)).thenReturn(List.of(new OrdenResponseDTO()));
 
         mockMvc.perform(get(URL_HISTORIAL)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isOk());
     }
 
@@ -183,7 +185,7 @@ class OrdenIT extends BaseIntegrationTest {
         when(ordenService.cancelarOrden(USER_EMAIL)).thenReturn(new OrdenResponseDTO());
 
         mockMvc.perform(delete(URL_CANCELAR)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isOk());
     }
 
@@ -198,7 +200,7 @@ class OrdenIT extends BaseIntegrationTest {
         when(ordenService.historialLiviano(USER_EMAIL)).thenReturn(List.of(new OrdenHistorialDTO()));
 
         mockMvc.perform(get(URL_HISTORIAL_LIVIANO)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isOk());
     }
 

@@ -3,7 +3,6 @@ package co.edu.unbosque.mundial_2026.integration;
 import co.edu.unbosque.mundial_2026.dto.response.EquipoMundialDTO;
 import co.edu.unbosque.mundial_2026.dto.response.JugadorDTO;
 import co.edu.unbosque.mundial_2026.dto.response.PartidoDTO;
-import co.edu.unbosque.mundial_2026.dto.response.PosicionDTO;
 import co.edu.unbosque.mundial_2026.dto.response.PreferenciaDTO;
 import co.edu.unbosque.mundial_2026.entity.Partido;
 import co.edu.unbosque.mundial_2026.service.PartidoService;
@@ -34,6 +33,8 @@ class PartidoIT extends BaseIntegrationTest {
     private static final String URL_CATALOGO = "/api/partidos/catalogo/selecciones";
     private static final String URL_BD_TODOS = "/api/partidos/bd/todos";
 
+    private static final String AUTH_HEADER = "Authorization";
+private static final String BEARER_PREFIX = "Bearer ";
     @MockitoBean
     private PartidoService partidoService;
 
@@ -47,7 +48,7 @@ class PartidoIT extends BaseIntegrationTest {
         when(partidoService.obtenerPartidosPorEquipo(1L)).thenReturn(List.of());
 
         mockMvc.perform(get(URL_EQUIPO)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isOk());
     }
 
@@ -62,7 +63,7 @@ class PartidoIT extends BaseIntegrationTest {
         when(partidoService.obtenerStandings()).thenReturn(List.of());
 
         mockMvc.perform(get(URL_STANDINGS)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isOk());
     }
 
@@ -77,7 +78,7 @@ class PartidoIT extends BaseIntegrationTest {
         when(partidoService.obtenerSelecciones()).thenReturn(List.of(new EquipoMundialDTO()));
 
         mockMvc.perform(get(URL_SELECCIONES)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isOk());
     }
 
@@ -92,7 +93,7 @@ class PartidoIT extends BaseIntegrationTest {
         when(partidoService.obtenerJugadoresPorEquipo(1L)).thenReturn(List.of(new JugadorDTO()));
 
         mockMvc.perform(get(URL_JUGADORES)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isOk());
     }
 
@@ -107,7 +108,7 @@ class PartidoIT extends BaseIntegrationTest {
         when(partidoService.obtenerPartidosPorFecha("2026-06-10")).thenReturn(List.of());
 
         mockMvc.perform(get(URL_FECHA)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isOk());
     }
 
@@ -122,7 +123,7 @@ class PartidoIT extends BaseIntegrationTest {
         when(partidoService.obtenerPartidosEnVivo()).thenReturn(List.of());
 
         mockMvc.perform(get(URL_ENVIVO)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isOk());
     }
 
@@ -137,7 +138,7 @@ class PartidoIT extends BaseIntegrationTest {
         when(partidoService.obtenerPartidosPorSeleccionesFav(USER_EMAIL)).thenReturn(List.of());
 
         mockMvc.perform(get(URL_PREF_SELECCIONES)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isOk());
     }
 
@@ -152,7 +153,7 @@ class PartidoIT extends BaseIntegrationTest {
         when(partidoService.obtenerPartidosPorEstadiosFav(USER_EMAIL)).thenReturn(List.of());
 
         mockMvc.perform(get(URL_PREF_ESTADIOS)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isOk());
     }
 
@@ -167,7 +168,7 @@ class PartidoIT extends BaseIntegrationTest {
         when(partidoService.obtenerPartidosPorCiudadesFav(USER_EMAIL)).thenReturn(List.of());
 
         mockMvc.perform(get(URL_PREF_CIUDADES)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isOk());
     }
 
@@ -182,14 +183,14 @@ class PartidoIT extends BaseIntegrationTest {
         when(partidoService.sincronizarPorFechaYLiga("2026-06-10", 1, 2026)).thenReturn(5);
 
         mockMvc.perform(get(URL_SINCRONIZAR)
-                        .header("Authorization", "Bearer " + tokenAdmin()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenAdmin()))
                 .andExpect(status().isOk());
     }
 
     @Test
     void sincronizar_conRolUser_retorna403() throws Exception {
         mockMvc.perform(get(URL_SINCRONIZAR)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isForbidden());
     }
 
@@ -204,7 +205,7 @@ class PartidoIT extends BaseIntegrationTest {
         when(partidoService.actualizarResultado(1L, 2, 1, 90)).thenReturn(1);
 
         mockMvc.perform(put(URL_RESULTADO)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isOk());
     }
 
@@ -219,7 +220,7 @@ class PartidoIT extends BaseIntegrationTest {
         when(partidoService.obtenerPartidoPorId(1L)).thenReturn(new PartidoDTO());
 
         mockMvc.perform(get(URL_POR_ID)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isOk());
     }
 
@@ -234,7 +235,7 @@ class PartidoIT extends BaseIntegrationTest {
         when(partidoService.obtenerCatalogoSelecciones()).thenReturn(List.of(new PreferenciaDTO(1L, "Test")));
 
         mockMvc.perform(get(URL_CATALOGO)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isOk());
     }
 
@@ -249,14 +250,14 @@ class PartidoIT extends BaseIntegrationTest {
         when(partidoService.listarDesdeBD()).thenReturn(List.of(new Partido()));
 
         mockMvc.perform(get(URL_BD_TODOS)
-                        .header("Authorization", "Bearer " + tokenAdmin()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenAdmin()))
                 .andExpect(status().isOk());
     }
 
     @Test
     void listarDesdeBD_conRolUser_retorna403() throws Exception {
         mockMvc.perform(get(URL_BD_TODOS)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isForbidden());
     }
 

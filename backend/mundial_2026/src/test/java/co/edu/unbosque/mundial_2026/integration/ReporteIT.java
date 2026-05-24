@@ -31,6 +31,8 @@ class ReporteIT extends BaseIntegrationTest {
     private static final String URL_TOP_SOUVENIR = "/api/reportes/top-souvenir";
     private static final String URL_TOP_ENTRADAS = "/api/reportes/top-entradas";
 
+    private static final String AUTH_HEADER = "Authorization";
+private static final String BEARER_PREFIX = "Bearer ";
     @MockitoBean
     private ReporteService reportesService;
 
@@ -39,14 +41,14 @@ class ReporteIT extends BaseIntegrationTest {
         when(reportesService.obtenerEstadisticasGenerales()).thenReturn(new ReportesResponseDTO());
 
         mockMvc.perform(get(URL_ESTADISTICAS)
-                        .header("Authorization", "Bearer " + tokenAdmin()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenAdmin()))
                 .andExpect(status().isOk());
     }
 
     @Test
     void obtenerEstadisticasGenerales_conRolUser_retorna403() throws Exception {
         mockMvc.perform(get(URL_ESTADISTICAS)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isForbidden());
     }
 
@@ -61,14 +63,14 @@ class ReporteIT extends BaseIntegrationTest {
         when(reportesService.obtenerReportesCompras()).thenReturn(new ReportesComprasDTO());
 
         mockMvc.perform(get(URL_COMPRAS)
-                        .header("Authorization", "Bearer " + tokenAdmin()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenAdmin()))
                 .andExpect(status().isOk());
     }
 
     @Test
     void obtenerReportesCompras_conRolUser_retorna403() throws Exception {
         mockMvc.perform(get(URL_COMPRAS)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isForbidden());
     }
 
@@ -83,14 +85,14 @@ class ReporteIT extends BaseIntegrationTest {
         when(reportesService.obtenerPartidosMasApostados()).thenReturn(List.of(new PartidoMasApostadoDTO()));
 
         mockMvc.perform(get(URL_PARTIDOS_APOSTADOS)
-                        .header("Authorization", "Bearer " + tokenAdmin()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenAdmin()))
                 .andExpect(status().isOk());
     }
 
     @Test
     void obtenerPartidosMasApostados_conRolUser_retorna403() throws Exception {
         mockMvc.perform(get(URL_PARTIDOS_APOSTADOS)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isForbidden());
     }
 
@@ -105,14 +107,14 @@ class ReporteIT extends BaseIntegrationTest {
         when(reportesService.obtenerPollaRanking()).thenReturn(List.of(new PollaRankingDTO()));
 
         mockMvc.perform(get(URL_POLLAS)
-                        .header("Authorization", "Bearer " + tokenAdmin()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenAdmin()))
                 .andExpect(status().isOk());
     }
 
     @Test
     void obtenerPollaRanking_conRolUser_retorna403() throws Exception {
         mockMvc.perform(get(URL_POLLAS)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isForbidden());
     }
 
@@ -127,14 +129,14 @@ class ReporteIT extends BaseIntegrationTest {
         when(reportesService.obtenerIngresosPorMetodoPago()).thenReturn(List.of(new IngresoMetodoPagoDTO()));
 
         mockMvc.perform(get(URL_METODOS_PAGO)
-                        .header("Authorization", "Bearer " + tokenAdmin()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenAdmin()))
                 .andExpect(status().isOk());
     }
 
     @Test
     void obtenerIngresosPorMetodoPago_conRolUser_retorna403() throws Exception {
         mockMvc.perform(get(URL_METODOS_PAGO)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isForbidden());
     }
 
@@ -149,14 +151,14 @@ class ReporteIT extends BaseIntegrationTest {
         when(reportesService.obtenerEntradasPorPartido()).thenReturn(List.of(new EntradaPorPartidoDTO()));
 
         mockMvc.perform(get(URL_ENTRADAS_PARTIDO)
-                        .header("Authorization", "Bearer " + tokenAdmin()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenAdmin()))
                 .andExpect(status().isOk());
     }
 
     @Test
     void obtenerEntradasPorPartido_conRolUser_retorna403() throws Exception {
         mockMvc.perform(get(URL_ENTRADAS_PARTIDO)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isForbidden());
     }
 
@@ -172,7 +174,7 @@ class ReporteIT extends BaseIntegrationTest {
                 .thenReturn(List.of(new TopUsuarioSouvenirDTO()));
 
         mockMvc.perform(get(URL_TOP_SOUVENIR)
-                        .header("Authorization", "Bearer " + tokenAdmin()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenAdmin()))
                 .andExpect(status().isOk());
     }
 
@@ -182,14 +184,14 @@ class ReporteIT extends BaseIntegrationTest {
                 .thenReturn(List.of());
 
         mockMvc.perform(get(URL_TOP_SOUVENIR + "?size=10")
-                        .header("Authorization", "Bearer " + tokenAdmin()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenAdmin()))
                 .andExpect(status().isOk());
     }
 
     @Test
     void obtenerTopSouvenir_conRolUser_retorna403() throws Exception {
         mockMvc.perform(get(URL_TOP_SOUVENIR)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isForbidden());
     }
 
@@ -205,7 +207,7 @@ class ReporteIT extends BaseIntegrationTest {
                 .thenReturn(List.of(new TopUsuarioEntradaDTO()));
 
         mockMvc.perform(get(URL_TOP_ENTRADAS)
-                        .header("Authorization", "Bearer " + tokenAdmin()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenAdmin()))
                 .andExpect(status().isOk());
     }
 
@@ -215,14 +217,14 @@ class ReporteIT extends BaseIntegrationTest {
                 .thenReturn(List.of());
 
         mockMvc.perform(get(URL_TOP_ENTRADAS + "?size=10")
-                        .header("Authorization", "Bearer " + tokenAdmin()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenAdmin()))
                 .andExpect(status().isOk());
     }
 
     @Test
     void obtenerTopEntradas_conRolUser_retorna403() throws Exception {
         mockMvc.perform(get(URL_TOP_ENTRADAS)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isForbidden());
     }
 

@@ -28,6 +28,9 @@ class CategoriaIT extends BaseIntegrationTest {
     private static final String URL_PRODUCTOS = "/api/categorias/1/productos";
     private static final String NOMBRE_VALIDO = "Souvenirs";
 
+    
+    private static final String AUTH_HEADER = "Authorization";
+private static final String BEARER_PREFIX = "Bearer ";
     @MockitoBean
     private CategoriaService categoriaService;
 
@@ -42,7 +45,7 @@ class CategoriaIT extends BaseIntegrationTest {
         when(categoriaService.crear(any())).thenReturn(new CategoriaResponseDTO());
 
         mockMvc.perform(post(BASE_URL)
-                        .header("Authorization", "Bearer " + tokenAdmin())
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenAdmin())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestValido())))
                 .andExpect(status().isCreated());
@@ -51,7 +54,7 @@ class CategoriaIT extends BaseIntegrationTest {
     @Test
     void crear_conRolUser_retorna403() throws Exception {
         mockMvc.perform(post(BASE_URL)
-                        .header("Authorization", "Bearer " + tokenUsuario())
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestValido())))
                 .andExpect(status().isForbidden());
@@ -71,7 +74,7 @@ class CategoriaIT extends BaseIntegrationTest {
         dto.setNombre("");
 
         mockMvc.perform(post(BASE_URL)
-                        .header("Authorization", "Bearer " + tokenAdmin())
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenAdmin())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest());
@@ -83,7 +86,7 @@ class CategoriaIT extends BaseIntegrationTest {
         dto.setNombre("A");
 
         mockMvc.perform(post(BASE_URL)
-                        .header("Authorization", "Bearer " + tokenAdmin())
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenAdmin())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest());
@@ -95,7 +98,7 @@ class CategoriaIT extends BaseIntegrationTest {
         dto.setNombre("Categoria@#$");
 
         mockMvc.perform(post(BASE_URL)
-                        .header("Authorization", "Bearer " + tokenAdmin())
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenAdmin())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest());
@@ -114,7 +117,7 @@ class CategoriaIT extends BaseIntegrationTest {
         when(categoriaService.listar()).thenReturn(List.of());
 
         mockMvc.perform(get(BASE_URL)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isOk());
     }
 
@@ -123,7 +126,7 @@ class CategoriaIT extends BaseIntegrationTest {
         when(categoriaService.actualizar(eq(1L), any())).thenReturn(new CategoriaResponseDTO());
 
         mockMvc.perform(put(URL_ID)
-                        .header("Authorization", "Bearer " + tokenAdmin())
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenAdmin())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestValido())))
                 .andExpect(status().isOk());
@@ -132,7 +135,7 @@ class CategoriaIT extends BaseIntegrationTest {
     @Test
     void actualizar_conRolUser_retorna403() throws Exception {
         mockMvc.perform(put(URL_ID)
-                        .header("Authorization", "Bearer " + tokenUsuario())
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestValido())))
                 .andExpect(status().isForbidden());
@@ -152,7 +155,7 @@ class CategoriaIT extends BaseIntegrationTest {
         dto.setNombre("");
 
         mockMvc.perform(put(URL_ID)
-                        .header("Authorization", "Bearer " + tokenAdmin())
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenAdmin())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest());
@@ -163,14 +166,14 @@ class CategoriaIT extends BaseIntegrationTest {
         when(categoriaService.desactivar(1L)).thenReturn(new DesactivarCategoriaResponseDTO());
 
         mockMvc.perform(patch(URL_DESACTIVAR)
-                        .header("Authorization", "Bearer " + tokenAdmin()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenAdmin()))
                 .andExpect(status().isOk());
     }
 
     @Test
     void desactivar_conRolUser_retorna403() throws Exception {
         mockMvc.perform(patch(URL_DESACTIVAR)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isForbidden());
     }
 
@@ -185,14 +188,14 @@ class CategoriaIT extends BaseIntegrationTest {
         when(categoriaService.reactivar(1L)).thenReturn(new ReactivarCategoriaResponseDTO());
 
         mockMvc.perform(patch(URL_REACTIVAR)
-                        .header("Authorization", "Bearer " + tokenAdmin()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenAdmin()))
                 .andExpect(status().isOk());
     }
 
     @Test
     void reactivar_conRolUser_retorna403() throws Exception {
         mockMvc.perform(patch(URL_REACTIVAR)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isForbidden());
     }
 
@@ -207,14 +210,14 @@ class CategoriaIT extends BaseIntegrationTest {
         when(categoriaService.listarTodas()).thenReturn(List.of());
 
         mockMvc.perform(get(URL_TODAS)
-                        .header("Authorization", "Bearer " + tokenAdmin()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenAdmin()))
                 .andExpect(status().isOk());
     }
 
     @Test
     void listarTodas_conRolUser_retorna403() throws Exception {
         mockMvc.perform(get(URL_TODAS)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isForbidden());
     }
 
@@ -229,14 +232,14 @@ class CategoriaIT extends BaseIntegrationTest {
         when(categoriaService.obtenerProductosPorCategoria(1L)).thenReturn(List.of(new ProductoResponseDTO()));
 
         mockMvc.perform(get(URL_PRODUCTOS)
-                        .header("Authorization", "Bearer " + tokenAdmin()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenAdmin()))
                 .andExpect(status().isOk());
     }
 
     @Test
     void obtenerProductos_conRolUser_retorna403() throws Exception {
         mockMvc.perform(get(URL_PRODUCTOS)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isForbidden());
     }
 

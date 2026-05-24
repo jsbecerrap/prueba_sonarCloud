@@ -6,7 +6,7 @@ import { Alert, Button, Paper, Stack, TextField, Typography } from "@mui/materia
 
 
 
-import { bannerImages } from "../data/mockMedia";
+import { bannerImages } from "../theme/bannerImages";
 import { useApp } from "../context/AppContext";
 
 import type { Pool } from "../types/pool"; 
@@ -79,7 +79,7 @@ export default function PoolDetail() {
   const refresh = async (p: Pool, currentUserId?: string) => { 
 
     const allMatches = await getMatches();
-    const ms = allMatches.filter((m) => p.matchIds.includes(m.id));
+const ms = allMatches.filter((m) => (p.matchIds ?? []).includes(m.id));
 
     setMatches(ms); 
 
@@ -89,7 +89,7 @@ export default function PoolDetail() {
 
     if (currentUserId) { 
 
-      const my = await getMyPredictions(p.id, currentUserId); 
+    const my = await getMyPredictions(String(p.id), currentUserId); 
 
       setMine(my); 
 
@@ -117,7 +117,7 @@ export default function PoolDetail() {
 
  
 
-    const ap = await getPredictionsByPool(p.id);
+   const ap = await getPredictionsByPool(String(p.id));
 
     setAllPreds(ap); 
 
@@ -129,7 +129,7 @@ export default function PoolDetail() {
 
     const load = async () => { 
 
-      const pools = await getPools(); 
+     const pools = await getPools(Number(user?.id ?? 0));
 
       const found = pools.find((p) => p.code === code) ?? null; 
 
@@ -163,7 +163,7 @@ export default function PoolDetail() {
 
     if (!pool) return map; 
 
-    pool.members.forEach((mem) => map.set(mem.user.id, mem.user.name)); 
+    pool.members.forEach((mem) => map.set(String(mem.usuarioId), mem.nombre));
 
     return map; 
 
@@ -179,7 +179,7 @@ export default function PoolDetail() {
 
       .slice() 
 
-      .map((mem) => ({ user: mem.user, points: mem.points })) 
+.map((mem) => ({ user: { id: String(mem.usuarioId), name: mem.nombre }, points: mem.puntos }))
 
       .sort((a, b) => b.points - a.points); 
 
@@ -218,7 +218,7 @@ export default function PoolDetail() {
         return;
       }
 
-      await upsertPrediction(pool.id, user.id, matchId, homeScore, awayScore);
+      await upsertPrediction(String(pool.id), user.id, matchId, homeScore, awayScore);
 
 
 
@@ -226,7 +226,7 @@ export default function PoolDetail() {
 
  
 
-      const pools = await getPools();
+      const pools = await getPools(Number(user.id));
 
       const updated = pools.find((p) => p.code === code) ?? pool; 
 
@@ -240,7 +240,7 @@ export default function PoolDetail() {
 
  
 
-      const pools = await getPools(); 
+      const pools = await getPools(Number(user.id));
 
       const updated = pools.find((p) => p.code === code) ?? pool; 
 
@@ -262,7 +262,7 @@ export default function PoolDetail() {
         sx={{
           p: { xs: 2.5, md: 3 },
           minHeight: 240,
-          background: `linear-gradient(135deg, rgba(9,61,42,.92), rgba(22,117,79,.82)), url(${bannerImages.pollDetail})`,
+          background: `linear-gradient(135deg, rgba(9,61,42,.92), rgba(22,117,79,.82)), url(${bannerImages.matches})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
           display: "flex",

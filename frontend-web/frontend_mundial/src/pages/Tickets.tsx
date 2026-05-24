@@ -191,7 +191,7 @@ const summary = useMemo(
     try {
       setLoading(true);
       setMsg(null);
-await reserveTicket(user.id, selectedMatchId, quantity, categoria, sector, fila);
+    await reserveTicket(user.id, selectedMatchId, quantity, categoria, sector);
       setMsg({ text: "Reserva creada. Tienes 15 minutos para pagarla.", severity: "success" });
       await refresh();
     } catch (e) {

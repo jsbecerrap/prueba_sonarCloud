@@ -179,7 +179,8 @@ export async function adminCreateMatch(payload: {
   const assign = payload.assignToAllPools ?? true;
   if (assign) {
     for (const p of poolsMock) {
-      if (!p.matchIds.includes(match.id)) p.matchIds.push(match.id);
+     p.matchIds = p.matchIds ?? [];
+if (!p.matchIds.includes(match.id)) p.matchIds.push(match.id);
     }
   }
   await createSystemEvent({

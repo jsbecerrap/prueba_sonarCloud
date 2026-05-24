@@ -36,8 +36,9 @@ private static final String BARRA = "BARRA";
 private static final String RESERVADA = "RESERVADA";
 private static final String PAGADA = "PAGADA";
 private static final String DESTINO = "destino@test.com";
-
+private static final String CORREO_USER2 = "user2@test.com";
     private EntradaServiceImpl service;
+    
 
     @BeforeEach
     void setUp() {
@@ -436,10 +437,10 @@ private static final String DESTINO = "destino@test.com";
         Partido partido = crearPartido(1L, 1000);
         Entrada entrada = crearEntrada(1L, usuario, partido, PAGADA);
         TransferenciaRequestDTO dto = new TransferenciaRequestDTO();
-        dto.setCorreoDestino("user2@test.com");
+        dto.setCorreoDestino(CORREO_USER2);
 
         when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
-        when(usuarioService.obtenerEntidadPorCorreo("user2@test.com")).thenReturn(destino);
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER2)).thenReturn(destino);
         when(entradaRepository.findById(1L)).thenReturn(Optional.of(entrada));
         when(entradaRepository.findByUsuarioIdAndFechaCompraBetween(eq(1L), any(), any())).thenReturn(List.of());
         when(entradaRepository.save(any(Entrada.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -463,10 +464,10 @@ private static final String DESTINO = "destino@test.com";
         Entrada entradaPagadaHoy = crearEntrada(3L, usuario, partido, PAGADA);
         entradaPagadaHoy.setCantidad(10);
         TransferenciaRequestDTO dto = new TransferenciaRequestDTO();
-        dto.setCorreoDestino("user2@test.com");
+        dto.setCorreoDestino(CORREO_USER2);
 
         when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER1)).thenReturn(usuario);
-        when(usuarioService.obtenerEntidadPorCorreo("user2@test.com")).thenReturn(destino);
+        when(usuarioService.obtenerEntidadPorCorreo(CORREO_USER2)).thenReturn(destino);
         when(entradaRepository.findById(1L)).thenReturn(Optional.of(entrada));
         when(entradaRepository.findByUsuarioIdAndFechaCompraBetween(eq(1L), any(), any()))
                 .thenReturn(List.of(entradaPagadaHoy));

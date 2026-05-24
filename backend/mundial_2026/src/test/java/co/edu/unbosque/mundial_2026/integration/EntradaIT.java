@@ -31,6 +31,8 @@ class EntradaIT extends BaseIntegrationTest {
     private static final String URL_PARTIDOS = "/api/entradas/partidos";
     private static final String PAYMENT_REF = "REF-001";
 
+    private static final String AUTH_HEADER = "Authorization";
+private static final String BEARER_PREFIX = "Bearer ";
     @MockitoBean
     private EntradaService entradaService;
 
@@ -48,7 +50,7 @@ class EntradaIT extends BaseIntegrationTest {
         when(entradaService.obtenerCuposPorZona(1L)).thenReturn(List.of(new CuposZonaDTO()));
 
         mockMvc.perform(get(URL_CUPOS)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isOk());
     }
 
@@ -63,7 +65,7 @@ class EntradaIT extends BaseIntegrationTest {
         when(entradaService.obtenerEntrada(1L)).thenReturn(new EntradaResponseDTO());
 
         mockMvc.perform(get(URL_DETALLE)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isOk());
     }
 
@@ -78,7 +80,7 @@ class EntradaIT extends BaseIntegrationTest {
         when(entradaService.reservarEntrada(eq(USER_EMAIL), any())).thenReturn(new EntradaResponseDTO());
 
         mockMvc.perform(post(URL_RESERVAR)
-                        .header("Authorization", "Bearer " + tokenUsuario())
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestValido())))
                 .andExpect(status().isOk());
@@ -97,7 +99,7 @@ class EntradaIT extends BaseIntegrationTest {
         when(entradaService.confirmarPago(1L, PAYMENT_REF)).thenReturn(new EntradaResponseDTO());
 
         mockMvc.perform(patch(URL_PAGAR)
-                        .header("Authorization", "Bearer " + tokenUsuario())
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario())
                         .param("paymentRef", PAYMENT_REF))
                 .andExpect(status().isOk());
     }
@@ -112,7 +114,7 @@ class EntradaIT extends BaseIntegrationTest {
     @Test
     void pagar_sinPaymentRef_retorna400() throws Exception {
         mockMvc.perform(patch(URL_PAGAR)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -121,7 +123,7 @@ class EntradaIT extends BaseIntegrationTest {
         when(entradaService.cancelarReserva(USER_EMAIL, 1L)).thenReturn(new EntradaResponseDTO());
 
         mockMvc.perform(patch(URL_CANCELAR)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isOk());
     }
 
@@ -138,7 +140,7 @@ class EntradaIT extends BaseIntegrationTest {
                 .thenReturn(new EntradaResponseDTO());
 
         mockMvc.perform(patch(URL_TRANSFERIR)
-                        .header("Authorization", "Bearer " + tokenUsuario())
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk());
@@ -157,7 +159,7 @@ class EntradaIT extends BaseIntegrationTest {
         when(entradaService.reembolsarEntrada(USER_EMAIL, 1L)).thenReturn(new EntradaResponseDTO());
 
         mockMvc.perform(patch(URL_REEMBOLSAR)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isOk());
     }
 
@@ -172,7 +174,7 @@ class EntradaIT extends BaseIntegrationTest {
         when(entradaService.listarEntradasUsuario(USER_EMAIL)).thenReturn(List.of(new EntradaResponseDTO()));
 
         mockMvc.perform(get(URL_USUARIO)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isOk());
     }
 
@@ -187,7 +189,7 @@ class EntradaIT extends BaseIntegrationTest {
         when(entradaService.listarPartidosConCapacidad()).thenReturn(List.of(new PartidoCapacidadDTO()));
 
         mockMvc.perform(get(URL_PARTIDOS)
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isOk());
     }
 

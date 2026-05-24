@@ -20,6 +20,8 @@ class EventoAuditoriaIT extends BaseIntegrationTest {
 
     @MockitoBean
     private EventoAuditoriaService eventoService;
+    private static final String AUTH_HEADER = "Authorization";
+private static final String BEARER_PREFIX = "Bearer ";
 
 
 
@@ -29,14 +31,14 @@ class EventoAuditoriaIT extends BaseIntegrationTest {
                 .thenReturn(new PageImpl<>(List.of(new EventoAuditoriaDTO())));
 
         mockMvc.perform(get("/api/auditoria/todos")
-                        .header("Authorization", "Bearer " + tokenAdmin()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenAdmin()))
                 .andExpect(status().isOk());
     }
 
     @Test
     void obtenerTodos_conRolUser_retorna403() throws Exception {
         mockMvc.perform(get("/api/auditoria/todos")
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isForbidden());
     }
 
@@ -52,7 +54,7 @@ class EventoAuditoriaIT extends BaseIntegrationTest {
                 .thenReturn(new PageImpl<>(List.of()));
 
         mockMvc.perform(get("/api/auditoria/todos?page=1&size=10")
-                        .header("Authorization", "Bearer " + tokenAdmin()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenAdmin()))
                 .andExpect(status().isOk());
     }
 
@@ -64,7 +66,7 @@ class EventoAuditoriaIT extends BaseIntegrationTest {
                 .thenReturn(new PageImpl<>(List.of()));
 
         mockMvc.perform(get("/api/auditoria/buscar")
-                        .header("Authorization", "Bearer " + tokenAdmin()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenAdmin()))
                 .andExpect(status().isOk());
     }
 
@@ -74,7 +76,7 @@ class EventoAuditoriaIT extends BaseIntegrationTest {
                 .thenReturn(new PageImpl<>(List.of()));
 
         mockMvc.perform(get("/api/auditoria/buscar?usuarioId=1")
-                        .header("Authorization", "Bearer " + tokenAdmin()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenAdmin()))
                 .andExpect(status().isOk());
     }
 
@@ -84,14 +86,14 @@ class EventoAuditoriaIT extends BaseIntegrationTest {
                 .thenReturn(new PageImpl<>(List.of()));
 
         mockMvc.perform(get("/api/auditoria/buscar?tipos=LOGIN")
-                        .header("Authorization", "Bearer " + tokenAdmin()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenAdmin()))
                 .andExpect(status().isOk());
     }
 
     @Test
     void buscar_conRolUser_retorna403() throws Exception {
         mockMvc.perform(get("/api/auditoria/buscar")
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isForbidden());
     }
 
@@ -108,14 +110,14 @@ class EventoAuditoriaIT extends BaseIntegrationTest {
                 .thenReturn(new PageImpl<>(List.of()));
 
         mockMvc.perform(get("/api/auditoria/usuario/1")
-                        .header("Authorization", "Bearer " + tokenAdmin()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenAdmin()))
                 .andExpect(status().isOk());
     }
 
     @Test
     void buscarPorUsuario_conRolUser_retorna403() throws Exception {
         mockMvc.perform(get("/api/auditoria/usuario/1")
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isForbidden());
     }
 
@@ -133,14 +135,14 @@ class EventoAuditoriaIT extends BaseIntegrationTest {
                 .thenReturn(new PageImpl<>(List.of()));
 
         mockMvc.perform(get("/api/auditoria/tipo/LOGIN")
-                        .header("Authorization", "Bearer " + tokenAdmin()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenAdmin()))
                 .andExpect(status().isOk());
     }
 
     @Test
     void buscarPorTipo_conRolUser_retorna403() throws Exception {
         mockMvc.perform(get("/api/auditoria/tipo/LOGIN")
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isForbidden());
     }
 
@@ -157,14 +159,14 @@ class EventoAuditoriaIT extends BaseIntegrationTest {
                 .thenReturn(new PageImpl<>(List.of()));
 
         mockMvc.perform(get("/api/auditoria/correlacion/abc-123")
-                        .header("Authorization", "Bearer " + tokenAdmin()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenAdmin()))
                 .andExpect(status().isOk());
     }
 
     @Test
     void buscarPorCorrelacion_conRolUser_retorna403() throws Exception {
         mockMvc.perform(get("/api/auditoria/correlacion/abc-123")
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isForbidden());
     }
 
@@ -184,7 +186,7 @@ class EventoAuditoriaIT extends BaseIntegrationTest {
         mockMvc.perform(get("/api/auditoria/fecha")
                         .param("fechaInicio", "2026-01-01T00:00:00")
                         .param("fechaFin", "2026-12-31T23:59:59")
-                        .header("Authorization", "Bearer " + tokenAdmin()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenAdmin()))
                 .andExpect(status().isOk());
     }
 
@@ -193,7 +195,7 @@ class EventoAuditoriaIT extends BaseIntegrationTest {
         mockMvc.perform(get("/api/auditoria/fecha")
                         .param("fechaInicio", "2026-01-01T00:00:00")
                         .param("fechaFin", "2026-12-31T23:59:59")
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isForbidden());
     }
 
@@ -213,14 +215,14 @@ class EventoAuditoriaIT extends BaseIntegrationTest {
                 .thenReturn(new PageImpl<>(List.of()));
 
         mockMvc.perform(get("/api/auditoria/entidad/Orden")
-                        .header("Authorization", "Bearer " + tokenAdmin()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenAdmin()))
                 .andExpect(status().isOk());
     }
 
     @Test
     void buscarPorEntidad_conRolUser_retorna403() throws Exception {
         mockMvc.perform(get("/api/auditoria/entidad/Orden")
-                        .header("Authorization", "Bearer " + tokenUsuario()))
+                        .header(AUTH_HEADER, BEARER_PREFIX + tokenUsuario()))
                 .andExpect(status().isForbidden());
     }
 
