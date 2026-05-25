@@ -1,5 +1,9 @@
 package co.edu.unbosque.mundial_2026.service;
 
+/**
+ * Pruebas unitarias del servicio de categoría
+ * Valida creación actualización desactivación reactivación y consultas de categorías
+ */
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -39,22 +43,49 @@ import co.edu.unbosque.mundial_2026.repository.CategoriaRepository;
 import co.edu.unbosque.mundial_2026.repository.ProductoRepository;
 
 @ExtendWith(MockitoExtension.class)
+/**
+ * Clase de pruebas para CategoriaServiceImpl
+ * Usa Mockito para simular repositorios y servicios externos
+ */
 class CategoriaServiceImplTest {
 
     @Mock
+    /**
+     * Repositorio de categorías simulado para pruebas
+     */
     private CategoriaRepository categoriaRepository;
 
     @Mock
+    /**
+     * Repositorio de productos simulado para pruebas
+     */
     private ProductoRepository productoRepository;
 
     @Mock
+    /**
+     * Servicio de auditoría simulado
+     */
     private EventoAuditoriaService auditoriaService;
 
     @InjectMocks
+    /**
+     * Servicio de categoría bajo prueba
+     */
     private CategoriaServiceImpl categoriaService;
 
+    /**
+     * Entidad de categoría usada en pruebas
+     */
     private Categoria categoria;
+
+    /**
+     * Nombre constante de categoría usada en pruebas
+     */
 private static final String CAMISETAS = "Camisetas";
+
+    /**
+     * Inicialización antes de cada prueba
+     */
     @BeforeEach
     void setUp() {
         categoria = new Categoria();
@@ -66,9 +97,15 @@ private static final String CAMISETAS = "Camisetas";
 
     @Nested
     @DisplayName("crear")
+    /**
+     * Pruebas de creación de categorías
+     */
     class Crear {
 
         @Test
+        /**
+         * Verifica creación cuando el nombre no existe
+         */
         void cuandoNombreNoExiste_creaCategoria() {
             CategoriaRequestDTO dto = new CategoriaRequestDTO();
             dto.setNombre("Nueva");
@@ -90,6 +127,9 @@ private static final String CAMISETAS = "Camisetas";
         }
 
         @Test
+        /**
+         * Verifica error cuando la categoría ya existe
+         */
         void cuandoNombreYaExiste_lanzaCategoriaYaExisteException() {
             CategoriaRequestDTO dto = new CategoriaRequestDTO();
             dto.setNombre(CAMISETAS);
@@ -103,9 +143,15 @@ private static final String CAMISETAS = "Camisetas";
 
     @Nested
     @DisplayName("actualizar")
+    /**
+     * Pruebas de actualización de categorías
+     */
     class Actualizar {
 
         @Test
+        /**
+         * Verifica actualización de nombre y descripción
+         */
         void cuandoActualizaNombreYDescripcion_funciona() {
             CategoriaRequestDTO dto = new CategoriaRequestDTO();
             dto.setNombre("NuevoNombre");
@@ -123,6 +169,9 @@ private static final String CAMISETAS = "Camisetas";
         }
 
         @Test
+        /**
+         * Verifica error por nombre duplicado en otra categoría
+         */
         void cuandoNombreDuplicadoEnOtraCategoria_lanzaCategoriaYaExiste() {
             CategoriaRequestDTO dto = new CategoriaRequestDTO();
             dto.setNombre("Existente");
@@ -138,6 +187,9 @@ private static final String CAMISETAS = "Camisetas";
         }
 
         @Test
+        /**
+         * Verifica que no falle si el nombre es el mismo
+         */
         void cuandoNombreDuplicadoEnMismaCategoria_noLanza() {
             CategoriaRequestDTO dto = new CategoriaRequestDTO();
             dto.setNombre(CAMISETAS);
@@ -152,6 +204,9 @@ private static final String CAMISETAS = "Camisetas";
         }
 
         @Test
+        /**
+         * Verifica que no actualiza campos vacíos o nulos
+         */
         void cuandoCamposNullOBlanco_noActualiza() {
             CategoriaRequestDTO dto = new CategoriaRequestDTO();
             dto.setNombre(null);
@@ -167,6 +222,9 @@ private static final String CAMISETAS = "Camisetas";
         }
 
         @Test
+        /**
+         * Verifica error cuando la categoría no existe
+         */
         void cuandoNoExiste_lanzaCategoriaNotFoundException() {
             CategoriaRequestDTO dto = new CategoriaRequestDTO();
 
@@ -178,9 +236,15 @@ private static final String CAMISETAS = "Camisetas";
 
     @Nested
     @DisplayName("desactivar")
+    /**
+     * Pruebas de desactivación de categorías
+     */
     class Desactivar {
 
         @Test
+        /**
+         * Verifica desactivación de categoría con productos
+         */
         void cuandoExiste_desactivaCategoriaYProductos() {
             Producto p1 = new Producto();
             p1.setId(10L);
@@ -207,6 +271,9 @@ private static final String CAMISETAS = "Camisetas";
         }
 
         @Test
+        /**
+         * Verifica desactivación sin productos
+         */
         void cuandoNoTieneProductos_desactivaSoloCategoria() {
             when(categoriaRepository.findByIdAndActivoTrue(1L)).thenReturn(Optional.of(categoria));
             when(productoRepository.findByCategoriaId(1L)).thenReturn(Collections.emptyList());
@@ -219,6 +286,9 @@ private static final String CAMISETAS = "Camisetas";
         }
 
         @Test
+        /**
+         * Verifica error cuando no existe categoría
+         */
         void cuandoNoExiste_lanzaCategoriaNotFoundException() {
             when(categoriaRepository.findByIdAndActivoTrue(99L)).thenReturn(Optional.empty());
 
@@ -228,9 +298,15 @@ private static final String CAMISETAS = "Camisetas";
 
     @Nested
     @DisplayName("reactivar")
+    /**
+     * Pruebas de reactivación de categorías
+     */
     class Reactivar {
 
         @Test
+        /**
+         * Verifica reactivación de categoría
+         */
         void cuandoExiste_reactivaCategoria() {
             categoria.setActivo(false);
             Producto p = new Producto();
@@ -248,6 +324,9 @@ private static final String CAMISETAS = "Camisetas";
         }
 
         @Test
+        /**
+         * Verifica error cuando no existe categoría
+         */
         void cuandoNoExiste_lanzaCategoriaNotFoundException() {
             when(categoriaRepository.findById(99L)).thenReturn(Optional.empty());
 
@@ -257,9 +336,15 @@ private static final String CAMISETAS = "Camisetas";
 
     @Nested
     @DisplayName("listar y listarTodas")
+    /**
+     * Pruebas de listado de categorías
+     */
     class Listar {
 
         @Test
+        /**
+         * Verifica listado de categorías activas
+         */
         void listar_retornaSoloActivas() {
             when(categoriaRepository.findByActivoTrue()).thenReturn(List.of(categoria));
 
@@ -270,6 +355,9 @@ private static final String CAMISETAS = "Camisetas";
         }
 
         @Test
+        /**
+         * Verifica listado vacío
+         */
         void listar_cuandoNoHay_retornaListaVacia() {
             when(categoriaRepository.findByActivoTrue()).thenReturn(Collections.emptyList());
 
@@ -279,6 +367,9 @@ private static final String CAMISETAS = "Camisetas";
         }
 
         @Test
+        /**
+         * Verifica listado total
+         */
         void listarTodas_retornaTodas() {
             when(categoriaRepository.findAll()).thenReturn(List.of(categoria));
 
@@ -290,9 +381,15 @@ private static final String CAMISETAS = "Camisetas";
 
     @Nested
     @DisplayName("obtenerEntidadPorId")
+    /**
+     * Pruebas de obtención de entidad
+     */
     class ObtenerEntidadPorId {
 
         @Test
+        /**
+         * Verifica obtención correcta
+         */
         void cuandoExiste_retornaCategoria() {
             when(categoriaRepository.findByIdAndActivoTrue(1L)).thenReturn(Optional.of(categoria));
 
@@ -303,6 +400,9 @@ private static final String CAMISETAS = "Camisetas";
         }
 
         @Test
+        /**
+         * Verifica error cuando no existe
+         */
         void cuandoNoExiste_lanzaCategoriaNotFoundException() {
             when(categoriaRepository.findByIdAndActivoTrue(99L)).thenReturn(Optional.empty());
 
@@ -312,9 +412,15 @@ private static final String CAMISETAS = "Camisetas";
 
     @Nested
     @DisplayName("obtenerProductosPorCategoria")
+    /**
+     * Pruebas de obtención de productos por categoría
+     */
     class ObtenerProductosPorCategoria {
 
         @Test
+        /**
+         * Verifica productos por categoría
+         */
         void retornaProductosDeLaCategoria() {
             Producto p = new Producto();
             p.setId(10L);
@@ -330,6 +436,9 @@ private static final String CAMISETAS = "Camisetas";
         }
 
         @Test
+        /**
+         * Verifica lista vacía
+         */
         void cuandoNoHayProductos_retornaListaVacia() {
             when(productoRepository.findByCategoriaId(1L)).thenReturn(Collections.emptyList());
 

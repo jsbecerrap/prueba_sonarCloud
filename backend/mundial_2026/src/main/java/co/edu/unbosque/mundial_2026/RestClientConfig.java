@@ -31,8 +31,8 @@ public class RestClientConfig {
     @Bean
     public RestClient footballClient() {
         return RestClient.builder()
-                .baseUrl(apiFootballUrl)
-                .defaultHeader("x-apisports-key", apiFootballKey)
-                .build();
+                .baseUrl(apiFootballUrl)//base url
+                .defaultHeader("x-apisports-key", apiFootballKey)//header y la key
+                .build();//construye el objeto 
     }
 }

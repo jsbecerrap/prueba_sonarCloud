@@ -54,16 +54,16 @@ public class JwtValidationFilter extends BasicAuthenticationFilter {
             throws IOException, ServletException {
 
         try {
-            final String header = request.getHeader(HEADER_AUTHORIZATION);
+            final String header = request.getHeader(HEADER_AUTHORIZATION);//extrae el header para ver si es publico
 
             if (header == null || !header.startsWith(PREFIX_TOKEN)) {
-                chain.doFilter(request, response);
+                chain.doFilter(request, response);//deja pasar si es publico 
                 return;
             }
 
-            final String token = header.replace(PREFIX_TOKEN, "");
+            final String token = header.replace(PREFIX_TOKEN, "");//necesita el token limpio para validar
 
-            if (tokenBlacklist.estaInvalidado(token)) {
+            if (tokenBlacklist.estaInvalidado(token)) {//verifica si esta invalidado o no 
                 final Map<String, String> body = new HashMap<>();
                 body.put("error", "Token invalidado");
                 body.put("mensaje", "Sesión cerrada inicia sesión nuevamente");
@@ -72,23 +72,23 @@ public class JwtValidationFilter extends BasicAuthenticationFilter {
             }
 
             final Claims claims = Jwts.parser()
-                    .verifyWith(TokenJwt.getSecretKey())
+                    .verifyWith(TokenJwt.getSecretKey())//con que clave verificar
                     .build()
-                    .parseSignedClaims(token)
+                    .parseSignedClaims(token)//que va a verificar
                     .getPayload();
 
-            final String username = claims.getSubject();
+            final String username = claims.getSubject();//obtiene el correo 
 
-            final List<GrantedAuthority> authorities =
+            final List<GrantedAuthority> authorities =//obtiene los roles mediante la interfaz 
                     ((List<?>) claims.get("authorities"))
                             .stream()
                             .map(role -> new SimpleGrantedAuthority(role.toString()))
                             .collect(Collectors.toList());
 
             SecurityContextHolder.getContext().setAuthentication(
-                    new UsernamePasswordAuthenticationToken(username, null, authorities));
+                    new UsernamePasswordAuthenticationToken(username, null, authorities));//para asignarselos al contexto
 
-            chain.doFilter(request, response);
+            chain.doFilter(request, response);//pasa el siguiente filtro asi en cadena 
 
         } catch (JwtException e) {
             final Map<String, String> body = new HashMap<>();

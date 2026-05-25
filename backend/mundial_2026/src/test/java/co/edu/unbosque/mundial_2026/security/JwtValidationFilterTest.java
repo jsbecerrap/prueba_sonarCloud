@@ -23,21 +23,49 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import co.edu.unbosque.mundial_2026.security.filter.JwtValidationFilter;
 import io.jsonwebtoken.Jwts;
 
+/**
+ * Clase de pruebas encargada de validar el comportamiento
+ * del filtro de validación JWT en distintos escenarios.
+ */
 @ExtendWith(MockitoExtension.class)
 class JwtValidationFilterTest {
-private static final String USER_EMAIL = "user@test.com";
-private static final String BEARER_PREFIX = "Bearer ";
+
+    /**
+     * Correo de usuario utilizado en pruebas.
+     */
+    private static final String USER_EMAIL = "user@test.com";
+
+    /**
+     * Prefijo estándar del encabezado Authorization.
+     */
+    private static final String BEARER_PREFIX = "Bearer ";
+
+    /**
+     * Clave secreta codificada en Base64 utilizada para pruebas.
+     */
     private static final String SECRET_BASE64 =
             "dGVzdHNlY3JldGtleXRlc3RzZWNyZXRrZXl0ZXN0c2VjcmV0a2V5dGVzdA==";
 
+    /**
+     * Administrador de autenticación utilizado en pruebas.
+     */
     @Mock
     private AuthenticationManager authManager;
 
+    /**
+     * Lista negra de tokens invalidados.
+     */
     @Mock
     private TokenBlacklist tokenBlacklist;
 
+    /**
+     * Filtro JWT que será probado.
+     */
     private JwtValidationFilter filter;
 
+    /**
+     * Inicializa dependencias antes de cada prueba.
+     */
     @BeforeEach
     void setUp() {
         TokenJwt.init(SECRET_BASE64);
@@ -45,6 +73,12 @@ private static final String BEARER_PREFIX = "Bearer ";
         SecurityContextHolder.clearContext();
     }
 
+    /**
+     * Genera un token JWT válido para pruebas.
+     *
+     * @param correo correo del usuario
+     * @return token JWT generado
+     */
     private String tokenValido(String correo) {
         return Jwts.builder()
                 .subject(correo)
@@ -54,6 +88,12 @@ private static final String BEARER_PREFIX = "Bearer ";
                 .compact();
     }
 
+    /**
+     * Verifica que sin encabezado Authorization
+     * la petición continúe normalmente.
+     *
+     * @throws Exception si ocurre un error en la prueba
+     */
     @Test
     void doFilter_sinHeader_continuaChain() throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest();
@@ -66,6 +106,12 @@ private static final String BEARER_PREFIX = "Bearer ";
         assertNotNull(chain.getRequest());
     }
 
+    /**
+     * Verifica que un encabezado sin prefijo Bearer
+     * no intente autenticación y continúe la petición.
+     *
+     * @throws Exception si ocurre un error en la prueba
+     */
     @Test
     void doFilter_headerSinPrefixBearer_continuaChain() throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest();
@@ -79,6 +125,12 @@ private static final String BEARER_PREFIX = "Bearer ";
         assertNotNull(chain.getRequest());
     }
 
+    /**
+     * Verifica que un token válido
+     * registre autenticación en el contexto de seguridad.
+     *
+     * @throws Exception si ocurre un error en la prueba
+     */
     @Test
     void doFilter_tokenValido_setAuthenticationEnContext() throws Exception {
         String token = tokenValido(USER_EMAIL);
@@ -95,6 +147,12 @@ private static final String BEARER_PREFIX = "Bearer ";
                 SecurityContextHolder.getContext().getAuthentication().getName());
     }
 
+    /**
+     * Verifica que un token invalidado
+     * retorne error 401.
+     *
+     * @throws Exception si ocurre un error en la prueba
+     */
     @Test
     void doFilter_tokenInvalidado_retorna401() throws Exception {
         String token = tokenValido(USER_EMAIL);
@@ -110,6 +168,12 @@ private static final String BEARER_PREFIX = "Bearer ";
         assertNull(SecurityContextHolder.getContext().getAuthentication());
     }
 
+    /**
+     * Verifica que un token mal formado
+     * retorne error 401.
+     *
+     * @throws Exception si ocurre un error en la prueba
+     */
     @Test
     void doFilter_tokenMalformado_retorna401() throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest();
@@ -123,6 +187,12 @@ private static final String BEARER_PREFIX = "Bearer ";
         assertEquals(401, response.getStatus());
     }
 
+    /**
+     * Verifica que un token válido
+     * cargue correctamente los roles del usuario.
+     *
+     * @throws Exception si ocurre un error en la prueba
+     */
     @Test
     void doFilter_tokenValido_rolesSetEnAuthentication() throws Exception {
         String token = tokenValido("admin@test.com");

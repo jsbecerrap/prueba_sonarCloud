@@ -24,21 +24,30 @@ import co.edu.unbosque.mundial_2026.entity.Partido;
 import co.edu.unbosque.mundial_2026.exception.PartidoNotFoundException;
 import co.edu.unbosque.mundial_2026.service.PartidoService;
 
+/**
+ * Pruebas unitarias para {@link PartidoController}
+ * Verifica el comportamiento del controlador de partidos usando mocks de {@link PartidoService},
+ * con contexto de seguridad simulado para los endpoints que requieren usuario autenticado
+ */
 @ExtendWith(MockitoExtension.class)
 class PartidoControllerTest {
 
     @Mock private PartidoService partidoService;
     @InjectMocks private PartidoController controller;
 
+    /** Correo del usuario autenticado simulado en el SecurityContext para los tests de favoritos */
     private static final String USER_CORREO = "user@test.com";
-private static final String FECHA_PARTIDO = "2026-06-11";
+
+    /** Fecha de partido de prueba usada en los tests de busqueda y sincronizacion por fecha */
+    private static final String FECHA_PARTIDO = "2026-06-11";
+
     @Mock private SecurityContext securityContext;
     @Mock private Authentication authentication;
 
     @BeforeEach
     void setUpSecurityContext() {
-   lenient().when(securityContext.getAuthentication()).thenReturn(authentication);
-lenient().when(authentication.getName()).thenReturn(USER_CORREO);
+        lenient().when(securityContext.getAuthentication()).thenReturn(authentication);
+        lenient().when(authentication.getName()).thenReturn(USER_CORREO);
         SecurityContextHolder.setContext(securityContext);
     }
 
@@ -79,6 +88,9 @@ lenient().when(authentication.getName()).thenReturn(USER_CORREO);
         return dto;
     }
 
+    /**
+     * Verifica que listar todos los partidos retorna HTTP 200 y la lista contiene exactamente un elemento
+     */
     @Test
     void listarPartidos_retornaOkConLista() {
         when(partidoService.obtenerPartidos()).thenReturn(List.of(partidoDTO(1L)));
@@ -90,6 +102,9 @@ lenient().when(authentication.getName()).thenReturn(USER_CORREO);
         verify(partidoService).obtenerPartidos();
     }
 
+    /**
+     * Verifica que listar partidos cuando no hay ninguno retorna HTTP 200 con lista vacia
+     */
     @Test
     void listarPartidos_listaVacia_retornaOkVacio() {
         when(partidoService.obtenerPartidos()).thenReturn(List.of());
@@ -100,6 +115,9 @@ lenient().when(authentication.getName()).thenReturn(USER_CORREO);
         assertTrue(res.getBody().isEmpty());
     }
 
+    /**
+     * Verifica que obtener partidos por equipo retorna HTTP 200 y la lista contiene exactamente un elemento
+     */
     @Test
     void obtenerPartidosPorEquipo_retornaOkConLista() {
         when(partidoService.obtenerPartidosPorEquipo(1L)).thenReturn(List.of(partidoDTO(1L)));
@@ -111,6 +129,9 @@ lenient().when(authentication.getName()).thenReturn(USER_CORREO);
         verify(partidoService).obtenerPartidosPorEquipo(1L);
     }
 
+    /**
+     * Verifica que obtener partidos de un equipo sin partidos retorna HTTP 200 con lista vacia
+     */
     @Test
     void obtenerPartidosPorEquipo_listaVacia_retornaOkVacio() {
         when(partidoService.obtenerPartidosPorEquipo(99L)).thenReturn(List.of());
@@ -121,6 +142,9 @@ lenient().when(authentication.getName()).thenReturn(USER_CORREO);
         assertTrue(res.getBody().isEmpty());
     }
 
+    /**
+     * Verifica que obtener standings retorna HTTP 200 y la lista contiene exactamente un grupo
+     */
     @Test
     void obtenerStandings_retornaOkConGrupos() {
         List<List<PosicionDTO>> standings = List.of(List.of(new PosicionDTO()));
@@ -133,6 +157,9 @@ lenient().when(authentication.getName()).thenReturn(USER_CORREO);
         verify(partidoService).obtenerStandings();
     }
 
+    /**
+     * Verifica que obtener standings cuando no hay grupos retorna HTTP 200 con lista vacia
+     */
     @Test
     void obtenerStandings_vacio_retornaOkVacio() {
         when(partidoService.obtenerStandings()).thenReturn(List.of());
@@ -143,6 +170,9 @@ lenient().when(authentication.getName()).thenReturn(USER_CORREO);
         assertTrue(res.getBody().isEmpty());
     }
 
+    /**
+     * Verifica que obtener selecciones del mundial retorna HTTP 200 y la lista contiene exactamente un elemento
+     */
     @Test
     void obtenerSelecciones_retornaOkConLista() {
         when(partidoService.obtenerSelecciones()).thenReturn(List.of(new EquipoMundialDTO()));
@@ -154,6 +184,9 @@ lenient().when(authentication.getName()).thenReturn(USER_CORREO);
         verify(partidoService).obtenerSelecciones();
     }
 
+    /**
+     * Verifica que obtener selecciones cuando no hay ninguna retorna HTTP 200 con lista vacia
+     */
     @Test
     void obtenerSelecciones_listaVacia_retornaOkVacio() {
         when(partidoService.obtenerSelecciones()).thenReturn(List.of());
@@ -164,6 +197,9 @@ lenient().when(authentication.getName()).thenReturn(USER_CORREO);
         assertTrue(res.getBody().isEmpty());
     }
 
+    /**
+     * Verifica que obtener jugadores por equipo retorna HTTP 200 y la lista contiene exactamente un elemento
+     */
     @Test
     void obtenerJugadoresPorEquipo_retornaOkConLista() {
         when(partidoService.obtenerJugadoresPorEquipo(1L)).thenReturn(List.of(new JugadorDTO()));
@@ -175,6 +211,9 @@ lenient().when(authentication.getName()).thenReturn(USER_CORREO);
         verify(partidoService).obtenerJugadoresPorEquipo(1L);
     }
 
+    /**
+     * Verifica que obtener jugadores de un equipo sin jugadores retorna HTTP 200 con lista vacia
+     */
     @Test
     void obtenerJugadoresPorEquipo_listaVacia_retornaOkVacio() {
         when(partidoService.obtenerJugadoresPorEquipo(99L)).thenReturn(List.of());
@@ -185,6 +224,9 @@ lenient().when(authentication.getName()).thenReturn(USER_CORREO);
         assertTrue(res.getBody().isEmpty());
     }
 
+    /**
+     * Verifica que obtener partidos por fecha retorna HTTP 200 y la lista contiene exactamente un elemento
+     */
     @Test
     void obtenerPartidosPorFecha_retornaOkConLista() {
         when(partidoService.obtenerPartidosPorFecha(FECHA_PARTIDO)).thenReturn(List.of(partidoDTO(1L)));
@@ -196,6 +238,9 @@ lenient().when(authentication.getName()).thenReturn(USER_CORREO);
         verify(partidoService).obtenerPartidosPorFecha(FECHA_PARTIDO);
     }
 
+    /**
+     * Verifica que obtener partidos en una fecha sin partidos retorna HTTP 200 con lista vacia
+     */
     @Test
     void obtenerPartidosPorFecha_listaVacia_retornaOkVacio() {
         when(partidoService.obtenerPartidosPorFecha("2099-01-01")).thenReturn(List.of());
@@ -206,6 +251,9 @@ lenient().when(authentication.getName()).thenReturn(USER_CORREO);
         assertTrue(res.getBody().isEmpty());
     }
 
+    /**
+     * Verifica que obtener partidos en vivo retorna HTTP 200 y la lista contiene exactamente un elemento
+     */
     @Test
     void obtenerPartidosEnVivo_retornaOkConLista() {
         when(partidoService.obtenerPartidosEnVivo()).thenReturn(List.of(partidoDTO(1L)));
@@ -217,6 +265,9 @@ lenient().when(authentication.getName()).thenReturn(USER_CORREO);
         verify(partidoService).obtenerPartidosEnVivo();
     }
 
+    /**
+     * Verifica que obtener partidos en vivo cuando no hay ninguno retorna HTTP 200 con lista vacia
+     */
     @Test
     void obtenerPartidosEnVivo_sinPartidos_retornaOkVacio() {
         when(partidoService.obtenerPartidosEnVivo()).thenReturn(List.of());
@@ -227,6 +278,10 @@ lenient().when(authentication.getName()).thenReturn(USER_CORREO);
         assertTrue(res.getBody().isEmpty());
     }
 
+    /**
+     * Verifica que obtener partidos de las selecciones favoritas del usuario autenticado
+     * retorna HTTP 200 y la lista contiene exactamente un elemento
+     */
     @Test
     void obtenerPartidosPorSeleccionesFav_retornaOkConLista() {
         when(partidoService.obtenerPartidosPorSeleccionesFav(USER_CORREO))
@@ -239,6 +294,9 @@ lenient().when(authentication.getName()).thenReturn(USER_CORREO);
         verify(partidoService).obtenerPartidosPorSeleccionesFav(USER_CORREO);
     }
 
+    /**
+     * Verifica que obtener partidos por selecciones favoritas sin resultados retorna HTTP 200 con lista vacia
+     */
     @Test
     void obtenerPartidosPorSeleccionesFav_listaVacia_retornaOkVacio() {
         when(partidoService.obtenerPartidosPorSeleccionesFav(USER_CORREO)).thenReturn(List.of());
@@ -249,6 +307,10 @@ lenient().when(authentication.getName()).thenReturn(USER_CORREO);
         assertTrue(res.getBody().isEmpty());
     }
 
+    /**
+     * Verifica que obtener partidos de los estadios favoritos del usuario autenticado
+     * retorna HTTP 200 y la lista contiene exactamente un elemento
+     */
     @Test
     void obtenerPartidosPorEstadiosFav_retornaOkConLista() {
         when(partidoService.obtenerPartidosPorEstadiosFav(USER_CORREO))
@@ -261,6 +323,9 @@ lenient().when(authentication.getName()).thenReturn(USER_CORREO);
         verify(partidoService).obtenerPartidosPorEstadiosFav(USER_CORREO);
     }
 
+    /**
+     * Verifica que obtener partidos por estadios favoritos sin resultados retorna HTTP 200 con lista vacia
+     */
     @Test
     void obtenerPartidosPorEstadiosFav_listaVacia_retornaOkVacio() {
         when(partidoService.obtenerPartidosPorEstadiosFav(USER_CORREO)).thenReturn(List.of());
@@ -271,6 +336,10 @@ lenient().when(authentication.getName()).thenReturn(USER_CORREO);
         assertTrue(res.getBody().isEmpty());
     }
 
+    /**
+     * Verifica que obtener partidos de las ciudades favoritas del usuario autenticado
+     * retorna HTTP 200 y la lista contiene exactamente un elemento
+     */
     @Test
     void obtenerPartidosPorCiudadesFav_retornaOkConLista() {
         when(partidoService.obtenerPartidosPorCiudadesFav(USER_CORREO))
@@ -283,6 +352,9 @@ lenient().when(authentication.getName()).thenReturn(USER_CORREO);
         verify(partidoService).obtenerPartidosPorCiudadesFav(USER_CORREO);
     }
 
+    /**
+     * Verifica que obtener partidos por ciudades favoritas sin resultados retorna HTTP 200 con lista vacia
+     */
     @Test
     void obtenerPartidosPorCiudadesFav_listaVacia_retornaOkVacio() {
         when(partidoService.obtenerPartidosPorCiudadesFav(USER_CORREO)).thenReturn(List.of());
@@ -293,6 +365,10 @@ lenient().when(authentication.getName()).thenReturn(USER_CORREO);
         assertTrue(res.getBody().isEmpty());
     }
 
+    /**
+     * Verifica que sincronizar partidos por fecha y liga retorna HTTP 200
+     * y el conteo de partidos sincronizados es el esperado
+     */
     @Test
     void sincronizarPorFechaYLiga_retornaOkConConteo() {
         when(partidoService.sincronizarPorFechaYLiga(FECHA_PARTIDO, 1, 2026)).thenReturn(10);
@@ -304,6 +380,9 @@ lenient().when(authentication.getName()).thenReturn(USER_CORREO);
         verify(partidoService).sincronizarPorFechaYLiga(FECHA_PARTIDO, 1, 2026);
     }
 
+    /**
+     * Verifica que sincronizar partidos cuando no hay ninguno que sincronizar retorna HTTP 200 con cero
+     */
     @Test
     void sincronizarPorFechaYLiga_sinPartidos_retornaCero() {
         when(partidoService.sincronizarPorFechaYLiga(any(), anyInt(), anyInt())).thenReturn(0);
@@ -314,6 +393,9 @@ lenient().when(authentication.getName()).thenReturn(USER_CORREO);
         assertEquals(0, res.getBody());
     }
 
+    /**
+     * Verifica que actualizar el resultado de un partido existente retorna HTTP 200 con valor uno
+     */
     @Test
     void actualizarResultado_retornaOkConUno() {
         when(partidoService.actualizarResultado(1L, 2, 1, 90)).thenReturn(1);
@@ -325,6 +407,9 @@ lenient().when(authentication.getName()).thenReturn(USER_CORREO);
         verify(partidoService).actualizarResultado(1L, 2, 1, 90);
     }
 
+    /**
+     * Verifica que actualizar el resultado de un partido inexistente lanza {@link PartidoNotFoundException}
+     */
     @Test
     void actualizarResultado_partidoNoExistente_propagaExcepcion() {
         when(partidoService.actualizarResultado(eq(99L), anyInt(), anyInt(), anyInt()))
@@ -334,6 +419,10 @@ lenient().when(authentication.getName()).thenReturn(USER_CORREO);
                 () -> controller.actualizarResultado(99L, 1, 0, 90));
     }
 
+    /**
+     * Verifica que obtener un partido por ID existente retorna HTTP 200
+     * y el ID del DTO coincide con el solicitado
+     */
     @Test
     void obtenerPorId_existente_retornaOk() {
         when(partidoService.obtenerPartidoPorId(1L)).thenReturn(partidoDTO(1L));
@@ -346,6 +435,9 @@ lenient().when(authentication.getName()).thenReturn(USER_CORREO);
         verify(partidoService).obtenerPartidoPorId(1L);
     }
 
+    /**
+     * Verifica que obtener un partido por ID inexistente lanza {@link PartidoNotFoundException}
+     */
     @Test
     void obtenerPorId_noExistente_propagaExcepcion() {
         when(partidoService.obtenerPartidoPorId(99L)).thenThrow(new PartidoNotFoundException("no encontrado"));
@@ -353,6 +445,10 @@ lenient().when(authentication.getName()).thenReturn(USER_CORREO);
         assertThrows(PartidoNotFoundException.class, () -> controller.obtenerPorId(99L));
     }
 
+    /**
+     * Verifica que obtener el catalogo de selecciones retorna HTTP 200
+     * y el nombre del primer elemento coincide con el esperado
+     */
     @Test
     void obtenerCatalogoSelecciones_retornaOkConLista() {
         when(partidoService.obtenerCatalogoSelecciones())
@@ -366,6 +462,9 @@ lenient().when(authentication.getName()).thenReturn(USER_CORREO);
         verify(partidoService).obtenerCatalogoSelecciones();
     }
 
+    /**
+     * Verifica que obtener el catalogo de selecciones cuando no hay ninguna retorna HTTP 200 con lista vacia
+     */
     @Test
     void obtenerCatalogoSelecciones_listaVacia_retornaOkVacio() {
         when(partidoService.obtenerCatalogoSelecciones()).thenReturn(List.of());
@@ -376,6 +475,10 @@ lenient().when(authentication.getName()).thenReturn(USER_CORREO);
         assertTrue(res.getBody().isEmpty());
     }
 
+    /**
+     * Verifica que listar partidos desde la base de datos retorna HTTP 200
+     * y la lista contiene exactamente un elemento
+     */
     @Test
     void listarDesdeBD_retornaOkConLista() {
         Partido partido = new Partido();
@@ -389,6 +492,9 @@ lenient().when(authentication.getName()).thenReturn(USER_CORREO);
         verify(partidoService).listarDesdeBD();
     }
 
+    /**
+     * Verifica que listar partidos desde la base de datos cuando no hay ninguno retorna HTTP 200 con lista vacia
+     */
     @Test
     void listarDesdeBD_listaVacia_retornaOkVacio() {
         when(partidoService.listarDesdeBD()).thenReturn(List.of());

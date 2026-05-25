@@ -56,18 +56,41 @@ import co.edu.unbosque.mundial_2026.repository.PartidoRepository;
 import co.edu.unbosque.mundial_2026.repository.SeleccionRepository;
 import org.springframework.web.client.RestClientException;
 import java.time.LocalDateTime;
+
+/**
+ * Pruebas unitarias para {@link PartidoServiceImpl}
+ * Verifica la logica de negocio del servicio de partidos usando mocks del cliente REST externo,
+ * repositorios y servicios dependientes, incluyendo fallback a base de datos cuando la API falla
+ */
 @ExtendWith(MockitoExtension.class)
 @SuppressWarnings({ "rawtypes", "unchecked" })
 class PartidoServiceImplTest {
-private static final String CORREO_TEST = "test@test.com";
-private static final String BRASIL = "Brasil";
-private static final String ARGENTINA = "Argentina";
-private static final String ESTADIO_AZTECA = "Estadio Azteca";
-private static final String FECHA = "2026-06-11T20:00:00+00:00";
-private static final String CIUDAD_MEXICO = "Ciudad de Mexico";
-private static final String FECHA_PARTIDO = "2026-06-11";
-private static final String GRUPO_A = "Group A";  
-@Mock
+
+    /** Correo del usuario de prueba usado en los tests de preferencias y favoritos */
+    private static final String CORREO_TEST = "test@test.com";
+
+    /** Nombre de seleccion local usado en los partidos de prueba */
+    private static final String BRASIL = "Brasil";
+
+    /** Nombre de seleccion visitante usado en los partidos de prueba */
+    private static final String ARGENTINA = "Argentina";
+
+    /** Nombre del estadio de prueba usado en los tests de filtrado por estadio y ciudad */
+    private static final String ESTADIO_AZTECA = "Estadio Azteca";
+
+    /** Fecha y hora completa del partido de prueba en formato ISO */
+    private static final String FECHA = "2026-06-11T20:00:00+00:00";
+
+    /** Ciudad de prueba mapeada al estadio Azteca en los tests de preferencias por ciudad */
+    private static final String CIUDAD_MEXICO = "Ciudad de Mexico";
+
+    /** Fecha del partido en formato yyyy-MM-dd usada en los tests de busqueda por fecha */
+    private static final String FECHA_PARTIDO = "2026-06-11";
+
+    /** Nombre del grupo de fase de grupos usado en los partidos de prueba */
+    private static final String GRUPO_A = "Group A";
+
+    @Mock
     private RestClient footballClient;
 
     @Mock
@@ -94,7 +117,10 @@ private static final String GRUPO_A = "Group A";
     @InjectMocks
     private PartidoServiceImpl partidoService;
 
+    /** Usuario de prueba con listas de favoritos inicializadas vacias */
     private Usuario usuario;
+
+    /** PartidoDTO de prueba construido con datos del partido Brasil vs Argentina */
     private PartidoDTO partidoDTO;
 
     @BeforeEach
@@ -154,10 +180,16 @@ private static final String GRUPO_A = "Group A";
         when(responseSpec.body(any(Class.class))).thenReturn(responseBody);
     }
 
+    /**
+     * Tests del metodo obtenerPartidos — cubre obtencion desde API y fallback a base de datos
+     */
     @Nested
     @DisplayName("obtenerPartidos")
     class ObtenerPartidos {
 
+        /**
+         * Verifica que cuando la API responde correctamente se retorna la lista de partidos
+         */
         @Test
         void retornaListaDeAPI() {
             PartidoResponseDTO response = new PartidoResponseDTO();
@@ -169,34 +201,44 @@ private static final String GRUPO_A = "Group A";
 
             assertEquals(1, resultado.size());
         }
+
+        /**
+         * Verifica que cuando la API falla se retornan los partidos almacenados en base de datos
+         */
         @Test
-void cuandoAPIFalla_retornaDesdeBD() {
-    when(footballClient.get()).thenThrow(new RestClientException("API no disponible"));
+        void cuandoAPIFalla_retornaDesdeBD() {
+            when(footballClient.get()).thenThrow(new RestClientException("API no disponible"));
 
-    Partido p = new Partido();
-    p.setId(1001L);
-    p.setSeleccionLocal(BRASIL);
-    p.setSeleccionVisitante(ARGENTINA);
-    p.setEstadio(ESTADIO_AZTECA);
-    p.setEstado("FT");
-    p.setRonda(GRUPO_A);
-    p.setGolesLocal(2);
-    p.setGolesVisitante(1);
-    p.setFecha(LocalDateTime.of(2026, 6, 11, 20, 0));
-    when(partidoRepository.findAll()).thenReturn(List.of(p));
+            Partido p = new Partido();
+            p.setId(1001L);
+            p.setSeleccionLocal(BRASIL);
+            p.setSeleccionVisitante(ARGENTINA);
+            p.setEstadio(ESTADIO_AZTECA);
+            p.setEstado("FT");
+            p.setRonda(GRUPO_A);
+            p.setGolesLocal(2);
+            p.setGolesVisitante(1);
+            p.setFecha(LocalDateTime.of(2026, 6, 11, 20, 0));
+            when(partidoRepository.findAll()).thenReturn(List.of(p));
 
-    List<PartidoDTO> resultado = partidoService.obtenerPartidos();
+            List<PartidoDTO> resultado = partidoService.obtenerPartidos();
 
-    assertEquals(1, resultado.size());
-    assertEquals(BRASIL, resultado.get(0).getEquipos().getLocal().getNombre());
-    assertEquals(ARGENTINA, resultado.get(0).getEquipos().getVisitante().getNombre());
-}
+            assertEquals(1, resultado.size());
+            assertEquals(BRASIL, resultado.get(0).getEquipos().getLocal().getNombre());
+            assertEquals(ARGENTINA, resultado.get(0).getEquipos().getVisitante().getNombre());
+        }
     }
 
+    /**
+     * Tests del metodo obtenerPartidosPorEquipo — verifica filtracion de partidos por ID de equipo
+     */
     @Nested
     @DisplayName("obtenerPartidosPorEquipo")
     class ObtenerPartidosPorEquipo {
 
+        /**
+         * Verifica que se retornan los partidos del equipo indicado desde la API
+         */
         @Test
         void retornaPartidosDeUnEquipo() {
             PartidoResponseDTO response = new PartidoResponseDTO();
@@ -210,10 +252,16 @@ void cuandoAPIFalla_retornaDesdeBD() {
         }
     }
 
+    /**
+     * Tests del metodo obtenerPartidoPorId — cubre obtencion exitosa, lista vacia y lista nula
+     */
     @Nested
     @DisplayName("obtenerPartidoPorId")
     class ObtenerPartidoPorId {
 
+        /**
+         * Verifica que un partido existente se retorna con el ID correcto
+         */
         @Test
         void cuandoExiste_retornaPartido() {
             PartidoResponseDTO response = new PartidoResponseDTO();
@@ -227,6 +275,9 @@ void cuandoAPIFalla_retornaDesdeBD() {
             assertEquals(1001L, resultado.getInformacion().getId());
         }
 
+        /**
+         * Verifica que una lista vacia retornada por la API lanza {@link PartidoNotFoundException}
+         */
         @Test
         void cuandoListaVacia_lanzaPartidoNotFoundException() {
             PartidoResponseDTO response = new PartidoResponseDTO();
@@ -238,6 +289,9 @@ void cuandoAPIFalla_retornaDesdeBD() {
                     () -> partidoService.obtenerPartidoPorId(999L));
         }
 
+        /**
+         * Verifica que una lista nula retornada por la API lanza {@link PartidoNotFoundException}
+         */
         @Test
         void cuandoListaNula_lanzaPartidoNotFoundException() {
             PartidoResponseDTO response = new PartidoResponseDTO();
@@ -250,10 +304,16 @@ void cuandoAPIFalla_retornaDesdeBD() {
         }
     }
 
+    /**
+     * Tests del metodo obtenerStandings — verifica construccion de tabla de posiciones por grupos
+     */
     @Nested
     @DisplayName("obtenerStandings")
     class ObtenerStandings {
 
+        /**
+         * Verifica que se retorna la tabla de posiciones con los grupos correctamente estructurados
+         */
         @Test
         void retornaTablasDePosicion() {
             PosicionDTO posicion = new PosicionDTO();
@@ -272,10 +332,16 @@ void cuandoAPIFalla_retornaDesdeBD() {
         }
     }
 
+    /**
+     * Tests del metodo obtenerSelecciones — verifica listado de selecciones del mundial
+     */
     @Nested
     @DisplayName("obtenerSelecciones")
     class ObtenerSelecciones {
 
+        /**
+         * Verifica que se retornan las selecciones participantes del mundial desde la API
+         */
         @Test
         void retornaSelecciones() {
             EquipoMundialDTO eq = new EquipoMundialDTO();
@@ -290,10 +356,16 @@ void cuandoAPIFalla_retornaDesdeBD() {
         }
     }
 
+    /**
+     * Tests del metodo obtenerJugadoresPorEquipo — verifica listado de jugadores por ID de equipo
+     */
     @Nested
     @DisplayName("obtenerJugadoresPorEquipo")
     class ObtenerJugadoresPorEquipo {
 
+        /**
+         * Verifica que se retornan los jugadores del equipo indicado desde la API
+         */
         @Test
         void retornaJugadoresDelEquipo() {
             JugadorDTO j = new JugadorDTO();
@@ -310,10 +382,16 @@ void cuandoAPIFalla_retornaDesdeBD() {
         }
     }
 
+    /**
+     * Tests de los metodos obtenerPartidosPorFecha y obtenerPartidosEnVivo — cubre API y fallback a BD
+     */
     @Nested
     @DisplayName("obtenerPartidosPorFecha y obtenerPartidosEnVivo")
     class ObtenerPartidosFiltros {
 
+        /**
+         * Verifica que obtenerPartidosPorFecha retorna partidos de la fecha indicada desde la API
+         */
         @Test
         void obtenerPartidosPorFecha_retornaPartidos() {
             PartidoResponseDTO response = new PartidoResponseDTO();
@@ -326,6 +404,9 @@ void cuandoAPIFalla_retornaDesdeBD() {
             assertEquals(1, resultado.size());
         }
 
+        /**
+         * Verifica que obtenerPartidosEnVivo retorna los partidos en curso desde la API
+         */
         @Test
         void obtenerPartidosEnVivo_retornaPartidosLive() {
             PartidoResponseDTO response = new PartidoResponseDTO();
@@ -337,61 +418,74 @@ void cuandoAPIFalla_retornaDesdeBD() {
 
             assertEquals(1, resultado.size());
         }
+
+        /**
+         * Verifica que cuando la API falla al buscar por fecha se retornan solo los partidos de esa fecha desde BD
+         */
         @Test
-void obtenerPartidosPorFecha_cuandoAPIFalla_retornaDesdeBD() {
-    when(footballClient.get()).thenThrow(new RestClientException("API no disponible"));
+        void obtenerPartidosPorFecha_cuandoAPIFalla_retornaDesdeBD() {
+            when(footballClient.get()).thenThrow(new RestClientException("API no disponible"));
 
-    Partido coincide = new Partido();
-    coincide.setId(1002L);
-    coincide.setSeleccionLocal(BRASIL);
-    coincide.setSeleccionVisitante(ARGENTINA);
-    coincide.setEstadio(ESTADIO_AZTECA);
-    coincide.setEstado("NS");
-    coincide.setFecha(LocalDateTime.of(2026, 6, 11, 20, 0));
+            Partido coincide = new Partido();
+            coincide.setId(1002L);
+            coincide.setSeleccionLocal(BRASIL);
+            coincide.setSeleccionVisitante(ARGENTINA);
+            coincide.setEstadio(ESTADIO_AZTECA);
+            coincide.setEstado("NS");
+            coincide.setFecha(LocalDateTime.of(2026, 6, 11, 20, 0));
 
-    Partido noCoincide = new Partido();
-    noCoincide.setId(1005L);
-    noCoincide.setEstado("NS");
-    noCoincide.setFecha(LocalDateTime.of(2026, 6, 15, 18, 0));
+            Partido noCoincide = new Partido();
+            noCoincide.setId(1005L);
+            noCoincide.setEstado("NS");
+            noCoincide.setFecha(LocalDateTime.of(2026, 6, 15, 18, 0));
 
-    when(partidoRepository.findAll()).thenReturn(List.of(coincide, noCoincide));
+            when(partidoRepository.findAll()).thenReturn(List.of(coincide, noCoincide));
 
-    List<PartidoDTO> resultado = partidoService.obtenerPartidosPorFecha(FECHA_PARTIDO);
+            List<PartidoDTO> resultado = partidoService.obtenerPartidosPorFecha(FECHA_PARTIDO);
 
-    assertEquals(1, resultado.size());
-    assertEquals(BRASIL, resultado.get(0).getEquipos().getLocal().getNombre());
-}
+            assertEquals(1, resultado.size());
+            assertEquals(BRASIL, resultado.get(0).getEquipos().getLocal().getNombre());
+        }
 
-@Test
-void obtenerPartidosEnVivo_cuandoAPIFalla_retornaEnVivoDesdeBD() {
-    when(footballClient.get()).thenThrow(new RestClientException("API no disponible"));
+        /**
+         * Verifica que cuando la API falla al buscar en vivo se retornan solo los partidos con estado activo desde BD
+         */
+        @Test
+        void obtenerPartidosEnVivo_cuandoAPIFalla_retornaEnVivoDesdeBD() {
+            when(footballClient.get()).thenThrow(new RestClientException("API no disponible"));
 
-    Partido vivo = new Partido();
-    vivo.setId(1003L);
-    vivo.setSeleccionLocal(BRASIL);
-    vivo.setSeleccionVisitante(ARGENTINA);
-    vivo.setEstadio(ESTADIO_AZTECA);
-    vivo.setEstado("1H");
-    vivo.setFecha(LocalDateTime.of(2026, 6, 11, 20, 0));
+            Partido vivo = new Partido();
+            vivo.setId(1003L);
+            vivo.setSeleccionLocal(BRASIL);
+            vivo.setSeleccionVisitante(ARGENTINA);
+            vivo.setEstadio(ESTADIO_AZTECA);
+            vivo.setEstado("1H");
+            vivo.setFecha(LocalDateTime.of(2026, 6, 11, 20, 0));
 
-    Partido terminado = new Partido();
-    terminado.setId(1004L);
-    terminado.setEstado("FT");
-    terminado.setFecha(LocalDateTime.of(2026, 6, 10, 18, 0));
+            Partido terminado = new Partido();
+            terminado.setId(1004L);
+            terminado.setEstado("FT");
+            terminado.setFecha(LocalDateTime.of(2026, 6, 10, 18, 0));
 
-    when(partidoRepository.findAll()).thenReturn(List.of(vivo, terminado));
+            when(partidoRepository.findAll()).thenReturn(List.of(vivo, terminado));
 
-    List<PartidoDTO> resultado = partidoService.obtenerPartidosEnVivo();
+            List<PartidoDTO> resultado = partidoService.obtenerPartidosEnVivo();
 
-    assertEquals(1, resultado.size());
-    assertEquals(BRASIL, resultado.get(0).getEquipos().getLocal().getNombre());
-}
+            assertEquals(1, resultado.size());
+            assertEquals(BRASIL, resultado.get(0).getEquipos().getLocal().getNombre());
+        }
     }
 
+    /**
+     * Tests del metodo sincronizarPorFechaYLiga — cubre guardado, actualizacion y partido sin goles
+     */
     @Nested
     @DisplayName("sincronizarPorFechaYLiga")
     class SincronizarPorFechaYLiga {
 
+        /**
+         * Verifica que los partidos nuevos se persisten y se retorna la cantidad sincronizada
+         */
         @Test
         void cuandoTienePartidos_losGuardaYRetornaCantidad() {
             PartidoResponseDTO response = new PartidoResponseDTO();
@@ -406,6 +500,9 @@ void obtenerPartidosEnVivo_cuandoAPIFalla_retornaEnVivoDesdeBD() {
             verify(partidoRepository).saveAll(any());
         }
 
+        /**
+         * Verifica que un partido ya existente en BD se actualiza en lugar de duplicarse
+         */
         @Test
         void cuandoPartidoYaExiste_actualizaElExistente() {
             Partido existente = new Partido();
@@ -422,6 +519,9 @@ void obtenerPartidosEnVivo_cuandoAPIFalla_retornaEnVivoDesdeBD() {
             assertEquals(1, resultado);
         }
 
+        /**
+         * Verifica que un partido sin marcador en la API se sincroniza sin establecer goles
+         */
         @Test
         void cuandoPartidoSinGoles_noEstableceMarcadores() {
             PartidoDTO sinGoles = construirPartidoDTO(2001L, BRASIL, ARGENTINA,
@@ -440,10 +540,16 @@ void obtenerPartidosEnVivo_cuandoAPIFalla_retornaEnVivoDesdeBD() {
         }
     }
 
+    /**
+     * Tests del metodo obtenerPartidosPorSeleccionesFav — cubre filtracion con y sin selecciones favoritas
+     */
     @Nested
     @DisplayName("obtenerPartidosPorSeleccionesFav")
     class ObtenerPartidosPorSeleccionesFav {
 
+        /**
+         * Verifica que cuando el usuario tiene selecciones favoritas se retornan los partidos que las incluyen
+         */
         @Test
         void cuandoTieneSelecciones_retornaPartidos() {
             Seleccion sel = new Seleccion();
@@ -462,6 +568,9 @@ void obtenerPartidosEnVivo_cuandoAPIFalla_retornaEnVivoDesdeBD() {
             assertEquals(1, resultado.size());
         }
 
+        /**
+         * Verifica que cuando el usuario no tiene selecciones favoritas se retorna lista vacia
+         */
         @Test
         void cuandoNoTieneSelecciones_retornaListaVacia() {
             when(usuarioService.obtenerEntidadPorCorreo(CORREO_TEST)).thenReturn(usuario);
@@ -472,10 +581,16 @@ void obtenerPartidosEnVivo_cuandoAPIFalla_retornaEnVivoDesdeBD() {
         }
     }
 
+    /**
+     * Tests del metodo obtenerPartidosPorEstadiosFav — cubre filtracion con estadio coincidente y no coincidente
+     */
     @Nested
     @DisplayName("obtenerPartidosPorEstadiosFav")
     class ObtenerPartidosPorEstadiosFav {
 
+        /**
+         * Verifica que cuando el estadio favorito coincide con el del partido se retorna ese partido
+         */
         @Test
         void filtraPartidosPorEstadioFavorito() {
             EstadioFavorito est = new EstadioFavorito();
@@ -494,6 +609,9 @@ void obtenerPartidosEnVivo_cuandoAPIFalla_retornaEnVivoDesdeBD() {
             assertEquals(1, resultado.size());
         }
 
+        /**
+         * Verifica que cuando el estadio favorito no coincide con ninguno de los partidos se retorna lista vacia
+         */
         @Test
         void cuandoEstadioNoCoincide_retornaListaVacia() {
             EstadioFavorito est = new EstadioFavorito();
@@ -513,10 +631,16 @@ void obtenerPartidosEnVivo_cuandoAPIFalla_retornaEnVivoDesdeBD() {
         }
     }
 
+    /**
+     * Tests del metodo obtenerPartidosPorCiudadesFav — cubre mapeo ciudad-estadio con y sin coincidencia
+     */
     @Nested
     @DisplayName("obtenerPartidosPorCiudadesFav")
     class ObtenerPartidosPorCiudadesFav {
 
+        /**
+         * Verifica que cuando la ciudad favorita mapea al estadio del partido se retorna ese partido
+         */
         @Test
         void filtraPartidosPorCiudadFavorita() {
             CiudadFavorita ciudad = new CiudadFavorita();
@@ -535,6 +659,9 @@ void obtenerPartidosEnVivo_cuandoAPIFalla_retornaEnVivoDesdeBD() {
             assertEquals(1, resultado.size());
         }
 
+        /**
+         * Verifica que cuando la ciudad favorita no tiene mapeo conocido se retorna lista vacia
+         */
         @Test
         void cuandoCiudadNoMapea_retornaListaVacia() {
             CiudadFavorita ciudad = new CiudadFavorita();
@@ -554,10 +681,16 @@ void obtenerPartidosEnVivo_cuandoAPIFalla_retornaEnVivoDesdeBD() {
         }
     }
 
+    /**
+     * Tests de los metodos filtrarPorSeleccion, filtrarPorEstadio y filtrarPorCiudad desde BD
+     */
     @Nested
     @DisplayName("filtrarPorSeleccion, filtrarPorEstadio, filtrarPorCiudad")
     class FiltrarBD {
 
+        /**
+         * Verifica que filtrarPorSeleccion retorna los partidos que incluyen la seleccion indicada
+         */
         @Test
         void filtrarPorSeleccion_retornaPartidos() {
             Partido p = new Partido();
@@ -568,6 +701,9 @@ void obtenerPartidosEnVivo_cuandoAPIFalla_retornaEnVivoDesdeBD() {
             assertEquals(1, resultado.size());
         }
 
+        /**
+         * Verifica que filtrarPorEstadio retorna los partidos jugados en el estadio indicado
+         */
         @Test
         void filtrarPorEstadio_retornaPartidos() {
             Partido p = new Partido();
@@ -578,6 +714,9 @@ void obtenerPartidosEnVivo_cuandoAPIFalla_retornaEnVivoDesdeBD() {
             assertEquals(1, resultado.size());
         }
 
+        /**
+         * Verifica que filtrarPorCiudad retorna los partidos cuyo estadio mapea a la ciudad indicada
+         */
         @Test
         void filtrarPorCiudad_cuandoEstadioMapeaACiudad_retornaPartido() {
             Partido p = new Partido();
@@ -589,6 +728,9 @@ void obtenerPartidosEnVivo_cuandoAPIFalla_retornaEnVivoDesdeBD() {
             assertEquals(1, resultado.size());
         }
 
+        /**
+         * Verifica que filtrarPorCiudad retorna lista vacia cuando ningun estadio mapea a la ciudad indicada
+         */
         @Test
         void filtrarPorCiudad_cuandoEstadioNoMapea_retornaListaVacia() {
             Partido p = new Partido();
@@ -601,10 +743,16 @@ void obtenerPartidosEnVivo_cuandoAPIFalla_retornaEnVivoDesdeBD() {
         }
     }
 
+    /**
+     * Tests del metodo obtenerCatalogoSelecciones — verifica listado de selecciones del catalogo
+     */
     @Nested
     @DisplayName("obtenerCatalogoSelecciones")
     class ObtenerCatalogoSelecciones {
 
+        /**
+         * Verifica que se retornan todas las selecciones disponibles en el catalogo
+         */
         @Test
         void retornaTodasLasSelecciones() {
             Seleccion s = new Seleccion();
@@ -619,10 +767,16 @@ void obtenerPartidosEnVivo_cuandoAPIFalla_retornaEnVivoDesdeBD() {
         }
     }
 
+    /**
+     * Tests del metodo obtenerPartidoEntidadPorId — cubre obtencion de entidad existente e inexistente
+     */
     @Nested
     @DisplayName("obtenerPartidoEntidadPorId")
     class ObtenerPartidoEntidadPorId {
 
+        /**
+         * Verifica que un partido existente retorna la entidad con el ID correcto
+         */
         @Test
         void cuandoExiste_retornaPartido() {
             Partido p = new Partido();
@@ -634,6 +788,9 @@ void obtenerPartidosEnVivo_cuandoAPIFalla_retornaEnVivoDesdeBD() {
             assertEquals(1L, resultado.getId());
         }
 
+        /**
+         * Verifica que un ID inexistente lanza {@link PartidoNotFoundException}
+         */
         @Test
         void cuandoNoExiste_lanzaPartidoNotFoundException() {
             when(partidoRepository.findById(99L)).thenReturn(Optional.empty());
@@ -643,10 +800,16 @@ void obtenerPartidosEnVivo_cuandoAPIFalla_retornaEnVivoDesdeBD() {
         }
     }
 
+    /**
+     * Tests del metodo actualizarCapacidad — cubre suma, resta y partido inexistente
+     */
     @Nested
     @DisplayName("actualizarCapacidad")
     class ActualizarCapacidad {
 
+        /**
+         * Verifica que sumar una cantidad positiva incrementa correctamente la capacidad disponible
+         */
         @Test
         void cuandoExiste_sumaLaCantidad() {
             Partido p = new Partido();
@@ -661,6 +824,9 @@ void obtenerPartidosEnVivo_cuandoAPIFalla_retornaEnVivoDesdeBD() {
             verify(partidoRepository).save(p);
         }
 
+        /**
+         * Verifica que pasar una cantidad negativa reduce correctamente la capacidad disponible
+         */
         @Test
         void cuandoExisteYRestaCantidad_resta() {
             Partido p = new Partido();
@@ -674,6 +840,9 @@ void obtenerPartidosEnVivo_cuandoAPIFalla_retornaEnVivoDesdeBD() {
             assertEquals(70, p.getCapacidadDisponible());
         }
 
+        /**
+         * Verifica que un ID inexistente lanza {@link PartidoNotFoundException}
+         */
         @Test
         void cuandoNoExiste_lanzaPartidoNotFoundException() {
             when(partidoRepository.findById(99L)).thenReturn(Optional.empty());
@@ -683,10 +852,16 @@ void obtenerPartidosEnVivo_cuandoAPIFalla_retornaEnVivoDesdeBD() {
         }
     }
 
+    /**
+     * Tests del metodo listarPartidosConCapacidad — cubre mapeo de ciudad, capacidad nula y estadio sin mapeo
+     */
     @Nested
     @DisplayName("listarPartidosConCapacidad")
     class ListarPartidosConCapacidad {
 
+        /**
+         * Verifica que se retornan todos los partidos con su ciudad y capacidad correctamente mapeados
+         */
         @Test
         void retornaTodosConSusCapacidades() {
             Partido p = new Partido();
@@ -706,6 +881,9 @@ void obtenerPartidosEnVivo_cuandoAPIFalla_retornaEnVivoDesdeBD() {
             assertEquals(50000, resultado.get(0).getCapacidadDisponible());
         }
 
+        /**
+         * Verifica que cuando la capacidad del partido es nula se usa el valor por defecto de 60000
+         */
         @Test
         void cuandoCapacidadNull_usaValorPorDefecto60000() {
             Partido p = new Partido();
@@ -720,6 +898,9 @@ void obtenerPartidosEnVivo_cuandoAPIFalla_retornaEnVivoDesdeBD() {
             assertEquals(60000, resultado.get(0).getCapacidadDisponible());
         }
 
+        /**
+         * Verifica que cuando el estadio no tiene ciudad mapeada se usa el valor por confirmar
+         */
         @Test
         void cuandoEstadioNoMapeaACiudad_usaPorConfirmar() {
             Partido p = new Partido();
@@ -735,10 +916,16 @@ void obtenerPartidosEnVivo_cuandoAPIFalla_retornaEnVivoDesdeBD() {
         }
     }
 
+    /**
+     * Tests del metodo listarDesdeBD — verifica listado directo de partidos en base de datos
+     */
     @Nested
     @DisplayName("listarDesdeBD")
     class ListarDesdeBD {
 
+        /**
+         * Verifica que se retornan todos los partidos almacenados en base de datos
+         */
         @Test
         void retornaTodosLosDeLaBD() {
             Partido p = new Partido();
@@ -750,10 +937,16 @@ void obtenerPartidosEnVivo_cuandoAPIFalla_retornaEnVivoDesdeBD() {
         }
     }
 
+    /**
+     * Tests del metodo actualizarResultado — cubre actualizacion exitosa y partido inexistente
+     */
     @Nested
     @DisplayName("actualizarResultado")
     class ActualizarResultado {
 
+        /**
+         * Verifica que actualizar el resultado de un partido existente actualiza goles, estado y registra auditoria
+         */
         @Test
         void cuandoExiste_actualizaGolesYRegistraAuditoria() {
             Partido p = new Partido();
@@ -775,6 +968,9 @@ void obtenerPartidosEnVivo_cuandoAPIFalla_retornaEnVivoDesdeBD() {
                     eq(null), anyString(), eq("Partido"));
         }
 
+        /**
+         * Verifica que un ID inexistente lanza {@link PartidoNotFoundException}
+         */
         @Test
         void cuandoNoExiste_lanzaPartidoNotFoundException() {
             when(partidoRepository.findById(99L)).thenReturn(Optional.empty());
@@ -784,10 +980,16 @@ void obtenerPartidosEnVivo_cuandoAPIFalla_retornaEnVivoDesdeBD() {
         }
     }
 
+    /**
+     * Tests del metodo sincronizarDesdeAPI — cubre sincronizacion exitosa y respuestas nulas o vacias
+     */
     @Nested
     @DisplayName("sincronizarDesdeAPI")
     class SincronizarDesdeAPI {
 
+        /**
+         * Verifica que los partidos obtenidos de la API se persisten y se registra el evento de auditoria
+         */
         @Test
         void cuandoHayPartidos_losGuardaYRegistraAuditoria() {
             PartidoResponseDTO response = new PartidoResponseDTO();
@@ -804,6 +1006,9 @@ void obtenerPartidosEnVivo_cuandoAPIFalla_retornaEnVivoDesdeBD() {
                     eq(null), anyString(), eq("Partido"));
         }
 
+        /**
+         * Verifica que una respuesta nula de la API retorna cero sin intentar persistir nada
+         */
         @Test
         void cuandoResponseNula_retornaCero() {
             prepararRestClient(null);
@@ -814,6 +1019,9 @@ void obtenerPartidosEnVivo_cuandoAPIFalla_retornaEnVivoDesdeBD() {
             verify(partidoRepository, never()).saveAll(any());
         }
 
+        /**
+         * Verifica que una lista de partidos nula en la respuesta retorna cero sin intentar persistir nada
+         */
         @Test
         void cuandoListaNula_retornaCero() {
             PartidoResponseDTO response = new PartidoResponseDTO();
@@ -827,6 +1035,9 @@ void obtenerPartidosEnVivo_cuandoAPIFalla_retornaEnVivoDesdeBD() {
             verify(partidoRepository, never()).saveAll(any());
         }
 
+        /**
+         * Verifica que una lista de partidos vacia en la respuesta retorna cero sin intentar persistir nada
+         */
         @Test
         void cuandoListaVacia_retornaCero() {
             PartidoResponseDTO response = new PartidoResponseDTO();

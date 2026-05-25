@@ -34,26 +34,64 @@ import co.edu.unbosque.mundial_2026.exception.MetodoPagoInvalidoException;
 import co.edu.unbosque.mundial_2026.exception.MetodoPagoNotFoundException;
 import co.edu.unbosque.mundial_2026.repository.MetodoPagoRepository;
 
+/**
+ * Pruebas unitarias para MetodoPagoServiceImpl usando Mockito
+ */
 @ExtendWith(MockitoExtension.class)
 class MetodoPagoServiceImplTest {
 
+    /**
+     * Mock del repositorio de métodos de pago
+     */
     @Mock
     private MetodoPagoRepository metodoPagoRepository;
 
+    /**
+     * Mock del servicio de usuarios
+     */
     @Mock
     private UsuarioService usuarioService;
 
+    /**
+     * Mock del servicio de auditoría
+     */
     @Mock
     private EventoAuditoriaService auditoriaService;
 
+    /**
+     * Instancia del servicio bajo prueba con mocks inyectados
+     */
     @InjectMocks
     private MetodoPagoServiceImpl metodoPagoService;
+
+    /**
+     * Correo de prueba reutilizado en los tests
+     */
 private static final String CORREO_TEST = "test@test.com";
+
+    /**
+     * Tipo de pago CARD de prueba
+     */
 private static final String CARD = "CARD";
+
+    /**
+     * Tipo de pago PSE de prueba
+     */
 private static final String PSE = "PSE";
+
+    /**
+     * Usuario base usado en los escenarios de prueba
+     */
     private Usuario usuario;
+
+    /**
+     * Método de pago base usado en los escenarios de prueba
+     */
     private MetodoPago metodoPago;
 
+    /**
+     * Inicializa los datos base antes de cada prueba
+     */
     @BeforeEach
     void setUp() {
         usuario = new Usuario();
@@ -72,6 +110,9 @@ private static final String PSE = "PSE";
         metodoPago.setCreatedAt("2026-01-01T10:00:00");
     }
 
+    /**
+     * Pruebas relacionadas con agregar métodos de pago
+     */
     @Nested
     @DisplayName("agregar")
     class Agregar {
@@ -157,6 +198,9 @@ private static final String PSE = "PSE";
         }
     }
 
+    /**
+     * Pruebas relacionadas con eliminar métodos de pago
+     */
     @Nested
     @DisplayName("eliminar")
     class Eliminar {
@@ -228,6 +272,9 @@ private static final String PSE = "PSE";
         }
     }
 
+    /**
+     * Pruebas relacionadas con listar métodos de pago por correo
+     */
     @Nested
     @DisplayName("listarPorCorreo")
     class ListarPorCorreo {
@@ -256,6 +303,9 @@ private static final String PSE = "PSE";
         }
     }
 
+    /**
+     * Pruebas relacionadas con cambiar el método por defecto
+     */
     @Nested
     @DisplayName("setDefaultPorCorreo")
     class SetDefaultPorCorreo {
@@ -288,6 +338,9 @@ private static final String PSE = "PSE";
         }
     }
 
+    /**
+     * Pruebas relacionadas con actualizar métodos de pago
+     */
     @Nested
     @DisplayName("actualizar")
     class Actualizar {
@@ -380,6 +433,9 @@ private static final String PSE = "PSE";
         }
     }
 
+    /**
+     * Pruebas relacionadas con obtener una entidad por su id
+     */
     @Nested
     @DisplayName("obtenerEntidadPorId")
     class ObtenerEntidadPorId {

@@ -27,7 +27,10 @@ import co.edu.unbosque.mundial_2026.exception.PartidoNotFoundException;
 import co.edu.unbosque.mundial_2026.exception.UsuarioNotFoundException;
 import co.edu.unbosque.mundial_2026.repository.*;
 
-
+/**
+ * Pruebas unitarias para {@link NotificacionServiceImpl}
+ * Verifica el envio, listado, marcado y notificaciones especificas del servicio de notificaciones
+ */
 @ExtendWith(MockitoExtension.class)
 class NotificacionServiceImplTest {
 
@@ -35,13 +38,28 @@ class NotificacionServiceImplTest {
     @Mock private UsuarioRepository usuarioRepository;
     @Mock private PartidoRepository partidoRepository;
     @Mock private EventoAuditoriaService eventoAuditoriaService;
-private static final String COLOMBIA_VS_BRAZIL = "Colombia vs Brazil";
-private static final String TITULO_TEST = "Titulo test";
-private static final String INFO = "INFO";
-private static final String MENSAJE_TEST = "Mensaje test";
-private static final String SISTEMA = "SISTEMA";
-private static final String COLOMBIA = "Colombia";
-private static final String BRAZIL = "Brazil";
+
+    /** Nombre del partido de prueba usado en los tests de notificaciones de entradas */
+    private static final String COLOMBIA_VS_BRAZIL = "Colombia vs Brazil";
+
+    /** Titulo de notificacion de prueba usado en los tests de envio individual */
+    private static final String TITULO_TEST = "Titulo test";
+
+    /** Tipo de notificacion informativa usado en los tests */
+    private static final String INFO = "INFO";
+
+    /** Mensaje de notificacion de prueba usado en los tests de envio individual */
+    private static final String MENSAJE_TEST = "Mensaje test";
+
+    /** Canal de sistema usado como canal por defecto en los DTOs de prueba */
+    private static final String SISTEMA = "SISTEMA";
+
+    /** Nombre de seleccion local usado en los tests de notificacion por partido */
+    private static final String COLOMBIA = "Colombia";
+
+    /** Nombre de seleccion visitante usado en los tests de notificacion por partido */
+    private static final String BRAZIL = "Brazil";
+
     @InjectMocks private NotificacionServiceImpl service;
 
     private Usuario crearUsuario(Long id, boolean activo) {
@@ -86,6 +104,9 @@ private static final String BRAZIL = "Brazil";
         return dto;
     }
 
+    /**
+     * Verifica que enviar una notificacion a un usuario existente sin token FCM guarda la notificacion en BD
+     */
     @Test
     void enviarNotificacion_usuarioExistente_sinToken_guardaNotificacion() {
         Usuario usuario = crearUsuario(1L, true);
@@ -98,6 +119,9 @@ private static final String BRAZIL = "Brazil";
         verify(notificacionRepository).save(any(Notificacion.class));
     }
 
+    /**
+     * Verifica que enviar una notificacion a un usuario con token FCM en blanco guarda la notificacion en BD
+     */
     @Test
     void enviarNotificacion_usuarioExistente_conTokenBlanco_guardaNotificacion() {
         Usuario usuario = crearUsuario(1L, true);
@@ -110,6 +134,9 @@ private static final String BRAZIL = "Brazil";
         verify(notificacionRepository).save(any(Notificacion.class));
     }
 
+    /**
+     * Verifica que enviar una notificacion a un usuario inexistente lanza {@link UsuarioNotFoundException}
+     */
     @Test
     void enviarNotificacion_usuarioNoExistente_lanzaExcepcion() {
         when(usuarioRepository.findById(99L)).thenReturn(Optional.empty());
@@ -117,6 +144,9 @@ private static final String BRAZIL = "Brazil";
         assertThrows(UsuarioNotFoundException.class, () -> service.enviarNotificacion(crearRequestDTO(99L)));
     }
 
+    /**
+     * Verifica que listar notificaciones de un usuario existente retorna la lista con los datos correctos
+     */
     @Test
     void listarPorUsuario_usuarioExistente_retornaLista() {
         Usuario usuario = crearUsuario(1L, true);
@@ -132,6 +162,9 @@ private static final String BRAZIL = "Brazil";
         assertFalse(resultado.get(0).isLeida());
     }
 
+    /**
+     * Verifica que listar notificaciones cuando el usuario no tiene ninguna retorna lista vacia
+     */
     @Test
     void listarPorUsuario_sinNotificaciones_retornaListaVacia() {
         Usuario usuario = crearUsuario(1L, true);
@@ -145,6 +178,9 @@ private static final String BRAZIL = "Brazil";
         assertTrue(resultado.isEmpty());
     }
 
+    /**
+     * Verifica que listar notificaciones de un usuario inexistente lanza {@link UsuarioNotFoundException}
+     */
     @Test
     void listarPorUsuario_usuarioNoExistente_lanzaExcepcion() {
         when(usuarioRepository.findById(99L)).thenReturn(Optional.empty());
@@ -152,6 +188,9 @@ private static final String BRAZIL = "Brazil";
         assertThrows(UsuarioNotFoundException.class, () -> service.listarPorUsuario(99L));
     }
 
+    /**
+     * Verifica que marcar una notificacion existente como leida actualiza el campo y persiste el cambio
+     */
     @Test
     void marcarLeida_notificacionExistente_marcaComoLeida() {
         Usuario usuario = crearUsuario(1L, true);
@@ -166,6 +205,9 @@ private static final String BRAZIL = "Brazil";
         verify(notificacionRepository).save(notificacion);
     }
 
+    /**
+     * Verifica que marcar como leida una notificacion inexistente lanza una excepcion en tiempo de ejecucion
+     */
     @Test
     void marcarLeida_notificacionNoExistente_lanzaExcepcion() {
         when(notificacionRepository.findById(99L)).thenReturn(Optional.empty());
@@ -173,6 +215,9 @@ private static final String BRAZIL = "Brazil";
         assertThrows(RuntimeException.class, () -> service.marcarLeida(99L));
     }
 
+    /**
+     * Verifica que marcar todas las notificaciones de un usuario como leidas invoca el repositorio correctamente
+     */
     @Test
     void marcarTodasLeidas_usuarioExistente_invocaRepositorio() {
         doNothing().when(notificacionRepository).marcarTodasLeidasPorUsuario(1L);
@@ -182,6 +227,9 @@ private static final String BRAZIL = "Brazil";
         verify(notificacionRepository).marcarTodasLeidasPorUsuario(1L);
     }
 
+    /**
+     * Verifica que enviar masiva sin lista de IDs envia solo a los usuarios activos del sistema
+     */
     @Test
     void enviarMasiva_sinUsuarioIds_enviaATodosActivos() {
         Usuario activo = crearUsuario(1L, true);
@@ -196,6 +244,9 @@ private static final String BRAZIL = "Brazil";
         verify(notificacionRepository).saveAll(argThat(list -> ((List<?>) list).size() == 1));
     }
 
+    /**
+     * Verifica que enviar masiva con lista vacia de IDs tambien envia a todos los usuarios activos
+     */
     @Test
     void enviarMasiva_conListaVacia_enviaATodosActivos() {
         Usuario activo = crearUsuario(1L, true);
@@ -209,6 +260,9 @@ private static final String BRAZIL = "Brazil";
         verify(notificacionRepository).saveAll(any());
     }
 
+    /**
+     * Verifica que enviar masiva con lista de IDs especifica envia solo a los usuarios activos de esa lista
+     */
     @Test
     void enviarMasiva_conUsuarioIds_enviaASoloActivos() {
         Usuario activo = crearUsuario(1L, true);
@@ -223,6 +277,9 @@ private static final String BRAZIL = "Brazil";
         verify(notificacionRepository).saveAll(argThat(list -> ((List<?>) list).size() == 1));
     }
 
+    /**
+     * Verifica que notificar por partido envia solo a usuarios con la seleccion del partido como favorita
+     */
     @Test
     void notificarPorPartido_partidoExistente_usuarioConSeleccionFav_notifica() {
         Partido partido = new Partido();
@@ -246,6 +303,9 @@ private static final String BRAZIL = "Brazil";
         verify(notificacionRepository).saveAll(argThat(list -> ((List<?>) list).size() == 1));
     }
 
+    /**
+     * Verifica que notificar por partido no envia notificacion a usuarios sin selecciones favoritas
+     */
     @Test
     void notificarPorPartido_usuarioSinSeleccionesFav_noEnviaNotificacion() {
         Partido partido = new Partido();
@@ -261,11 +321,14 @@ private static final String BRAZIL = "Brazil";
         when(notificacionRepository.saveAll(any())).thenReturn(List.of());
         doNothing().when(eventoAuditoriaService).registrar(any(), any(), any(), any(), any());
 
-       service.notificarPorPartido(1L, INFO, TITULO_TEST, MENSAJE_TEST);
+        service.notificarPorPartido(1L, INFO, TITULO_TEST, MENSAJE_TEST);
 
         verify(notificacionRepository).saveAll(argThat(list -> ((List<?>) list).isEmpty()));
     }
 
+    /**
+     * Verifica que notificar por partido no envia notificacion a usuarios inactivos aunque tengan la seleccion como favorita
+     */
     @Test
     void notificarPorPartido_usuarioInactivo_noEnviaNotificacion() {
         Partido partido = new Partido();
@@ -284,11 +347,14 @@ private static final String BRAZIL = "Brazil";
         when(notificacionRepository.saveAll(any())).thenReturn(List.of());
         doNothing().when(eventoAuditoriaService).registrar(any(), any(), any(), any(), any());
 
-       service.notificarPorPartido(1L, INFO, TITULO_TEST, MENSAJE_TEST);
+        service.notificarPorPartido(1L, INFO, TITULO_TEST, MENSAJE_TEST);
 
         verify(notificacionRepository).saveAll(argThat(list -> ((List<?>) list).isEmpty()));
     }
 
+    /**
+     * Verifica que notificar por un partido inexistente lanza {@link PartidoNotFoundException}
+     */
     @Test
     void notificarPorPartido_partidoNoExistente_lanzaExcepcion() {
         when(partidoRepository.findById(99L)).thenReturn(Optional.empty());
@@ -297,6 +363,9 @@ private static final String BRAZIL = "Brazil";
                 () -> service.notificarPorPartido(99L, INFO, "Titulo", "Mensaje"));
     }
 
+    /**
+     * Verifica que notificarRegistro guarda la notificacion de bienvenida para el usuario
+     */
     @Test
     void notificarRegistro_usuarioSinToken_guardaNotificacion() {
         Usuario usuario = crearUsuario(1L, true);
@@ -308,6 +377,9 @@ private static final String BRAZIL = "Brazil";
         verify(notificacionRepository).save(any(Notificacion.class));
     }
 
+    /**
+     * Verifica que notificarActualizacionPerfil guarda la notificacion de confirmacion de cambios
+     */
     @Test
     void notificarActualizacionPerfil_usuarioSinToken_guardaNotificacion() {
         Usuario usuario = crearUsuario(1L, true);
@@ -319,6 +391,9 @@ private static final String BRAZIL = "Brazil";
         verify(notificacionRepository).save(any(Notificacion.class));
     }
 
+    /**
+     * Verifica que notificarEntradaPagada guarda la notificacion de confirmacion de pago de entrada
+     */
     @Test
     void notificarEntradaPagada_guardaNotificacion() {
         Usuario usuario = crearUsuario(1L, true);
@@ -330,6 +405,9 @@ private static final String BRAZIL = "Brazil";
         verify(notificacionRepository).save(any(Notificacion.class));
     }
 
+    /**
+     * Verifica que notificarEntradaPagoFallido guarda la notificacion de fallo en el pago
+     */
     @Test
     void notificarEntradaPagoFallido_guardaNotificacion() {
         Usuario usuario = crearUsuario(1L, true);
@@ -341,6 +419,9 @@ private static final String BRAZIL = "Brazil";
         verify(notificacionRepository).save(any(Notificacion.class));
     }
 
+    /**
+     * Verifica que notificarOrdenConfirmada guarda la notificacion de confirmacion de orden con el total
+     */
     @Test
     void notificarOrdenConfirmada_guardaNotificacion() {
         Usuario usuario = crearUsuario(1L, true);
@@ -352,6 +433,9 @@ private static final String BRAZIL = "Brazil";
         verify(notificacionRepository).save(any(Notificacion.class));
     }
 
+    /**
+     * Verifica que notificarEntradaReembolsada guarda la notificacion de reembolso exitoso
+     */
     @Test
     void notificarEntradaReembolsada_guardaNotificacion() {
         Usuario usuario = crearUsuario(1L, true);
@@ -363,6 +447,9 @@ private static final String BRAZIL = "Brazil";
         verify(notificacionRepository).save(any(Notificacion.class));
     }
 
+    /**
+     * Verifica que notificarEntradaReembolsoFallido guarda la notificacion de fallo en el reembolso
+     */
     @Test
     void notificarEntradaReembolsoFallido_guardaNotificacion() {
         Usuario usuario = crearUsuario(1L, true);
@@ -374,6 +461,9 @@ private static final String BRAZIL = "Brazil";
         verify(notificacionRepository).save(any(Notificacion.class));
     }
 
+    /**
+     * Verifica que notificarEntradaTransferida guarda la notificacion para el usuario que transfiere
+     */
     @Test
     void notificarEntradaTransferida_guardaNotificacion() {
         Usuario usuario = crearUsuario(1L, true);
@@ -385,6 +475,9 @@ private static final String BRAZIL = "Brazil";
         verify(notificacionRepository).save(any(Notificacion.class));
     }
 
+    /**
+     * Verifica que notificarEntradaRecibida guarda la notificacion para el usuario que recibe la entrada
+     */
     @Test
     void notificarEntradaRecibida_guardaNotificacion() {
         Usuario usuario = crearUsuario(1L, true);
@@ -396,6 +489,9 @@ private static final String BRAZIL = "Brazil";
         verify(notificacionRepository).save(any(Notificacion.class));
     }
 
+    /**
+     * Verifica que notificarReservaExpirada guarda la notificacion de expiracion de reserva
+     */
     @Test
     void notificarReservaExpirada_guardaNotificacion() {
         Usuario usuario = crearUsuario(1L, true);
@@ -407,6 +503,9 @@ private static final String BRAZIL = "Brazil";
         verify(notificacionRepository).save(any(Notificacion.class));
     }
 
+    /**
+     * Verifica que notificarReservaPorExpirar guarda la notificacion de aviso previo a expiracion
+     */
     @Test
     void notificarReservaPorExpirar_guardaNotificacion() {
         Usuario usuario = crearUsuario(1L, true);
@@ -418,6 +517,9 @@ private static final String BRAZIL = "Brazil";
         verify(notificacionRepository).save(any(Notificacion.class));
     }
 
+    /**
+     * Verifica que notificarReservaCreada guarda la notificacion de confirmacion de reserva creada
+     */
     @Test
     void notificarReservaCreada_guardaNotificacion() {
         Usuario usuario = crearUsuario(1L, true);
@@ -429,6 +531,9 @@ private static final String BRAZIL = "Brazil";
         verify(notificacionRepository).save(any(Notificacion.class));
     }
 
+    /**
+     * Verifica que notificarApuestaUnirse guarda exactamente dos notificaciones: una para el nuevo participante y otra para el creador
+     */
     @Test
     void notificarApuestaUnirse_guardaNotificacionParaAmbosUsuarios() {
         Usuario nuevo = crearUsuario(1L, true);
@@ -442,6 +547,9 @@ private static final String BRAZIL = "Brazil";
         verify(notificacionRepository, times(2)).save(any(Notificacion.class));
     }
 
+    /**
+     * Verifica que notificarApuestaCerrada guarda una notificacion por cada participante en la lista
+     */
     @Test
     void notificarApuestaCerrada_variosParticipantes_guardaTodasLasNotificaciones() {
         Usuario u1 = crearUsuario(1L, true);
@@ -455,6 +563,9 @@ private static final String BRAZIL = "Brazil";
         verify(notificacionRepository).saveAll(argThat(list -> ((List<?>) list).size() == 2));
     }
 
+    /**
+     * Verifica que notificarApuestaCerrada sin participantes guarda una lista vacia
+     */
     @Test
     void notificarApuestaCerrada_sinParticipantes_guardaListaVacia() {
         when(notificacionRepository.saveAll(any())).thenReturn(List.of());
@@ -464,6 +575,9 @@ private static final String BRAZIL = "Brazil";
         verify(notificacionRepository).saveAll(argThat(list -> ((List<?>) list).isEmpty()));
     }
 
+    /**
+     * Verifica que notificarPuntosCalculados guarda la notificacion con la posicion y puntos del usuario
+     */
     @Test
     void notificarPuntosCalculados_guardaNotificacion() {
         Usuario usuario = crearUsuario(1L, true);
@@ -475,6 +589,9 @@ private static final String BRAZIL = "Brazil";
         verify(notificacionRepository).save(any(Notificacion.class));
     }
 
+    /**
+     * Verifica que notificarCarritoAbandonado guarda la notificacion de recordatorio de carrito
+     */
     @Test
     void notificarCarritoAbandonado_guardaNotificacion() {
         Usuario usuario = crearUsuario(1L, true);
@@ -486,6 +603,9 @@ private static final String BRAZIL = "Brazil";
         verify(notificacionRepository).save(any(Notificacion.class));
     }
 
+    /**
+     * Verifica que notificarOrdenFallida guarda la notificacion de fallo en el procesamiento de la orden
+     */
     @Test
     void notificarOrdenFallida_guardaNotificacion() {
         Usuario usuario = crearUsuario(1L, true);
@@ -497,6 +617,9 @@ private static final String BRAZIL = "Brazil";
         verify(notificacionRepository).save(any(Notificacion.class));
     }
 
+    /**
+     * Verifica que listar notificaciones paginadas retorna la pagina con el DTO correcto
+     */
     @Test
     void listarPorUsuarioPaginado_retornaPaginaDTO() {
         Usuario usuario = crearUsuario(1L, true);
@@ -513,6 +636,9 @@ private static final String BRAZIL = "Brazil";
         assertEquals(1L, resultado.getContent().get(0).getId());
     }
 
+    /**
+     * Verifica que listar notificaciones paginadas sin resultados retorna pagina vacia
+     */
     @Test
     void listarPorUsuarioPaginado_sinNotificaciones_retornaPaginaVacia() {
         Pageable pageable = PageRequest.of(0, 10);
@@ -526,6 +652,9 @@ private static final String BRAZIL = "Brazil";
         assertTrue(resultado.isEmpty());
     }
 
+    /**
+     * Verifica que listar notificaciones por rango de fechas retorna la pagina con los resultados correctos
+     */
     @Test
     void listarPorFecha_retornaPaginaDTO() {
         Usuario usuario = crearUsuario(1L, true);
@@ -544,6 +673,9 @@ private static final String BRAZIL = "Brazil";
         assertEquals(1, resultado.getTotalElements());
     }
 
+    /**
+     * Verifica que listar notificaciones por rango de fechas sin resultados retorna pagina vacia
+     */
     @Test
     void listarPorFecha_sinResultados_retornaPaginaVacia() {
         Pageable pageable = PageRequest.of(0, 10);

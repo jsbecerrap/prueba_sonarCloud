@@ -29,6 +29,11 @@ import co.edu.unbosque.mundial_2026.exception.UsuarioNotFoundException;
 import co.edu.unbosque.mundial_2026.security.TokenBlacklist;
 import co.edu.unbosque.mundial_2026.service.UsuarioService;
 
+/**
+ * Pruebas unitarias para {@link UsuarioController}
+ * Verifica el comportamiento del controlador de usuarios usando mocks de {@link UsuarioService}
+ * y {@link TokenBlacklist}, con contexto de seguridad simulado para endpoints del usuario autenticado
+ */
 @ExtendWith(MockitoExtension.class)
 class UsuarioRestControllerTest {
 
@@ -38,22 +43,40 @@ class UsuarioRestControllerTest {
 
     @Mock private SecurityContext securityContext;
     @Mock private Authentication authentication;
+
+    /** Correo del usuario autenticado simulado en el SecurityContext para todos los tests */
     private static final String USER_CORREO = "user@test.com";
-private static final String NOMBRE = "Juan";
-private static final String APELLIDO = "Perez";
-private static final String M_NO_ENCONTRADO = "no encontrado";
-private static final String MENSAJE = "mensaje";
-private static final String CORREO_CAMBIO = "correocambio";
-private static final String AUTHORIZATION = "Authorization";
-private static final String USUARIO_KEY = "usuario";
-private static final String NUEVO_CORREO = "nuevo@test.com";
+
+    /** Nombre de prueba usado en la construccion de DTOs de usuario */
+    private static final String NOMBRE = "Juan";
+
+    /** Apellido de prueba usado en la construccion de DTOs de usuario */
+    private static final String APELLIDO = "Perez";
+
+    /** Mensaje de error usado en las excepciones de usuario no encontrado */
+    private static final String M_NO_ENCONTRADO = "no encontrado";
+
+    /** Clave del mapa de respuesta que contiene mensajes informativos al usuario */
+    private static final String MENSAJE = "mensaje";
+
+    /** Clave del mapa de resultado del servicio que indica si hubo cambio de correo */
+    private static final String CORREO_CAMBIO = "correocambio";
+
+    /** Nombre del header HTTP de autorizacion usado en los tests de logout y actualizacion */
+    private static final String AUTHORIZATION = "Authorization";
+
+    /** Clave del mapa de resultado del servicio que contiene el DTO del usuario actualizado */
+    private static final String USUARIO_KEY = "usuario";
+
+    /** Nuevo correo usado en los tests de actualizacion de perfil con cambio de correo */
+    private static final String NUEVO_CORREO = "nuevo@test.com";
 
     @BeforeEach
-void setUpSecurityContext() {
-    lenient().when(securityContext.getAuthentication()).thenReturn(authentication);
-    lenient().when(authentication.getName()).thenReturn(USER_CORREO);
-    SecurityContextHolder.setContext(securityContext);
-}
+    void setUpSecurityContext() {
+        lenient().when(securityContext.getAuthentication()).thenReturn(authentication);
+        lenient().when(authentication.getName()).thenReturn(USER_CORREO);
+        SecurityContextHolder.setContext(securityContext);
+    }
 
     @AfterEach
     void clearSecurityContext() {
@@ -87,6 +110,9 @@ void setUpSecurityContext() {
         return dto;
     }
 
+    /**
+     * Verifica que listar todos los usuarios retorna HTTP 200 y la lista contiene exactamente un elemento
+     */
     @Test
     void listarTodos_retornaOkConLista() {
         when(service.listarTodos()).thenReturn(List.of(responseDTO(1L, USER_CORREO)));
@@ -98,6 +124,9 @@ void setUpSecurityContext() {
         verify(service).listarTodos();
     }
 
+    /**
+     * Verifica que listar usuarios cuando no hay ninguno retorna HTTP 200 con lista vacia
+     */
     @Test
     void listarTodos_listaVacia_retornaOkVacio() {
         when(service.listarTodos()).thenReturn(List.of());
@@ -108,6 +137,10 @@ void setUpSecurityContext() {
         assertTrue(res.getBody().isEmpty());
     }
 
+    /**
+     * Verifica que obtener un usuario existente por ID retorna HTTP 200
+     * y el ID del DTO coincide con el solicitado
+     */
     @Test
     void obtenerUsuario_existente_retornaOk() {
         when(service.obtenerUsuario(1L)).thenReturn(responseDTO(1L, USER_CORREO));
@@ -119,6 +152,9 @@ void setUpSecurityContext() {
         verify(service).obtenerUsuario(1L);
     }
 
+    /**
+     * Verifica que obtener un usuario inexistente lanza {@link UsuarioNotFoundException}
+     */
     @Test
     void obtenerUsuario_noExistente_propagaExcepcion() {
         when(service.obtenerUsuario(99L)).thenThrow(new UsuarioNotFoundException(M_NO_ENCONTRADO));
@@ -126,6 +162,10 @@ void setUpSecurityContext() {
         assertThrows(UsuarioNotFoundException.class, () -> controller.obtenerUsuario(99L));
     }
 
+    /**
+     * Verifica que obtener el perfil del usuario autenticado retorna HTTP 200
+     * y el correo del DTO coincide con el del usuario en sesion
+     */
     @Test
     void obtenerPerfil_retornaOkConDatosDelAutenticado() {
         when(service.obtenerPorCorreo(USER_CORREO)).thenReturn(responseDTO(1L, USER_CORREO));
@@ -137,6 +177,9 @@ void setUpSecurityContext() {
         verify(service).obtenerPorCorreo(USER_CORREO);
     }
 
+    /**
+     * Verifica que obtener el perfil cuando el usuario autenticado no existe lanza {@link UsuarioNotFoundException}
+     */
     @Test
     void obtenerPerfil_usuarioNoExistente_propagaExcepcion() {
         when(service.obtenerPorCorreo(USER_CORREO)).thenThrow(new UsuarioNotFoundException(M_NO_ENCONTRADO));
@@ -144,6 +187,9 @@ void setUpSecurityContext() {
         assertThrows(UsuarioNotFoundException.class, () -> controller.obtenerPerfil());
     }
 
+    /**
+     * Verifica que registrar un usuario con datos validos retorna HTTP 201 y el cuerpo no es nulo
+     */
     @Test
     void registrarUsuario_exitoso_retorna201() {
         UsuarioRequestDTO dto = requestDTO();
@@ -156,6 +202,9 @@ void setUpSecurityContext() {
         verify(service).registrarUsuario(dto);
     }
 
+    /**
+     * Verifica que registrar un usuario por un administrador retorna HTTP 201 y el cuerpo no es nulo
+     */
     @Test
     void registrarUsuarioPorAdmin_exitoso_retorna201() {
         UsuarioRequestDTO dto = requestDTO();
@@ -168,6 +217,9 @@ void setUpSecurityContext() {
         verify(service).registrarUsuarioComoAdmin(dto);
     }
 
+    /**
+     * Verifica que eliminar un usuario existente retorna HTTP 204 y el cuerpo es nulo
+     */
     @Test
     void eliminarUsuario_exitoso_retorna204() {
         doNothing().when(service).eliminarUsuario(1L);
@@ -179,6 +231,9 @@ void setUpSecurityContext() {
         verify(service).eliminarUsuario(1L);
     }
 
+    /**
+     * Verifica que eliminar un usuario inexistente lanza {@link UsuarioNotFoundException}
+     */
     @Test
     void eliminarUsuario_noExistente_propagaExcepcion() {
         doThrow(new UsuarioNotFoundException(M_NO_ENCONTRADO)).when(service).eliminarUsuario(99L);
@@ -186,6 +241,10 @@ void setUpSecurityContext() {
         assertThrows(UsuarioNotFoundException.class, () -> controller.eliminarUsuario(99L));
     }
 
+    /**
+     * Verifica que actualizar el perfil sin cambio de correo retorna HTTP 200
+     * y no interactua con la blacklist de tokens
+     */
     @Test
     void actualizarPerfil_sinCambioDeCorrco_retornaOkConDTO() {
         Map<String, Object> resultado = new HashMap<>();
@@ -201,6 +260,10 @@ void setUpSecurityContext() {
         verifyNoInteractions(tokenBlacklist);
     }
 
+    /**
+     * Verifica que actualizar el perfil con cambio de correo invalida el token actual
+     * y retorna HTTP 200 con un mensaje indicando que debe iniciar sesion nuevamente
+     */
     @Test
     void actualizarPerfil_conCambioDeCorreo_invalidaTokenYRetornaMensaje() {
         Map<String, Object> resultado = new HashMap<>();
@@ -221,6 +284,10 @@ void setUpSecurityContext() {
         verify(tokenBlacklist).agregar("token-valido");
     }
 
+    /**
+     * Verifica que actualizar el perfil con cambio de correo pero sin header Authorization
+     * retorna HTTP 200 sin intentar invalidar ningun token
+     */
     @Test
     void actualizarPerfil_conCambioDeCorreo_sinHeader_noInvalidaToken() {
         Map<String, Object> resultado = new HashMap<>();
@@ -236,6 +303,10 @@ void setUpSecurityContext() {
         verifyNoInteractions(tokenBlacklist);
     }
 
+    /**
+     * Verifica que actualizar el perfil con cambio de correo y header sin prefijo Bearer
+     * retorna HTTP 200 sin intentar invalidar ningun token
+     */
     @Test
     void actualizarPerfil_conCambioDeCorreo_headerSinPrefijo_noInvalidaToken() {
         Map<String, Object> resultado = new HashMap<>();
@@ -252,6 +323,10 @@ void setUpSecurityContext() {
         verifyNoInteractions(tokenBlacklist);
     }
 
+    /**
+     * Verifica que hacer logout con un token Bearer valido lo invalida en la blacklist
+     * y retorna HTTP 200 con mensaje de sesion cerrada
+     */
     @Test
     void logout_conToken_invalidaTokenYRetornaMensaje() {
         MockHttpServletRequest request = new MockHttpServletRequest();
@@ -266,6 +341,10 @@ void setUpSecurityContext() {
         verify(tokenBlacklist).agregar("token-de-sesion");
     }
 
+    /**
+     * Verifica que hacer logout sin header Authorization retorna HTTP 200
+     * sin intentar invalidar ningun token
+     */
     @Test
     void logout_sinHeader_noInvalidaTokenYRetornaMensaje() {
         MockHttpServletRequest request = new MockHttpServletRequest();
@@ -276,6 +355,10 @@ void setUpSecurityContext() {
         verifyNoInteractions(tokenBlacklist);
     }
 
+    /**
+     * Verifica que hacer logout con header sin prefijo Bearer retorna HTTP 200
+     * sin intentar invalidar ningun token
+     */
     @Test
     void logout_headerSinPrefijo_noInvalidaToken() {
         MockHttpServletRequest request = new MockHttpServletRequest();
@@ -287,6 +370,10 @@ void setUpSecurityContext() {
         verifyNoInteractions(tokenBlacklist);
     }
 
+    /**
+     * Verifica que obtener las selecciones favoritas del usuario autenticado retorna HTTP 200
+     * y la lista contiene exactamente un elemento
+     */
     @Test
     void obtenerSelecciones_retornaOkConLista() {
         when(service.seleccionesUsuario(USER_CORREO))
@@ -299,6 +386,9 @@ void setUpSecurityContext() {
         verify(service).seleccionesUsuario(USER_CORREO);
     }
 
+    /**
+     * Verifica que obtener selecciones favoritas cuando el usuario no tiene ninguna retorna HTTP 200 con lista vacia
+     */
     @Test
     void obtenerSelecciones_listaVacia_retornaOkVacio() {
         when(service.seleccionesUsuario(USER_CORREO)).thenReturn(List.of());
@@ -309,6 +399,9 @@ void setUpSecurityContext() {
         assertTrue(res.getBody().isEmpty());
     }
 
+    /**
+     * Verifica que agregar selecciones favoritas al usuario autenticado retorna HTTP 204
+     */
     @Test
     void agregarSeleccion_exitoso_retorna204() {
         doNothing().when(service).agregarSeleccion(USER_CORREO, List.of(1L, 2L));
@@ -319,6 +412,9 @@ void setUpSecurityContext() {
         verify(service).agregarSeleccion(USER_CORREO, List.of(1L, 2L));
     }
 
+    /**
+     * Verifica que eliminar una seleccion favorita del usuario autenticado retorna HTTP 204
+     */
     @Test
     void eliminarSeleccion_exitoso_retorna204() {
         doNothing().when(service).eliminarSeleccion(USER_CORREO, 1L);
@@ -329,6 +425,10 @@ void setUpSecurityContext() {
         verify(service).eliminarSeleccion(USER_CORREO, 1L);
     }
 
+    /**
+     * Verifica que obtener los estadios favoritos del usuario autenticado retorna HTTP 200
+     * y la lista contiene exactamente un elemento
+     */
     @Test
     void obtenerEstadios_retornaOkConLista() {
         when(service.estadiosUsuario(USER_CORREO))
@@ -341,6 +441,9 @@ void setUpSecurityContext() {
         verify(service).estadiosUsuario(USER_CORREO);
     }
 
+    /**
+     * Verifica que obtener estadios favoritos cuando el usuario no tiene ninguno retorna HTTP 200 con lista vacia
+     */
     @Test
     void obtenerEstadios_listaVacia_retornaOkVacio() {
         when(service.estadiosUsuario(USER_CORREO)).thenReturn(List.of());
@@ -351,6 +454,9 @@ void setUpSecurityContext() {
         assertTrue(res.getBody().isEmpty());
     }
 
+    /**
+     * Verifica que agregar estadios favoritos al usuario autenticado retorna HTTP 204
+     */
     @Test
     void agregarEstadio_exitoso_retorna204() {
         doNothing().when(service).agregarEstadio(USER_CORREO, List.of(1L));
@@ -361,6 +467,9 @@ void setUpSecurityContext() {
         verify(service).agregarEstadio(USER_CORREO, List.of(1L));
     }
 
+    /**
+     * Verifica que eliminar un estadio favorito del usuario autenticado retorna HTTP 204
+     */
     @Test
     void eliminarEstadio_exitoso_retorna204() {
         doNothing().when(service).eliminarEstadio(USER_CORREO, 1L);
@@ -371,6 +480,10 @@ void setUpSecurityContext() {
         verify(service).eliminarEstadio(USER_CORREO, 1L);
     }
 
+    /**
+     * Verifica que obtener las ciudades favoritas del usuario autenticado retorna HTTP 200
+     * y la lista contiene exactamente un elemento
+     */
     @Test
     void obtenerCiudades_retornaOkConLista() {
         when(service.ciudadesUsuario(USER_CORREO))
@@ -383,6 +496,9 @@ void setUpSecurityContext() {
         verify(service).ciudadesUsuario(USER_CORREO);
     }
 
+    /**
+     * Verifica que obtener ciudades favoritas cuando el usuario no tiene ninguna retorna HTTP 200 con lista vacia
+     */
     @Test
     void obtenerCiudades_listaVacia_retornaOkVacio() {
         when(service.ciudadesUsuario(USER_CORREO)).thenReturn(List.of());
@@ -393,6 +509,9 @@ void setUpSecurityContext() {
         assertTrue(res.getBody().isEmpty());
     }
 
+    /**
+     * Verifica que agregar ciudades favoritas al usuario autenticado retorna HTTP 204
+     */
     @Test
     void agregarCiudad_exitoso_retorna204() {
         doNothing().when(service).agregarCiudad(USER_CORREO, List.of(1L));
@@ -403,6 +522,9 @@ void setUpSecurityContext() {
         verify(service).agregarCiudad(USER_CORREO, List.of(1L));
     }
 
+    /**
+     * Verifica que eliminar una ciudad favorita del usuario autenticado retorna HTTP 204
+     */
     @Test
     void eliminarCiudad_exitoso_retorna204() {
         doNothing().when(service).eliminarCiudad(USER_CORREO, 1L);
@@ -413,6 +535,10 @@ void setUpSecurityContext() {
         verify(service).eliminarCiudad(USER_CORREO, 1L);
     }
 
+    /**
+     * Verifica que listar todos los estadios disponibles retorna HTTP 200
+     * y la lista contiene exactamente un elemento
+     */
     @Test
     void listarEstadios_retornaOkConLista() {
         when(service.listarEstadios()).thenReturn(List.of(new PreferenciaDTO(1L, "MetLife Stadium")));
@@ -424,6 +550,9 @@ void setUpSecurityContext() {
         verify(service).listarEstadios();
     }
 
+    /**
+     * Verifica que listar estadios cuando no hay ninguno retorna HTTP 200 con lista vacia
+     */
     @Test
     void listarEstadios_listaVacia_retornaOkVacio() {
         when(service.listarEstadios()).thenReturn(List.of());
@@ -434,6 +563,10 @@ void setUpSecurityContext() {
         assertTrue(res.getBody().isEmpty());
     }
 
+    /**
+     * Verifica que listar todas las ciudades disponibles retorna HTTP 200
+     * y la lista contiene exactamente un elemento
+     */
     @Test
     void listarCiudades_retornaOkConLista() {
         when(service.listarCiudades()).thenReturn(List.of(new PreferenciaDTO(1L, "East Rutherford")));
@@ -445,6 +578,9 @@ void setUpSecurityContext() {
         verify(service).listarCiudades();
     }
 
+    /**
+     * Verifica que listar ciudades cuando no hay ninguna retorna HTTP 200 con lista vacia
+     */
     @Test
     void listarCiudades_listaVacia_retornaOkVacio() {
         when(service.listarCiudades()).thenReturn(List.of());
@@ -455,6 +591,9 @@ void setUpSecurityContext() {
         assertTrue(res.getBody().isEmpty());
     }
 
+    /**
+     * Verifica que actualizar el token FCM del usuario autenticado retorna HTTP 204
+     */
     @Test
     void actualizarFcmToken_exitoso_retorna204() {
         doNothing().when(service).actualizarFcmToken(USER_CORREO, "token-fcm-nuevo");
@@ -466,6 +605,10 @@ void setUpSecurityContext() {
         verify(service).actualizarFcmToken(USER_CORREO, "token-fcm-nuevo");
     }
 
+    /**
+     * Verifica que obtener el nombre de un usuario existente retorna HTTP 200
+     * y el mapa contiene el nombre y apellido correctos
+     */
     @Test
     void obtenerNombreUsuario_existente_retornaOkConNombreYApellido() {
         when(service.obtenerUsuario(1L)).thenReturn(responseDTO(1L, USER_CORREO));
@@ -478,6 +621,9 @@ void setUpSecurityContext() {
         verify(service).obtenerUsuario(1L);
     }
 
+    /**
+     * Verifica que obtener el nombre de un usuario inexistente lanza {@link UsuarioNotFoundException}
+     */
     @Test
     void obtenerNombreUsuario_noExistente_propagaExcepcion() {
         when(service.obtenerUsuario(99L)).thenThrow(new UsuarioNotFoundException(M_NO_ENCONTRADO));

@@ -10,10 +10,10 @@ import org.springframework.scheduling.annotation.EnableAsync;
  * Clase principal de la aplicación Spring Boot del sistema Mundial 2026
  *
  * <p>Habilita la ejecución de tareas programadas con {@code @EnableScheduling}
- * y el procesamiento asíncrono de métodos con {@code @EnableAsync}</p>
+ * y el procesamiento asíncrono de métodos con {@code @EnableAsync}</p>// 
  */
 @EnableScheduling
-@EnableAsync
+@EnableAsync//permite trabjar de forma asincrona por ejemplo las notificaciones
 @SpringBootApplication
 public class Mundial2026Application {
 

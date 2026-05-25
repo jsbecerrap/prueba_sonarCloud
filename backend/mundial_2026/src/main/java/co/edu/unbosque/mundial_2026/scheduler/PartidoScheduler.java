@@ -34,7 +34,7 @@ public class PartidoScheduler {
     @Scheduled(fixedDelay = 300_000)
     public void actualizarResultadosHoy() {
         final String hoy = LocalDate.now()
-                .format(DateTimeFormatter.ISO_LOCAL_DATE);
+                .format(DateTimeFormatter.ISO_LOCAL_DATE);//api necesita uno formato especifico no uno generico de java
 
         try {
             final int actualizados = partidoService

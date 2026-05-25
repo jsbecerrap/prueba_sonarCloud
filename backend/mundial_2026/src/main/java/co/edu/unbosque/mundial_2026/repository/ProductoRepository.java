@@ -5,7 +5,6 @@ import java.util.List;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-
 import co.edu.unbosque.mundial_2026.dto.response.ProductoListadoDTO;
 import co.edu.unbosque.mundial_2026.entity.Producto;
 /**

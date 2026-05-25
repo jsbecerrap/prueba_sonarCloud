@@ -30,22 +30,48 @@ import co.edu.unbosque.mundial_2026.entity.EventoAuditoria;
 import co.edu.unbosque.mundial_2026.entity.Usuario;
 import co.edu.unbosque.mundial_2026.repository.EventoAuditoriaRepository;
 
+/**
+ * Pruebas unitarias para EventoAuditoriaServiceImpl.
+ */
 @ExtendWith(MockitoExtension.class)
 class EventoAuditoriaServiceImplTest {
 
+    /**
+     * Mock del repositorio de auditoría.
+     */
     @Mock
     private EventoAuditoriaRepository repository;
 
+    /**
+     * Mock del servicio de usuarios.
+     */
     @Mock
     private UsuarioService usuarioService;
 
+    /**
+     * Instancia del servicio bajo prueba.
+     */
     @InjectMocks
     private EventoAuditoriaServiceImpl auditoriaService;
 
+    /**
+     * Evento de prueba.
+     */
     private EventoAuditoria evento;
+
+    /**
+     * Configuración de paginación para pruebas.
+     */
     private Pageable pageable;
+
+    /**
+     * Constante de tipo de evento registrado.
+     */
     private static final String USUARIO_REGISTRADO = "USUARIO_REGISTRADO";
 
+    /**
+     * Configura los datos iniciales antes de cada prueba.
+     */
     @BeforeEach
     void setUp() {
         Usuario usuario = new Usuario();
@@ -63,10 +89,16 @@ class EventoAuditoriaServiceImplTest {
         pageable = PageRequest.of(0, 10);
     }
 
+    /**
+     * Pruebas para el método registrar.
+     */
     @Nested
     @DisplayName("registrar")
     class Registrar {
 
+        /**
+         * Verifica que se asigne la referencia del usuario cuando el id no es null.
+         */
         @Test
         void cuandoUsuarioIdNoEsNull_asignaReferenciaDeUsuario() {
             auditoriaService.registrar("TIPO_X", "desc", 5L, "corr-1", "Entidad");
@@ -84,6 +116,9 @@ class EventoAuditoriaServiceImplTest {
             assertNotNull(guardado.getFecha());
         }
 
+        /**
+         * Verifica que no se asigne usuario cuando el id es null.
+         */
         @Test
         void cuandoUsuarioIdEsNull_noAsignaUsuario() {
             auditoriaService.registrar("TIPO_SISTEMA", "desc sistema", null, "corr-2", "Sistema");
@@ -97,10 +132,16 @@ class EventoAuditoriaServiceImplTest {
         }
     }
 
+    /**
+     * Pruebas para el método obtenerTodos.
+     */
     @Nested
     @DisplayName("obtenerTodos")
     class ObtenerTodos {
 
+        /**
+         * Verifica que se retorne una página de eventos.
+         */
         @Test
         void retornaPageDeEventos() {
             Page<EventoAuditoria> page = new PageImpl<>(List.of(evento), pageable, 1);
@@ -113,6 +154,9 @@ class EventoAuditoriaServiceImplTest {
             assertEquals(1L, resultado.getContent().get(0).getUsuarioId());
         }
 
+        /**
+         * Verifica que el usuarioId sea null cuando el evento no tiene usuario.
+         */
         @Test
         void cuandoEventoSinUsuario_mapeaUsuarioIdNull() {
             evento.setUsuario(null);
@@ -125,10 +169,16 @@ class EventoAuditoriaServiceImplTest {
         }
     }
 
+    /**
+     * Pruebas para el método buscarPorUsuario.
+     */
     @Nested
     @DisplayName("buscarPorUsuario")
     class BuscarPorUsuario {
 
+        /**
+         * Verifica que se retornen eventos de un usuario.
+         */
         @Test
         void retornaEventosDelUsuario() {
             Page<EventoAuditoria> page = new PageImpl<>(List.of(evento), pageable, 1);
@@ -140,10 +190,16 @@ class EventoAuditoriaServiceImplTest {
         }
     }
 
+    /**
+     * Pruebas para el método buscarPorTipo.
+     */
     @Nested
     @DisplayName("buscarPorTipo")
     class BuscarPorTipo {
 
+        /**
+         * Verifica que se retornen eventos de un tipo.
+         */
         @Test
         void retornaEventosDelTipo() {
             Page<EventoAuditoria> page = new PageImpl<>(List.of(evento), pageable, 1);
@@ -156,10 +212,16 @@ class EventoAuditoriaServiceImplTest {
         }
     }
 
+    /**
+     * Pruebas para el método buscarPorCorrelacion.
+     */
     @Nested
     @DisplayName("buscarPorCorrelacion")
     class BuscarPorCorrelacion {
 
+        /**
+         * Verifica que se retornen eventos por correlación.
+         */
         @Test
         void retornaEventosDeCorrelacion() {
             Page<EventoAuditoria> page = new PageImpl<>(List.of(evento), pageable, 1);
@@ -171,10 +233,16 @@ class EventoAuditoriaServiceImplTest {
         }
     }
 
+    /**
+     * Pruebas para el método buscarPorEntidad.
+     */
     @Nested
     @DisplayName("buscarPorEntidad")
     class BuscarPorEntidad {
 
+        /**
+         * Verifica que se retornen eventos de una entidad.
+         */
         @Test
         void retornaEventosDeLaEntidad() {
             Page<EventoAuditoria> page = new PageImpl<>(List.of(evento), pageable, 1);
@@ -186,10 +254,16 @@ class EventoAuditoriaServiceImplTest {
         }
     }
 
+    /**
+     * Pruebas para el método buscarPorFecha.
+     */
     @Nested
     @DisplayName("buscarPorFecha")
     class BuscarPorFecha {
 
+        /**
+         * Verifica que se retornen eventos dentro de un rango de fechas.
+         */
         @Test
         void retornaEventosEnRangoDeFechas() {
             LocalDateTime inicio = LocalDateTime.of(2026, 1, 1, 0, 0);
@@ -204,10 +278,16 @@ class EventoAuditoriaServiceImplTest {
         }
     }
 
+    /**
+     * Pruebas para el método buscarConFiltros.
+     */
     @Nested
     @DisplayName("buscarConFiltros")
     class BuscarConFiltros {
 
+        /**
+         * Verifica el envío de fechas como String cuando todos los filtros tienen valor.
+         */
         @Test
 void cuandoTodosLosFiltrosTienenValor_pasaStringsDeFecha() {
     LocalDateTime inicio = LocalDateTime.of(2026, 1, 1, 0, 0);
@@ -224,6 +304,9 @@ void cuandoTodosLosFiltrosTienenValor_pasaStringsDeFecha() {
     assertEquals(1, resultado.getTotalElements());
 }
 
+        /**
+         * Verifica el envío de null en fechas al repositorio.
+         */
 @Test
 void cuandoFechasNull_pasaNullAlRepositorio() {
     Page<EventoAuditoria> page = new PageImpl<>(List.of(evento), pageable, 1);
@@ -236,6 +319,9 @@ void cuandoFechasNull_pasaNullAlRepositorio() {
     assertEquals(1, resultado.getTotalElements());
 }
 
+        /**
+         * Verifica el envío de todos los filtros en null.
+         */
 @Test
 void cuandoFiltrosNull_pasaTodosNulls() {
     Page<EventoAuditoria> page = new PageImpl<>(List.of(evento), pageable, 1);

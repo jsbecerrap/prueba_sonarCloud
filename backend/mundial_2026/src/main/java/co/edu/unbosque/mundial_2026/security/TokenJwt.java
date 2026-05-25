@@ -26,9 +26,9 @@ public final class TokenJwt {
      *
      * @param secret clave secreta en formato Base64
      */
-    public static void init(final String secret) {
-        final byte[] keyBytes = Base64.getDecoder().decode(secret);
-        secretKey = Keys.hmacShaKeyFor(keyBytes);
+    public static void init(final String secret) {//se trae la clave 
+        final byte[] keyBytes = Base64.getDecoder().decode(secret);//decodifica en bytes
+        secretKey = Keys.hmacShaKeyFor(keyBytes);//se necesita empaquetar la secret key a envolver los bytes y indicar el algoritmo de firmar usando SHA-256
     }
 
     /**

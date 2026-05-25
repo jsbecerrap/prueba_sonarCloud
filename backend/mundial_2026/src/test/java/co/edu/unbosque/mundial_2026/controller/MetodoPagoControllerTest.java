@@ -25,10 +25,13 @@ class MetodoPagoControllerTest {
 
     @InjectMocks
     private MetodoPagoController controller;
+
     private static final String USER_CORREO = "user@test.com";
 
-    /** 
-     * @return MetodoPagoRequestDTO
+    /**
+     * Crea un DTO de request válido para pruebas.
+     *
+     * @return objeto MetodoPagoRequestDTO con datos de prueba
      */
     private MetodoPagoRequestDTO requestValido() {
         MetodoPagoRequestDTO dto = new MetodoPagoRequestDTO();
@@ -38,8 +41,10 @@ class MetodoPagoControllerTest {
         return dto;
     }
 
-    /** 
-     * @return MetodoPagoResponseDTO
+    /**
+     * Crea un DTO de respuesta válido para pruebas.
+     *
+     * @return objeto MetodoPagoResponseDTO con datos de prueba
      */
     private MetodoPagoResponseDTO responseDTO() {
         MetodoPagoResponseDTO dto = new MetodoPagoResponseDTO();
@@ -50,8 +55,9 @@ class MetodoPagoControllerTest {
         return dto;
     }
 
-   
-
+    /**
+     * Verifica que listar retorne código 200 con una lista de métodos de pago.
+     */
     @Test
     void listar_retorna200ConLista() {
         when(metodoPagoService.listarPorCorreo(USER_CORREO))
@@ -64,6 +70,9 @@ class MetodoPagoControllerTest {
         verify(metodoPagoService).listarPorCorreo(USER_CORREO);
     }
 
+    /**
+     * Verifica que listar retorne código 200 cuando la lista está vacía.
+     */
     @Test
     void listar_listaVacia_retorna200() {
         when(metodoPagoService.listarPorCorreo(USER_CORREO)).thenReturn(List.of());
@@ -74,6 +83,9 @@ class MetodoPagoControllerTest {
         assertTrue(res.getBody().isEmpty());
     }
 
+    /**
+     * Verifica que una excepción del servicio en listar se propague.
+     */
     @Test
     void listar_serviceLanzaExcepcion_propaga() {
         when(metodoPagoService.listarPorCorreo(any())).thenThrow(new RuntimeException("error"));
@@ -81,11 +93,12 @@ class MetodoPagoControllerTest {
         assertThrows(RuntimeException.class, () -> controller.listar(USER_CORREO));
     }
 
-   
-
+    /**
+     * Verifica que agregar retorne código 200 con respuesta válida.
+     */
     @Test
     void agregar_valido_retorna200() {
-      when(metodoPagoService.agregar(any(), any())).thenReturn(responseDTO());
+        when(metodoPagoService.agregar(any(), any())).thenReturn(responseDTO());
 
         ResponseEntity<MetodoPagoResponseDTO> res = controller.agregar(USER_CORREO, requestValido());
 
@@ -95,6 +108,9 @@ class MetodoPagoControllerTest {
         verify(metodoPagoService).agregar(eq(USER_CORREO), any());
     }
 
+    /**
+     * Verifica que agregar retorne código 400 cuando el servicio retorna null.
+     */
     @Test
     void agregar_serviceRetornaNull_retorna400() {
         when(metodoPagoService.agregar(any(), any())).thenReturn(null);
@@ -105,6 +121,9 @@ class MetodoPagoControllerTest {
         assertNull(res.getBody());
     }
 
+    /**
+     * Verifica que agregar con tipo PSE retorne código 200.
+     */
     @Test
     void agregar_tipoPSE_retorna200() {
         MetodoPagoRequestDTO dto = requestValido();
@@ -119,6 +138,9 @@ class MetodoPagoControllerTest {
         assertEquals("PSE", res.getBody().getType());
     }
 
+    /**
+     * Verifica que agregar con tipo CASH retorne código 200.
+     */
     @Test
     void agregar_tipoCASH_retorna200() {
         MetodoPagoRequestDTO dto = requestValido();
@@ -130,6 +152,9 @@ class MetodoPagoControllerTest {
         assertEquals(200, res.getStatusCode().value());
     }
 
+    /**
+     * Verifica que agregar con tipo TRANSFER retorne código 200.
+     */
     @Test
     void agregar_tipoTRANSFER_retorna200() {
         MetodoPagoRequestDTO dto = requestValido();
@@ -141,6 +166,9 @@ class MetodoPagoControllerTest {
         assertEquals(200, res.getStatusCode().value());
     }
 
+    /**
+     * Verifica que una excepción del servicio en agregar se propague.
+     */
     @Test
     void agregar_serviceLanzaExcepcion_propaga() {
         when(metodoPagoService.agregar(any(), any())).thenThrow(new RuntimeException("error"));
@@ -149,8 +177,9 @@ class MetodoPagoControllerTest {
                 () -> controller.agregar(USER_CORREO, requestValido()));
     }
 
-   
-
+    /**
+     * Verifica que setDefault retorne código 204.
+     */
     @Test
     void setDefault_retorna204() {
         doNothing().when(metodoPagoService).setDefaultPorCorreo(USER_CORREO, 1L);
@@ -162,6 +191,9 @@ class MetodoPagoControllerTest {
         verify(metodoPagoService).setDefaultPorCorreo(USER_CORREO, 1L);
     }
 
+    /**
+     * Verifica que una excepción del servicio en setDefault se propague.
+     */
     @Test
     void setDefault_serviceLanzaExcepcion_propaga() {
         doThrow(new RuntimeException("no encontrado"))
@@ -171,8 +203,9 @@ class MetodoPagoControllerTest {
                 () -> controller.setDefault(USER_CORREO, 99L));
     }
 
-
-
+    /**
+     * Verifica que eliminar retorne código 204.
+     */
     @Test
     void eliminar_retorna204() {
         doNothing().when(metodoPagoService).eliminar(USER_CORREO, 1L);
@@ -184,6 +217,9 @@ class MetodoPagoControllerTest {
         verify(metodoPagoService).eliminar(USER_CORREO, 1L);
     }
 
+    /**
+     * Verifica que una excepción del servicio en eliminar se propague.
+     */
     @Test
     void eliminar_serviceLanzaExcepcion_propaga() {
         doThrow(new RuntimeException("no encontrado"))
@@ -193,11 +229,12 @@ class MetodoPagoControllerTest {
                 () -> controller.eliminar(USER_CORREO, 99L));
     }
 
-   
-
+    /**
+     * Verifica que actualizar retorne código 200 con respuesta válida.
+     */
     @Test
     void actualizar_valido_retorna200() {
-       when(metodoPagoService.actualizar(any(), eq(1L), any())).thenReturn(responseDTO());
+        when(metodoPagoService.actualizar(any(), eq(1L), any())).thenReturn(responseDTO());
 
         ResponseEntity<MetodoPagoResponseDTO> res =
                 controller.actualizar(USER_CORREO, 1L, requestValido());
@@ -207,6 +244,9 @@ class MetodoPagoControllerTest {
         verify(metodoPagoService).actualizar(eq(USER_CORREO), eq(1L), any());
     }
 
+    /**
+     * Verifica que actualizar retorne el DTO devuelto por el servicio.
+     */
     @Test
     void actualizar_retornaElDTODelServicio() {
         MetodoPagoResponseDTO esperado = responseDTO();
@@ -219,6 +259,9 @@ class MetodoPagoControllerTest {
         assertEquals("Visa Actualizada", res.getBody().getLabel());
     }
 
+    /**
+     * Verifica que una excepción del servicio en actualizar se propague.
+     */
     @Test
     void actualizar_serviceLanzaExcepcion_propaga() {
         when(metodoPagoService.actualizar(any(), eq(99L), any()))

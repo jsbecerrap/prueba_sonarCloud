@@ -14,6 +14,11 @@ import co.edu.unbosque.mundial_2026.entity.Apuesta;
 import co.edu.unbosque.mundial_2026.repository.ApuestaRepository;
 import co.edu.unbosque.mundial_2026.service.ApuestaService;
 
+/**
+ * Pruebas unitarias para la clase ApuestaScheduler.
+ * Verifica la ejecución de tareas automáticas relacionadas
+ * con cierre y cálculo de apuestas.
+ */
 @ExtendWith(MockitoExtension.class)
 class ApuestaSchedulerTest {
 
@@ -26,12 +31,20 @@ class ApuestaSchedulerTest {
     @InjectMocks
     private ApuestaScheduler scheduler;
 
+    /**
+     * Verifica que el cierre de pollas vencidas invoque
+     * el servicio correspondiente.
+     */
     @Test
     void cerrarPollasvencidas_invocaCerrarApuestasVencidas() {
         scheduler.cerrarPollasvencidas();
         verify(apuestaService).cerrarApuestasVencidas();
     }
 
+    /**
+     * Verifica que se calculen puntos parciales
+     * para cada apuesta abierta encontrada.
+     */
     @Test
     void calcularParciales_conApuestasAbiertas_calculaPorCadaUna() {
         Apuesta a1 = new Apuesta();
@@ -46,6 +59,10 @@ class ApuestaSchedulerTest {
         verify(apuestaService).calcularPuntosParciales(2L);
     }
 
+    /**
+     * Verifica que no se calculen puntos parciales
+     * cuando no existen apuestas abiertas.
+     */
     @Test
     void calcularParciales_sinApuestasAbiertas_noCalculaNada() {
         when(apuestaRepository.findByEstado("ABIERTA")).thenReturn(List.of());
@@ -55,6 +72,10 @@ class ApuestaSchedulerTest {
         verify(apuestaService, never()).calcularPuntosParciales(any());
     }
 
+    /**
+     * Verifica que el cálculo final invoque
+     * el proceso automático correspondiente.
+     */
     @Test
     void calcularFinales_invocaCalculaPuntosAutomatico() {
         scheduler.calcularFinales();

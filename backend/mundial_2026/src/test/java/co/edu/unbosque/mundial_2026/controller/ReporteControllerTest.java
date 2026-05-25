@@ -1,6 +1,5 @@
 package co.edu.unbosque.mundial_2026.controller;
 
-
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -18,12 +17,19 @@ import org.springframework.http.ResponseEntity;
 import co.edu.unbosque.mundial_2026.dto.response.*;
 import co.edu.unbosque.mundial_2026.service.ReporteService;
 
+/**
+ * Pruebas unitarias para ReporteController usando Mockito.
+ * Verifica respuestas HTTP y datos retornados por cada endpoint.
+ */
 @ExtendWith(MockitoExtension.class)
 class ReporteControllerTest {
 
     @Mock private ReporteService reportesService;
     @InjectMocks private ReporteController controller;
 
+    /**
+     * Verifica obtención correcta de estadísticas generales.
+     */
     @Test
     void obtenerEstadisticasGenerales_retornaOkConDTO() {
         ReportesResponseDTO dto = new ReportesResponseDTO();
@@ -44,6 +50,9 @@ class ReporteControllerTest {
         verify(reportesService).obtenerEstadisticasGenerales();
     }
 
+    /**
+     * Verifica estadísticas generales con valores por defecto.
+     */
     @Test
     void obtenerEstadisticasGenerales_todosCero_retornaOk() {
         when(reportesService.obtenerEstadisticasGenerales()).thenReturn(new ReportesResponseDTO());
@@ -54,6 +63,9 @@ class ReporteControllerTest {
         assertNotNull(res.getBody());
     }
 
+    /**
+     * Verifica obtención correcta del reporte de compras.
+     */
     @Test
     void obtenerReportesCompras_retornaOkConDTO() {
         ReportesComprasDTO dto = new ReportesComprasDTO();
@@ -73,6 +85,9 @@ class ReporteControllerTest {
         verify(reportesService).obtenerReportesCompras();
     }
 
+    /**
+     * Verifica reporte de compras sin datos.
+     */
     @Test
     void obtenerReportesCompras_sinDatos_retornaOk() {
         ReportesComprasDTO dto = new ReportesComprasDTO();
@@ -87,6 +102,9 @@ class ReporteControllerTest {
         assertTrue(res.getBody().getProductosMasVendidos().isEmpty());
     }
 
+    /**
+     * Verifica obtención de partidos más apostados.
+     */
     @Test
     void obtenerPartidosMasApostados_retornaOkConLista() {
         PartidoMasApostadoDTO dto = new PartidoMasApostadoDTO(1L, "Colombia", "Brazil", "Grupo A", 200);
@@ -100,6 +118,9 @@ class ReporteControllerTest {
         verify(reportesService).obtenerPartidosMasApostados();
     }
 
+    /**
+     * Verifica lista vacía de partidos más apostados.
+     */
     @Test
     void obtenerPartidosMasApostados_listaVacia_retornaOkVacio() {
         when(reportesService.obtenerPartidosMasApostados()).thenReturn(List.of());
@@ -110,6 +131,9 @@ class ReporteControllerTest {
         assertTrue(res.getBody().isEmpty());
     }
 
+    /**
+     * Verifica obtención de ranking de pollas.
+     */
     @Test
     void obtenerPollaRanking_retornaOkConLista() {
         PollaRankingDTO dto = new PollaRankingDTO(1L, "Polla Mundial", "ACTIVA", 15);
@@ -123,6 +147,9 @@ class ReporteControllerTest {
         verify(reportesService).obtenerPollaRanking();
     }
 
+    /**
+     * Verifica ranking vacío.
+     */
     @Test
     void obtenerPollaRanking_listaVacia_retornaOkVacio() {
         when(reportesService.obtenerPollaRanking()).thenReturn(List.of());
@@ -133,6 +160,9 @@ class ReporteControllerTest {
         assertTrue(res.getBody().isEmpty());
     }
 
+    /**
+     * Verifica ingresos por método de pago.
+     */
     @Test
     void obtenerIngresosPorMetodoPago_retornaOkConLista() {
         IngresoMetodoPagoDTO dto = new IngresoMetodoPagoDTO("TARJETA", 40, 4000000.0);
@@ -146,6 +176,9 @@ class ReporteControllerTest {
         verify(reportesService).obtenerIngresosPorMetodoPago();
     }
 
+    /**
+     * Verifica ingresos por método de pago vacíos.
+     */
     @Test
     void obtenerIngresosPorMetodoPago_listaVacia_retornaOkVacio() {
         when(reportesService.obtenerIngresosPorMetodoPago()).thenReturn(List.of());
@@ -156,6 +189,9 @@ class ReporteControllerTest {
         assertTrue(res.getBody().isEmpty());
     }
 
+    /**
+     * Verifica entradas vendidas por partido.
+     */
     @Test
     void obtenerEntradasPorPartido_retornaOkConLista() {
         EntradaPorPartidoDTO dto = new EntradaPorPartidoDTO(1L, "Colombia", "Brazil", "Grupo A", "MetLife Stadium", 300, 9000000.0);
@@ -169,6 +205,9 @@ class ReporteControllerTest {
         verify(reportesService).obtenerEntradasPorPartido();
     }
 
+    /**
+     * Verifica lista vacía de entradas por partido.
+     */
     @Test
     void obtenerEntradasPorPartido_listaVacia_retornaOkVacio() {
         when(reportesService.obtenerEntradasPorPartido()).thenReturn(List.of());
@@ -179,6 +218,9 @@ class ReporteControllerTest {
         assertTrue(res.getBody().isEmpty());
     }
 
+    /**
+     * Verifica top usuarios de souvenir con tamaño por defecto.
+     */
     @Test
     void obtenerTopUsuariosSouvenir_sizeDefault_retornaOkConLista() {
         TopUsuarioSouvenirDTO dto = new TopUsuarioSouvenirDTO(1L, "Juan", "Perez", "juan@test.com", 5, 250000.0);
@@ -192,6 +234,9 @@ class ReporteControllerTest {
         verify(reportesService).obtenerTopUsuariosSouvenir(any(Pageable.class));
     }
 
+    /**
+     * Verifica pageable personalizado en top usuarios souvenir.
+     */
     @Test
     void obtenerTopUsuariosSouvenir_sizePersonalizado_usaPageableCorrecto() {
         when(reportesService.obtenerTopUsuariosSouvenir(any(Pageable.class))).thenReturn(List.of());
@@ -202,6 +247,9 @@ class ReporteControllerTest {
         verify(reportesService).obtenerTopUsuariosSouvenir(argThat(p -> p.getPageSize() == 10 && p.getPageNumber() == 0));
     }
 
+    /**
+     * Verifica top usuarios souvenir vacío.
+     */
     @Test
     void obtenerTopUsuariosSouvenir_listaVacia_retornaOkVacio() {
         when(reportesService.obtenerTopUsuariosSouvenir(any(Pageable.class))).thenReturn(List.of());
@@ -212,6 +260,9 @@ class ReporteControllerTest {
         assertTrue(res.getBody().isEmpty());
     }
 
+    /**
+     * Verifica top usuarios de entradas con tamaño por defecto.
+     */
     @Test
     void obtenerTopUsuariosEntrada_sizeDefault_retornaOkConLista() {
         TopUsuarioEntradaDTO dto = new TopUsuarioEntradaDTO(2L, "Maria", "Lopez", "maria@test.com", 8, 640000.0);
@@ -225,6 +276,9 @@ class ReporteControllerTest {
         verify(reportesService).obtenerTopUsuariosEntrada(any(Pageable.class));
     }
 
+    /**
+     * Verifica pageable personalizado en top usuarios entrada.
+     */
     @Test
     void obtenerTopUsuariosEntrada_sizePersonalizado_usaPageableCorrecto() {
         when(reportesService.obtenerTopUsuariosEntrada(any(Pageable.class))).thenReturn(List.of());
@@ -235,6 +289,9 @@ class ReporteControllerTest {
         verify(reportesService).obtenerTopUsuariosEntrada(argThat(p -> p.getPageSize() == 3 && p.getPageNumber() == 0));
     }
 
+    /**
+     * Verifica top usuarios entrada vacío.
+     */
     @Test
     void obtenerTopUsuariosEntrada_listaVacia_retornaOkVacio() {
         when(reportesService.obtenerTopUsuariosEntrada(any(Pageable.class))).thenReturn(List.of());

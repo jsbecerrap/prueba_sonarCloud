@@ -20,17 +20,30 @@ import co.edu.unbosque.mundial_2026.dto.response.ProductoResponseDTO;
 import co.edu.unbosque.mundial_2026.dto.response.ReactivarCategoriaResponseDTO;
 import co.edu.unbosque.mundial_2026.service.CategoriaService;
 
+/**
+ * Pruebas unitarias para {@link CategoriaController}.
+ * Verifica el comportamiento de los endpoints relacionados con la gestión
+ * de categorías utilizando mocks del servicio.
+ */
 @ExtendWith(MockitoExtension.class)
 class CategoriaControllerTest {
 
+    /**
+     * Mock del servicio de categorías.
+     */
     @Mock
     private CategoriaService categoriaService;
 
+    /**
+     * Instancia del controlador con mocks inyectados.
+     */
     @InjectMocks
     private CategoriaController controller;
 
     /** 
-     * @return CategoriaRequestDTO
+     * Crea un DTO válido de prueba para usar en los tests.
+     * 
+     * @return CategoriaRequestDTO con datos de ejemplo
      */
     private CategoriaRequestDTO requestValido() {
         CategoriaRequestDTO dto = new CategoriaRequestDTO();
@@ -39,6 +52,9 @@ class CategoriaControllerTest {
         return dto;
     }
 
+    /**
+     * Verifica que crear una categoría válida retorna estado 201.
+     */
     @Test
     void crear_valido_retorna201() {
         when(categoriaService.crear(any())).thenReturn(new CategoriaResponseDTO());
@@ -50,6 +66,9 @@ class CategoriaControllerTest {
         verify(categoriaService).crear(any());
     }
 
+    /**
+     * Verifica que el controlador retorna el DTO entregado por el servicio.
+     */
     @Test
     void crear_retornaElDTODelServicio() {
         CategoriaResponseDTO esperado = new CategoriaResponseDTO();
@@ -61,6 +80,9 @@ class CategoriaControllerTest {
         assertEquals(5L, res.getBody().getId());
     }
 
+    /**
+     * Verifica que una excepción del servicio al crear se propaga.
+     */
     @Test
     void crear_serviceLanzaExcepcion_propaga() {
         when(categoriaService.crear(any())).thenThrow(new RuntimeException("ya existe"));
@@ -68,6 +90,9 @@ class CategoriaControllerTest {
         assertThrows(RuntimeException.class, () -> controller.crear(requestValido()));
     }
 
+    /**
+     * Verifica que una descripción nula no impide crear y retorna 201.
+     */
     @Test
     void crear_descripcionNula_retorna201() {
         CategoriaRequestDTO dto = new CategoriaRequestDTO();
@@ -79,8 +104,9 @@ class CategoriaControllerTest {
         assertEquals(201, res.getStatusCode().value());
     }
 
-
-
+    /**
+     * Verifica que listar categorías retorna 200 con elementos.
+     */
     @Test
     void listar_retorna200ConLista() {
         when(categoriaService.listar()).thenReturn(List.of(new CategoriaResponseDTO()));
@@ -92,6 +118,9 @@ class CategoriaControllerTest {
         verify(categoriaService).listar();
     }
 
+    /**
+     * Verifica que listar categorías vacías retorna 200.
+     */
     @Test
     void listar_listaVacia_retorna200() {
         when(categoriaService.listar()).thenReturn(List.of());
@@ -102,7 +131,9 @@ class CategoriaControllerTest {
         assertTrue(res.getBody().isEmpty());
     }
 
-
+    /**
+     * Verifica que actualizar una categoría válida retorna 200.
+     */
     @Test
     void actualizar_valido_retorna200() {
         when(categoriaService.actualizar(eq(1L), any())).thenReturn(new CategoriaResponseDTO());
@@ -114,6 +145,9 @@ class CategoriaControllerTest {
         verify(categoriaService).actualizar(eq(1L), any());
     }
 
+    /**
+     * Verifica que el DTO actualizado retornado es el del servicio.
+     */
     @Test
     void actualizar_retornaElDTODelServicio() {
         CategoriaResponseDTO esperado = new CategoriaResponseDTO();
@@ -125,6 +159,9 @@ class CategoriaControllerTest {
         assertEquals(1L, res.getBody().getId());
     }
 
+    /**
+     * Verifica que una excepción al actualizar se propaga.
+     */
     @Test
     void actualizar_serviceLanzaExcepcion_propaga() {
         when(categoriaService.actualizar(eq(99L), any())).thenThrow(new RuntimeException("no encontrada"));
@@ -132,8 +169,9 @@ class CategoriaControllerTest {
         assertThrows(RuntimeException.class, () -> controller.actualizar(99L, requestValido()));
     }
 
-   
-
+    /**
+     * Verifica que desactivar una categoría retorna 200.
+     */
     @Test
     void desactivar_retorna200() {
         when(categoriaService.desactivar(1L)).thenReturn(new DesactivarCategoriaResponseDTO());
@@ -145,6 +183,9 @@ class CategoriaControllerTest {
         verify(categoriaService).desactivar(1L);
     }
 
+    /**
+     * Verifica que una excepción al desactivar se propaga.
+     */
     @Test
     void desactivar_serviceLanzaExcepcion_propaga() {
         when(categoriaService.desactivar(99L)).thenThrow(new RuntimeException("no encontrada"));
@@ -152,8 +193,9 @@ class CategoriaControllerTest {
         assertThrows(RuntimeException.class, () -> controller.desactivar(99L));
     }
 
-   
-
+    /**
+     * Verifica que reactivar una categoría retorna 200.
+     */
     @Test
     void reactivar_retorna200() {
         when(categoriaService.reactivar(1L)).thenReturn(new ReactivarCategoriaResponseDTO());
@@ -165,6 +207,9 @@ class CategoriaControllerTest {
         verify(categoriaService).reactivar(1L);
     }
 
+    /**
+     * Verifica que una excepción al reactivar se propaga.
+     */
     @Test
     void reactivar_serviceLanzaExcepcion_propaga() {
         when(categoriaService.reactivar(99L)).thenThrow(new RuntimeException("no encontrada"));
@@ -172,7 +217,9 @@ class CategoriaControllerTest {
         assertThrows(RuntimeException.class, () -> controller.reactivar(99L));
     }
 
-
+    /**
+     * Verifica que listar todas las categorías retorna 200 con lista.
+     */
     @Test
     void listarTodas_retorna200ConLista() {
         when(categoriaService.listarTodas()).thenReturn(List.of(new CategoriaResponseDTO()));
@@ -184,6 +231,9 @@ class CategoriaControllerTest {
         verify(categoriaService).listarTodas();
     }
 
+    /**
+     * Verifica que listar todas con lista vacía retorna 200.
+     */
     @Test
     void listarTodas_listaVacia_retorna200() {
         when(categoriaService.listarTodas()).thenReturn(List.of());
@@ -194,6 +244,9 @@ class CategoriaControllerTest {
         assertTrue(res.getBody().isEmpty());
     }
 
+    /**
+     * Verifica que una excepción al listar todas se propaga.
+     */
     @Test
     void listarTodas_serviceLanzaExcepcion_propaga() {
         when(categoriaService.listarTodas()).thenThrow(new RuntimeException("error"));
@@ -201,7 +254,9 @@ class CategoriaControllerTest {
         assertThrows(RuntimeException.class, () -> controller.listarTodas());
     }
 
- 
+    /**
+     * Verifica que obtener productos de una categoría retorna 200 con lista.
+     */
     @Test
     void obtenerProductos_retorna200ConLista() {
         when(categoriaService.obtenerProductosPorCategoria(1L))
@@ -214,6 +269,9 @@ class CategoriaControllerTest {
         verify(categoriaService).obtenerProductosPorCategoria(1L);
     }
 
+    /**
+     * Verifica que obtener productos con lista vacía retorna 200.
+     */
     @Test
     void obtenerProductos_listaVacia_retorna200() {
         when(categoriaService.obtenerProductosPorCategoria(99L)).thenReturn(List.of());
@@ -224,6 +282,9 @@ class CategoriaControllerTest {
         assertTrue(res.getBody().isEmpty());
     }
 
+    /**
+     * Verifica que una excepción por categoría inexistente se propaga.
+     */
     @Test
     void obtenerProductos_categoriaNoExistente_propaga() {
         when(categoriaService.obtenerProductosPorCategoria(99L))

@@ -109,15 +109,15 @@ public SecurityFilterChain filterChain(final HttpSecurity http,
             .anyRequest().authenticated())
             .addFilter(new JwtAuthenticationFilter(authManager, usuarioRepository))
             .addFilter(new JwtValidationFilter(authManager, tokenBlacklist))
-            .csrf(config -> config.disable())
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .csrf(config -> config.disable())//no usamos cookies
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))//use cors de abajo 
             .sessionManagement(management -> management
-                    .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                    .sessionCreationPolicy(SessionCreationPolicy.STATELESS))//statless osea no guarda peticiones
             .exceptionHandling(ex -> ex
                     .authenticationEntryPoint((request, response, authException) -> {
                         response.setStatus(401);
                         response.setContentType("application/json");
-                        response.getWriter().write("{\"error\":\"No autenticado\"}");
+                        response.getWriter().write("{\"error\":\"No autenticado\"}");//que pasa si trata de ingresar a algo que no 
                     })
             )
             .build();
@@ -136,27 +136,29 @@ public SecurityFilterChain filterChain(final HttpSecurity http,
                 "http://localhost:8080",
                 "http://localhost:5173",
                 "https://mundial-2026-hub.vercel.app",
-                "https://*.vercel.app"));
+                "https://*.vercel.app"));//links que puede trate el front 
 
         config.setAllowedMethods(Arrays.asList("GET", "POST", "DELETE", "PUT", "PATCH"));
         config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
         config.setAllowCredentials(true);
 
         final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config);
+        source.registerCorsConfiguration("/**", config);//todas las rutas y simplemente lo añade de arriba 
 
         return source;
     }
 
     /**
      * Registra el filtro CORS con máxima prioridad para evitar bloqueos en solicitudes cross-origin
+     *  los preflight requests del navegador ANTES que Spring Security,
+ * evitando que los bloquee por falta de token JWT
      */
     @Bean
     public FilterRegistrationBean<CorsFilter> corsFilter() {
         final FilterRegistrationBean<CorsFilter> corsBean =
                 new FilterRegistrationBean<>(new CorsFilter(corsConfigurationSource()));
 
-        corsBean.setOrder(Ordered.HIGHEST_PRECEDENCE);
+        corsBean.setOrder(Ordered.HIGHEST_PRECEDENCE);// corre antes que todos los filtros
         return corsBean;
     }
 }

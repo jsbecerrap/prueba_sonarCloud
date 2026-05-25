@@ -21,6 +21,10 @@ import co.edu.unbosque.mundial_2026.dto.response.ProductoResponseDTO;
 import co.edu.unbosque.mundial_2026.exception.ProductoNotFoundException;
 import co.edu.unbosque.mundial_2026.service.ProductoService;
 
+/**
+ * Pruebas unitarias para ProductoController usando Mockito.
+ * Verifica respuestas HTTP y propagación de excepciones.
+ */
 @ExtendWith(MockitoExtension.class)
 class ProductoControllerTest {
 
@@ -28,7 +32,15 @@ class ProductoControllerTest {
     @InjectMocks private ProductoController controller;
 
     private static final String CAMISETA_PRUEBA = "Camiseta Colombia";
-private static final String NO_ENCONTRADO = "no encontrado";
+    private static final String NO_ENCONTRADO = "no encontrado";
+
+    /**
+     * Crea un DTO de respuesta para pruebas.
+     *
+     * @param id identificador del producto
+     * @param nombre nombre del producto
+     * @return DTO de respuesta
+     */
     private ProductoResponseDTO responseDTO(Long id, String nombre) {
         ProductoResponseDTO dto = new ProductoResponseDTO();
         dto.setId(id);
@@ -36,6 +48,11 @@ private static final String NO_ENCONTRADO = "no encontrado";
         return dto;
     }
 
+    /**
+     * Crea un DTO de creación de producto para pruebas.
+     *
+     * @return DTO de request
+     */
     private ProductoRequestDTO requestDTO() {
         ProductoRequestDTO dto = new ProductoRequestDTO();
         dto.setNombre(CAMISETA_PRUEBA);
@@ -44,12 +61,20 @@ private static final String NO_ENCONTRADO = "no encontrado";
         return dto;
     }
 
+    /**
+     * Crea un DTO de actualización para pruebas.
+     *
+     * @return DTO de actualización
+     */
     private ProductoActualizarRequestDTO actualizarDTO() {
         ProductoActualizarRequestDTO dto = new ProductoActualizarRequestDTO();
         dto.setPrecio(90000.0);
         return dto;
     }
 
+    /**
+     * Verifica creación exitosa de producto y retorno HTTP 201.
+     */
     @Test
     void crear_exitoso_retorna201() {
         ProductoRequestDTO dto = requestDTO();
@@ -64,6 +89,9 @@ private static final String NO_ENCONTRADO = "no encontrado";
         verify(productoService).crear(dto);
     }
 
+    /**
+     * Verifica que se propague excepción si categoría no existe.
+     */
     @Test
     void crear_categoriaInexistente_propagaExcepcion() {
         when(productoService.crear(any())).thenThrow(new ProductoNotFoundException("categoría no encontrada"));
@@ -71,6 +99,9 @@ private static final String NO_ENCONTRADO = "no encontrado";
         assertThrows(ProductoNotFoundException.class, () -> controller.crear(requestDTO()));
     }
 
+    /**
+     * Verifica actualización exitosa y retorno HTTP 200.
+     */
     @Test
     void actualizar_exitoso_retornaOk() {
         ProductoActualizarRequestDTO dto = actualizarDTO();
@@ -84,6 +115,9 @@ private static final String NO_ENCONTRADO = "no encontrado";
         verify(productoService).actualizar(1L, dto);
     }
 
+    /**
+     * Verifica propagación de excepción al actualizar producto inexistente.
+     */
     @Test
     void actualizar_productoNoExistente_propagaExcepcion() {
         when(productoService.actualizar(eq(99L), any())).thenThrow(new ProductoNotFoundException(NO_ENCONTRADO));
@@ -91,6 +125,9 @@ private static final String NO_ENCONTRADO = "no encontrado";
         assertThrows(ProductoNotFoundException.class, () -> controller.actualizar(99L, actualizarDTO()));
     }
 
+    /**
+     * Verifica eliminación exitosa y retorno HTTP 204.
+     */
     @Test
     void eliminar_exitoso_retorna204() {
         doNothing().when(productoService).eliminar(1L);
@@ -102,6 +139,9 @@ private static final String NO_ENCONTRADO = "no encontrado";
         verify(productoService).eliminar(1L);
     }
 
+    /**
+     * Verifica propagación de excepción al eliminar producto inexistente.
+     */
     @Test
     void eliminar_productoNoExistente_propagaExcepcion() {
         doThrow(new ProductoNotFoundException(NO_ENCONTRADO)).when(productoService).eliminar(99L);
@@ -109,6 +149,9 @@ private static final String NO_ENCONTRADO = "no encontrado";
         assertThrows(ProductoNotFoundException.class, () -> controller.eliminar(99L));
     }
 
+    /**
+     * Verifica reactivación exitosa y retorno HTTP 204.
+     */
     @Test
     void reactivar_exitoso_retorna204() {
         doNothing().when(productoService).reactivar(1L);
@@ -120,6 +163,9 @@ private static final String NO_ENCONTRADO = "no encontrado";
         verify(productoService).reactivar(1L);
     }
 
+    /**
+     * Verifica propagación de excepción al reactivar producto inexistente.
+     */
     @Test
     void reactivar_productoNoExistente_propagaExcepcion() {
         doThrow(new ProductoNotFoundException(NO_ENCONTRADO)).when(productoService).reactivar(99L);
@@ -127,6 +173,9 @@ private static final String NO_ENCONTRADO = "no encontrado";
         assertThrows(ProductoNotFoundException.class, () -> controller.reactivar(99L));
     }
 
+    /**
+     * Verifica listado admin con productos.
+     */
     @Test
     void listarTodosAdmin_retornaOkConLista() {
         when(productoService.listarTodos(false))
@@ -139,6 +188,9 @@ private static final String NO_ENCONTRADO = "no encontrado";
         verify(productoService).listarTodos(false);
     }
 
+    /**
+     * Verifica listado admin vacío.
+     */
     @Test
     void listarTodosAdmin_listaVacia_retornaOkVacio() {
         when(productoService.listarTodos(false)).thenReturn(List.of());
@@ -149,6 +201,9 @@ private static final String NO_ENCONTRADO = "no encontrado";
         assertTrue(res.getBody().isEmpty());
     }
 
+    /**
+     * Verifica listado general sin categoría.
+     */
     @Test
     void listar_sinCategoria_retornaTodosLosProductos() {
         when(productoService.listarTodos())
@@ -162,6 +217,9 @@ private static final String NO_ENCONTRADO = "no encontrado";
         verify(productoService, never()).listarPorCategoria(any());
     }
 
+    /**
+     * Verifica listado filtrado por categoría.
+     */
     @Test
     void listar_conCategoria_retornaProductosFiltrados() {
         when(productoService.listarPorCategoria(1L)).thenReturn(List.of(responseDTO(1L, "Camiseta")));
@@ -174,6 +232,9 @@ private static final String NO_ENCONTRADO = "no encontrado";
         verify(productoService, never()).listarTodos();
     }
 
+    /**
+     * Verifica listado por categoría vacío.
+     */
     @Test
     void listar_conCategoria_listaVacia_retornaOkVacio() {
         when(productoService.listarPorCategoria(99L)).thenReturn(List.of());
@@ -184,6 +245,9 @@ private static final String NO_ENCONTRADO = "no encontrado";
         assertTrue(res.getBody().isEmpty());
     }
 
+    /**
+     * Verifica listado general vacío.
+     */
     @Test
     void listar_sinCategoria_listaVacia_retornaOkVacio() {
         when(productoService.listarTodos()).thenReturn(List.of());
@@ -194,6 +258,9 @@ private static final String NO_ENCONTRADO = "no encontrado";
         assertTrue(res.getBody().isEmpty());
     }
 
+    /**
+     * Verifica obtención de producto existente por ID.
+     */
     @Test
     void obtenerPorId_existente_retornaOk() {
         when(productoService.obtenerPorId(1L)).thenReturn(responseDTO(1L, CAMISETA_PRUEBA));
@@ -206,6 +273,9 @@ private static final String NO_ENCONTRADO = "no encontrado";
         verify(productoService).obtenerPorId(1L);
     }
 
+    /**
+     * Verifica excepción al buscar producto inexistente.
+     */
     @Test
     void obtenerPorId_noExistente_propagaExcepcion() {
         when(productoService.obtenerPorId(99L)).thenThrow(new ProductoNotFoundException(NO_ENCONTRADO));
@@ -213,6 +283,9 @@ private static final String NO_ENCONTRADO = "no encontrado";
         assertThrows(ProductoNotFoundException.class, () -> controller.obtenerPorId(99L));
     }
 
+    /**
+     * Verifica listado liviano con datos.
+     */
     @Test
     void listarLiviano_retornaOkConLista() {
         ProductoListadoDTO dto = new ProductoListadoDTO();
@@ -225,6 +298,9 @@ private static final String NO_ENCONTRADO = "no encontrado";
         verify(productoService).listarTodosLiviano();
     }
 
+    /**
+     * Verifica listado liviano vacío.
+     */
     @Test
     void listarLiviano_listaVacia_retornaOkVacio() {
         when(productoService.listarTodosLiviano()).thenReturn(List.of());
@@ -235,6 +311,9 @@ private static final String NO_ENCONTRADO = "no encontrado";
         assertTrue(res.getBody().isEmpty());
     }
 
+    /**
+     * Verifica activación en lote exitosa.
+     */
     @Test
     void activarLote_exitoso_retorna204() {
         ActivarLoteRequestDTO dto = new ActivarLoteRequestDTO();
@@ -248,6 +327,9 @@ private static final String NO_ENCONTRADO = "no encontrado";
         verify(productoService).activarLote(List.of(1L, 2L, 3L));
     }
 
+    /**
+     * Verifica activación en lote con lista vacía.
+     */
     @Test
     void activarLote_listaVacia_retorna204() {
         ActivarLoteRequestDTO dto = new ActivarLoteRequestDTO();
@@ -260,6 +342,9 @@ private static final String NO_ENCONTRADO = "no encontrado";
         verify(productoService).activarLote(List.of());
     }
 
+    /**
+     * Verifica excepción al activar lote con producto inexistente.
+     */
     @Test
     void activarLote_productoNoExistente_propagaExcepcion() {
         ActivarLoteRequestDTO dto = new ActivarLoteRequestDTO();

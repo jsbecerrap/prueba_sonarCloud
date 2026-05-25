@@ -1,6 +1,5 @@
 package co.edu.unbosque.mundial_2026.controller;
 
-
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -24,12 +23,22 @@ import co.edu.unbosque.mundial_2026.service.OrdenService;
 @ExtendWith(MockitoExtension.class)
 class OrdenControllerTest {
 
-    @Mock private OrdenService ordenService;
-    @InjectMocks private OrdenController controller;
+    @Mock
+    private OrdenService ordenService;
+
+    @InjectMocks
+    private OrdenController controller;
+
     private static final String USER_CORREO = "user@test.com";
     private static final String PENDIENTE = "PENDIENTE";
     private static final String PAGADA = "PAGADA";
 
+    /**
+     * Crea un DTO de respuesta de orden para pruebas.
+     *
+     * @param estado estado de la orden
+     * @return objeto OrdenResponseDTO con datos de prueba
+     */
     private OrdenResponseDTO responseDTO(String estado) {
         OrdenResponseDTO dto = new OrdenResponseDTO();
         dto.setId(1L);
@@ -38,6 +47,11 @@ class OrdenControllerTest {
         return dto;
     }
 
+    /**
+     * Crea un DTO válido para agregar ítems.
+     *
+     * @return objeto AgregarItemDTO con datos de prueba
+     */
     private AgregarItemDTO agregarItemDTO() {
         AgregarItemDTO dto = new AgregarItemDTO();
         dto.setProductoId(1L);
@@ -46,12 +60,20 @@ class OrdenControllerTest {
         return dto;
     }
 
+    /**
+     * Crea un DTO válido para confirmar orden.
+     *
+     * @return objeto ConfirmarOrdenDTO con datos de prueba
+     */
     private ConfirmarOrdenDTO confirmarDTO() {
         ConfirmarOrdenDTO dto = new ConfirmarOrdenDTO();
         dto.setMetodoPagoId(1L);
         return dto;
     }
 
+    /**
+     * Verifica que agregar retorne código 200 cuando es exitoso.
+     */
     @Test
     void agregar_exitoso_retornaOk() {
         AgregarItemDTO dto = agregarItemDTO();
@@ -65,6 +87,9 @@ class OrdenControllerTest {
         verify(ordenService).agregarItem(USER_CORREO, dto);
     }
 
+    /**
+     * Verifica que se propague excepción cuando la variante no existe.
+     */
     @Test
     void agregar_varianteNoEncontrada_propagaExcepcion() {
         AgregarItemDTO dto = agregarItemDTO();
@@ -73,6 +98,9 @@ class OrdenControllerTest {
         assertThrows(ProductoNotFoundException.class, () -> controller.agregar(USER_CORREO, dto));
     }
 
+    /**
+     * Verifica que se propague excepción cuando no hay stock.
+     */
     @Test
     void agregar_stockInsuficiente_propagaExcepcion() {
         AgregarItemDTO dto = agregarItemDTO();
@@ -81,6 +109,9 @@ class OrdenControllerTest {
         assertThrows(StockInsuficienteException.class, () -> controller.agregar(USER_CORREO, dto));
     }
 
+    /**
+     * Verifica que se propague excepción cuando el producto está inactivo.
+     */
     @Test
     void agregar_productoInactivo_propagaExcepcion() {
         AgregarItemDTO dto = agregarItemDTO();
@@ -89,6 +120,9 @@ class OrdenControllerTest {
         assertThrows(ProductoNotFoundException.class, () -> controller.agregar(USER_CORREO, dto));
     }
 
+    /**
+     * Verifica que carrito retorne código 200 cuando existe.
+     */
     @Test
     void carrito_existente_retornaOk() {
         when(ordenService.obtenerCarrito(USER_CORREO)).thenReturn(responseDTO(PENDIENTE));
@@ -100,6 +134,9 @@ class OrdenControllerTest {
         verify(ordenService).obtenerCarrito(USER_CORREO);
     }
 
+    /**
+     * Verifica que se propague excepción cuando no existe carrito.
+     */
     @Test
     void carrito_sinCarrito_propagaExcepcion() {
         when(ordenService.obtenerCarrito(any())).thenThrow(new OrdenNotFoundException("no hay carrito"));
@@ -107,6 +144,9 @@ class OrdenControllerTest {
         assertThrows(OrdenNotFoundException.class, () -> controller.carrito(USER_CORREO));
     }
 
+    /**
+     * Verifica que eliminarItem retorne código 200 cuando es exitoso.
+     */
     @Test
     void eliminarItem_exitoso_retornaOk() {
         when(ordenService.eliminarItem(USER_CORREO, 1L)).thenReturn(responseDTO(PENDIENTE));
@@ -117,6 +157,9 @@ class OrdenControllerTest {
         verify(ordenService).eliminarItem(USER_CORREO, 1L);
     }
 
+    /**
+     * Verifica que se propague excepción cuando no hay carrito al eliminar.
+     */
     @Test
     void eliminarItem_sinCarrito_propagaExcepcion() {
         when(ordenService.eliminarItem(any(), any())).thenThrow(new OrdenNotFoundException("sin carrito"));
@@ -124,6 +167,9 @@ class OrdenControllerTest {
         assertThrows(OrdenNotFoundException.class, () -> controller.eliminarItem(USER_CORREO, 1L));
     }
 
+    /**
+     * Verifica que se propague excepción cuando el item no existe.
+     */
     @Test
     void eliminarItem_itemNoExistente_propagaExcepcion() {
         when(ordenService.eliminarItem(any(), any())).thenThrow(new ItemNotFoundException("item no existe"));
@@ -131,6 +177,9 @@ class OrdenControllerTest {
         assertThrows(ItemNotFoundException.class, () -> controller.eliminarItem(USER_CORREO, 99L));
     }
 
+    /**
+     * Verifica que confirmar retorne código 200 cuando es exitoso.
+     */
     @Test
     void confirmar_exitoso_retornaOk() {
         ConfirmarOrdenDTO dto = confirmarDTO();
@@ -143,6 +192,9 @@ class OrdenControllerTest {
         verify(ordenService).confirmarOrden(USER_CORREO, dto);
     }
 
+    /**
+     * Verifica que se propague excepción cuando el carrito está vacío.
+     */
     @Test
     void confirmar_carritoVacio_propagaExcepcion() {
         ConfirmarOrdenDTO dto = confirmarDTO();
@@ -151,6 +203,9 @@ class OrdenControllerTest {
         assertThrows(CarritoVacioException.class, () -> controller.confirmar(USER_CORREO, dto));
     }
 
+    /**
+     * Verifica que se propague excepción cuando el método de pago es inválido.
+     */
     @Test
     void confirmar_metodoPagoInvalido_propagaExcepcion() {
         ConfirmarOrdenDTO dto = confirmarDTO();
@@ -159,6 +214,9 @@ class OrdenControllerTest {
         assertThrows(MetodoPagoInvalidoException.class, () -> controller.confirmar(USER_CORREO, dto));
     }
 
+    /**
+     * Verifica que se propague excepción cuando no hay stock al confirmar.
+     */
     @Test
     void confirmar_stockInsuficiente_propagaExcepcion() {
         ConfirmarOrdenDTO dto = confirmarDTO();
@@ -167,6 +225,9 @@ class OrdenControllerTest {
         assertThrows(StockInsuficienteException.class, () -> controller.confirmar(USER_CORREO, dto));
     }
 
+    /**
+     * Verifica que se propague excepción cuando Stripe falla.
+     */
     @Test
     void confirmar_pagoStripe_propagaExcepcion() {
         ConfirmarOrdenDTO dto = confirmarDTO();
@@ -175,6 +236,9 @@ class OrdenControllerTest {
         assertThrows(PagoStripeException.class, () -> controller.confirmar(USER_CORREO, dto));
     }
 
+    /**
+     * Verifica que se propague excepción cuando no hay carrito al confirmar.
+     */
     @Test
     void confirmar_sinCarrito_propagaExcepcion() {
         ConfirmarOrdenDTO dto = confirmarDTO();
@@ -183,6 +247,9 @@ class OrdenControllerTest {
         assertThrows(OrdenNotFoundException.class, () -> controller.confirmar(USER_CORREO, dto));
     }
 
+    /**
+     * Verifica que historial retorne código 200 con órdenes.
+     */
     @Test
     void historial_conOrdenes_retornaOk() {
         when(ordenService.historial(USER_CORREO)).thenReturn(List.of(responseDTO(PAGADA)));
@@ -194,6 +261,9 @@ class OrdenControllerTest {
         verify(ordenService).historial(USER_CORREO);
     }
 
+    /**
+     * Verifica que historial retorne código 200 cuando está vacío.
+     */
     @Test
     void historial_sinOrdenes_retornaOkVacio() {
         when(ordenService.historial(USER_CORREO)).thenReturn(List.of());
@@ -204,6 +274,9 @@ class OrdenControllerTest {
         assertTrue(res.getBody().isEmpty());
     }
 
+    /**
+     * Verifica que cancelar retorne código 200 cuando es exitoso.
+     */
     @Test
     void cancelar_exitoso_retornaOk() {
         when(ordenService.cancelarOrden(USER_CORREO)).thenReturn(responseDTO("CANCELADA"));
@@ -215,6 +288,9 @@ class OrdenControllerTest {
         verify(ordenService).cancelarOrden(USER_CORREO);
     }
 
+    /**
+     * Verifica que se propague excepción cuando no hay carrito al cancelar.
+     */
     @Test
     void cancelar_sinCarrito_propagaExcepcion() {
         when(ordenService.cancelarOrden(any())).thenThrow(new OrdenNotFoundException("sin carrito"));
@@ -222,7 +298,9 @@ class OrdenControllerTest {
         assertThrows(OrdenNotFoundException.class, () -> controller.cancelar(USER_CORREO));
     }
 
-    
+    /**
+     * Verifica que historialLiviano retorne código 200 con órdenes.
+     */
     @Test
     void historialLiviano_conOrdenes_retornaOk() {
         OrdenHistorialDTO dto = new OrdenHistorialDTO();
@@ -238,6 +316,9 @@ class OrdenControllerTest {
         verify(ordenService).historialLiviano(USER_CORREO);
     }
 
+    /**
+     * Verifica que historialLiviano retorne código 200 cuando está vacío.
+     */
     @Test
     void historialLiviano_sinOrdenes_retornaOkVacio() {
         when(ordenService.historialLiviano(USER_CORREO)).thenReturn(List.of());

@@ -29,14 +29,14 @@ public class FireBaseConfig {
     @PostConstruct
     public void inicializar() throws IOException {
         try (InputStream serviceAccount = Thread.currentThread().getContextClassLoader()
-                .getResourceAsStream("firebase-service-account.json")) {
+                .getResourceAsStream("firebase-service-account.json")) {//busca el archivo dentro del proyecto 
 
             if (serviceAccount == null) {
                 return;
             }
 
             FirebaseOptions options = FirebaseOptions.builder()
-                    .setCredentials(GoogleCredentials.fromStream(serviceAccount))
+                    .setCredentials(GoogleCredentials.fromStream(serviceAccount))//extrae las credenciales y se las asigna para construir 
                     .build();
 
             if (FirebaseApp.getApps().isEmpty()) {

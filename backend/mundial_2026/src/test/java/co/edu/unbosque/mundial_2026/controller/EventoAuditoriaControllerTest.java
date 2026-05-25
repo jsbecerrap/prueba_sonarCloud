@@ -21,16 +21,28 @@ import org.springframework.http.ResponseEntity;
 import co.edu.unbosque.mundial_2026.dto.EventoAuditoriaDTO;
 import co.edu.unbosque.mundial_2026.service.EventoAuditoriaService;
 
+/**
+ * Pruebas unitarias para {@link EventoAuditoriaController}
+ * Verifica el comportamiento del controlador de auditoria usando mocks de {@link EventoAuditoriaService}
+ */
 @ExtendWith(MockitoExtension.class)
 class EventoAuditoriaControllerTest {
 
     @Mock private EventoAuditoriaService eventoService;
     @InjectMocks private EventoAuditoriaController controller;
 
-private static final String USUARIO = "USUARIO";
-private static final String LOGIN = "LOGIN";
-private static final String CORR_1 = "corr-1";
-private static final String COMPRA = "COMPRA";
+    /** Tipo de entidad usado como constante en los tests */
+    private static final String USUARIO = "USUARIO";
+
+    /** Tipo de evento de inicio de sesion usado en los tests */
+    private static final String LOGIN = "LOGIN";
+
+    /** Identificador de correlacion de prueba usado en los tests */
+    private static final String CORR_1 = "corr-1";
+
+    /** Tipo de evento de compra usado en los tests */
+    private static final String COMPRA = "COMPRA";
+
     private EventoAuditoriaDTO crearDTO(Long id, String tipo) {
         return new EventoAuditoriaDTO(id, tipo, "desc", LocalDateTime.now(), CORR_1, USUARIO, 1L);
     }
@@ -43,6 +55,10 @@ private static final String COMPRA = "COMPRA";
         return new PageImpl<>(List.of());
     }
 
+    /**
+     * Verifica que obtener todos los eventos retorna HTTP 200
+     * y la pagina contiene exactamente un elemento
+     */
     @Test
     void obtenerTodos_retornaOkConPagina() {
         when(eventoService.obtenerTodos(any(Pageable.class))).thenReturn(paginaConUno(crearDTO(1L, LOGIN)));
@@ -54,6 +70,9 @@ private static final String COMPRA = "COMPRA";
         assertEquals(1, res.getBody().getTotalElements());
     }
 
+    /**
+     * Verifica que obtener todos los eventos cuando no hay ninguno retorna HTTP 200 con pagina vacia
+     */
     @Test
     void obtenerTodos_paginaVacia_retornaOkVacio() {
         when(eventoService.obtenerTodos(any(Pageable.class))).thenReturn(paginaVacia());
@@ -64,6 +83,9 @@ private static final String COMPRA = "COMPRA";
         assertTrue(res.getBody().isEmpty());
     }
 
+    /**
+     * Verifica que pasar un numero de pagina negativo lo corrige a cero automaticamente
+     */
     @Test
     void obtenerTodos_pageNegativa_usaCero() {
         when(eventoService.obtenerTodos(any(Pageable.class))).thenReturn(paginaVacia());
@@ -74,6 +96,9 @@ private static final String COMPRA = "COMPRA";
         verify(eventoService).obtenerTodos(argThat(p -> p.getPageNumber() == 0));
     }
 
+    /**
+     * Verifica que pasar un size superior a 100 lo limita a 100 para evitar sobrecargar la consulta
+     */
     @Test
     void obtenerTodos_sizeSuperiorACien_usaCien() {
         when(eventoService.obtenerTodos(any(Pageable.class))).thenReturn(paginaVacia());
@@ -84,6 +109,9 @@ private static final String COMPRA = "COMPRA";
         verify(eventoService).obtenerTodos(argThat(p -> p.getPageSize() == 100));
     }
 
+    /**
+     * Verifica que pasar un size menor a 1 lo corrige a 1 como minimo permitido
+     */
     @Test
     void obtenerTodos_sizeMenorAUno_usaUno() {
         when(eventoService.obtenerTodos(any(Pageable.class))).thenReturn(paginaVacia());
@@ -94,6 +122,10 @@ private static final String COMPRA = "COMPRA";
         verify(eventoService).obtenerTodos(argThat(p -> p.getPageSize() == 1));
     }
 
+    /**
+     * Verifica que buscar eventos con todos los filtros disponibles retorna HTTP 200
+     * y el servicio recibe exactamente los parametros indicados
+     */
     @Test
     void buscar_conTodosLosFiltros_retornaOk() {
         LocalDateTime inicio = LocalDateTime.now().minusDays(7);
@@ -108,6 +140,10 @@ private static final String COMPRA = "COMPRA";
         verify(eventoService).buscarConFiltros(eq(1L), eq(LOGIN), eq(inicio), eq(fin), any(Pageable.class));
     }
 
+    /**
+     * Verifica que buscar eventos sin ningun filtro retorna HTTP 200
+     * y el servicio recibe todos los parametros como nulos
+     */
     @Test
     void buscar_sinFiltros_retornaOk() {
         when(eventoService.buscarConFiltros(isNull(), isNull(), isNull(), isNull(), any(Pageable.class)))
@@ -119,6 +155,9 @@ private static final String COMPRA = "COMPRA";
         verify(eventoService).buscarConFiltros(isNull(), isNull(), isNull(), isNull(), any(Pageable.class));
     }
 
+    /**
+     * Verifica que buscar eventos filtrando solo por usuario retorna HTTP 200
+     */
     @Test
     void buscar_soloFiltroUsuario_retornaOk() {
         when(eventoService.buscarConFiltros(eq(1L), isNull(), isNull(), isNull(), any(Pageable.class)))
@@ -129,6 +168,9 @@ private static final String COMPRA = "COMPRA";
         assertEquals(200, res.getStatusCode().value());
     }
 
+    /**
+     * Verifica que buscar eventos filtrando solo por tipo retorna HTTP 200
+     */
     @Test
     void buscar_soloFiltroTipos_retornaOk() {
         when(eventoService.buscarConFiltros(isNull(), eq("ORDEN_PAGADA,LOGIN"), isNull(), isNull(), any(Pageable.class)))
@@ -139,6 +181,10 @@ private static final String COMPRA = "COMPRA";
         assertEquals(200, res.getStatusCode().value());
     }
 
+    /**
+     * Verifica que buscar eventos por usuario retorna HTTP 200
+     * y la pagina contiene exactamente un elemento
+     */
     @Test
     void buscarPorUsuario_retornaOkConPagina() {
         when(eventoService.buscarPorUsuario(eq(1L), any(Pageable.class)))
@@ -151,6 +197,9 @@ private static final String COMPRA = "COMPRA";
         verify(eventoService).buscarPorUsuario(eq(1L), any(Pageable.class));
     }
 
+    /**
+     * Verifica que buscar eventos de un usuario sin resultados retorna HTTP 200 con pagina vacia
+     */
     @Test
     void buscarPorUsuario_sinResultados_retornaOkVacio() {
         when(eventoService.buscarPorUsuario(eq(99L), any(Pageable.class))).thenReturn(paginaVacia());
@@ -161,6 +210,9 @@ private static final String COMPRA = "COMPRA";
         assertTrue(res.getBody().isEmpty());
     }
 
+    /**
+     * Verifica que los parametros de paginacion personalizados se pasan correctamente al servicio
+     */
     @Test
     void buscarPorUsuario_paginacionPersonalizada_respetaParametros() {
         when(eventoService.buscarPorUsuario(eq(1L), any(Pageable.class))).thenReturn(paginaVacia());
@@ -170,6 +222,10 @@ private static final String COMPRA = "COMPRA";
         verify(eventoService).buscarPorUsuario(eq(1L), argThat(p -> p.getPageNumber() == 2 && p.getPageSize() == 10));
     }
 
+    /**
+     * Verifica que buscar eventos por tipo retorna HTTP 200
+     * y la pagina contiene exactamente un elemento
+     */
     @Test
     void buscarPorTipo_retornaOkConPagina() {
         when(eventoService.buscarPorTipo(eq(LOGIN), any(Pageable.class)))
@@ -182,6 +238,9 @@ private static final String COMPRA = "COMPRA";
         verify(eventoService).buscarPorTipo(eq(LOGIN), any(Pageable.class));
     }
 
+    /**
+     * Verifica que buscar eventos por un tipo que no existe retorna HTTP 200 con pagina vacia
+     */
     @Test
     void buscarPorTipo_sinResultados_retornaOkVacio() {
         when(eventoService.buscarPorTipo(eq("TIPO_RARO"), any(Pageable.class))).thenReturn(paginaVacia());
@@ -192,6 +251,9 @@ private static final String COMPRA = "COMPRA";
         assertTrue(res.getBody().isEmpty());
     }
 
+    /**
+     * Verifica que los parametros de paginacion personalizados al buscar por tipo se pasan correctamente al servicio
+     */
     @Test
     void buscarPorTipo_paginacionPersonalizada_respetaParametros() {
         when(eventoService.buscarPorTipo(eq(COMPRA), any(Pageable.class))).thenReturn(paginaVacia());
@@ -201,6 +263,10 @@ private static final String COMPRA = "COMPRA";
         verify(eventoService).buscarPorTipo(eq(COMPRA), argThat(p -> p.getPageNumber() == 1 && p.getPageSize() == 20));
     }
 
+    /**
+     * Verifica que buscar eventos por correlacion retorna HTTP 200
+     * y la pagina contiene exactamente un elemento
+     */
     @Test
     void buscarPorCorrelacion_retornaOkConPagina() {
         when(eventoService.buscarPorCorrelacion(eq(CORR_1), any(Pageable.class)))
@@ -213,6 +279,9 @@ private static final String COMPRA = "COMPRA";
         verify(eventoService).buscarPorCorrelacion(eq(CORR_1), any(Pageable.class));
     }
 
+    /**
+     * Verifica que buscar eventos por una correlacion inexistente retorna HTTP 200 con pagina vacia
+     */
     @Test
     void buscarPorCorrelacion_sinResultados_retornaOkVacio() {
         when(eventoService.buscarPorCorrelacion(eq("no-existe"), any(Pageable.class))).thenReturn(paginaVacia());
@@ -223,6 +292,10 @@ private static final String COMPRA = "COMPRA";
         assertTrue(res.getBody().isEmpty());
     }
 
+    /**
+     * Verifica que buscar eventos por rango de fechas retorna HTTP 200
+     * y la pagina contiene exactamente un elemento
+     */
     @Test
     void buscarPorFecha_retornaOkConPagina() {
         LocalDateTime inicio = LocalDateTime.now().minusDays(1);
@@ -237,6 +310,9 @@ private static final String COMPRA = "COMPRA";
         verify(eventoService).buscarPorFecha(eq(inicio), eq(fin), any(Pageable.class));
     }
 
+    /**
+     * Verifica que buscar eventos en un rango de fechas sin resultados retorna HTTP 200 con pagina vacia
+     */
     @Test
     void buscarPorFecha_sinResultados_retornaOkVacio() {
         LocalDateTime inicio = LocalDateTime.now().minusDays(30);
@@ -249,6 +325,9 @@ private static final String COMPRA = "COMPRA";
         assertTrue(res.getBody().isEmpty());
     }
 
+    /**
+     * Verifica que los parametros de paginacion personalizados al buscar por fecha se pasan correctamente al servicio
+     */
     @Test
     void buscarPorFecha_paginacionPersonalizada_respetaParametros() {
         LocalDateTime inicio = LocalDateTime.now().minusDays(1);
@@ -260,6 +339,10 @@ private static final String COMPRA = "COMPRA";
         verify(eventoService).buscarPorFecha(eq(inicio), eq(fin), argThat(p -> p.getPageNumber() == 3 && p.getPageSize() == 25));
     }
 
+    /**
+     * Verifica que buscar eventos por entidad retorna HTTP 200
+     * y la pagina contiene exactamente un elemento
+     */
     @Test
     void buscarPorEntidad_retornaOkConPagina() {
         when(eventoService.buscarPorEntidad(eq(USUARIO), any(Pageable.class)))
@@ -272,6 +355,9 @@ private static final String COMPRA = "COMPRA";
         verify(eventoService).buscarPorEntidad(eq(USUARIO), any(Pageable.class));
     }
 
+    /**
+     * Verifica que buscar eventos por una entidad sin resultados retorna HTTP 200 con pagina vacia
+     */
     @Test
     void buscarPorEntidad_sinResultados_retornaOkVacio() {
         when(eventoService.buscarPorEntidad(eq("ENTIDAD_RARA"), any(Pageable.class))).thenReturn(paginaVacia());
@@ -282,6 +368,9 @@ private static final String COMPRA = "COMPRA";
         assertTrue(res.getBody().isEmpty());
     }
 
+    /**
+     * Verifica que los parametros de paginacion personalizados al buscar por entidad se pasan correctamente al servicio
+     */
     @Test
     void buscarPorEntidad_paginacionPersonalizada_respetaParametros() {
         when(eventoService.buscarPorEntidad(eq("ORDEN"), any(Pageable.class))).thenReturn(paginaVacia());
@@ -291,6 +380,9 @@ private static final String COMPRA = "COMPRA";
         verify(eventoService).buscarPorEntidad(eq("ORDEN"), argThat(p -> p.getPageSize() == 10));
     }
 
+    /**
+     * Verifica que el Pageable construido internamente ordena los resultados por fecha de forma descendente
+     */
     @Test
     void buildPageable_ordenDescendentePorFecha() {
         when(eventoService.obtenerTodos(any(Pageable.class))).thenReturn(paginaVacia());

@@ -76,7 +76,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
             request.setAttribute(ATTR_CORREO_INTENTO, correo);
 
             if (contrasena != null && contrasena.length() > MAX_LONGITUD_PASSWORD) {
-                throw new AuthenticationServiceException("La contraseña excede la longitud permitida");
+                throw new AuthenticationServiceException("La contraseña excede la longitud permitida");//la contraseña no exceda la longitud 
             }
 
             if (correo != null && !correo.isBlank()) {
@@ -85,13 +85,13 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
                     final Usuario usuario = opt.get();
                     if (usuario.getBloqueadoHasta() != null
                             && usuario.getBloqueadoHasta().isAfter(LocalDateTime.now())) {
-                        throw new LockedException("Cuenta temporalmente bloqueada");
+                        throw new LockedException("Cuenta temporalmente bloqueada");//Mira que no este bloqueado
                     }
                 }
             }
 
             return authManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(correo, contrasena));
+                    new UsernamePasswordAuthenticationToken(correo, contrasena));//manda la autenticacion( se observa de manera baja en el manager)
 
         } catch (IOException e) {
             throw new AuthenticationServiceException("Error al leer las credenciales", e);
@@ -109,7 +109,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
                                            final Authentication authResult)
             throws IOException, ServletException {
 
-        final String username = authResult.getName();
+        final String username = authResult.getName();//se obtiene el correo y se busca
         final Usuario usuario = usuarioRepo.findByCorreoUsuario(username)
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
 
@@ -117,14 +117,14 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
                 || usuario.getBloqueadoHasta() != null) {
             usuario.setIntentosFallidos(0);
             usuario.setBloqueadoHasta(null);
-            usuarioRepo.save(usuario);
+            usuarioRepo.save(usuario);//se le reinician los valores de bloqueo 
         }
 
         final String nombreCompleto = usuario.getNombre() + " " + usuario.getApellido();
 
-        List<GrantedAuthority> roles = new ArrayList<>(authResult.getAuthorities());
+        List<GrantedAuthority> roles = new ArrayList<>(authResult.getAuthorities());//obtiene los roles 
 
-        final String token = Jwts.builder()
+        final String token = Jwts.builder()//construye el token con el nombre, roles, cuando expira y que debe entrar con ello 
                 .subject(username)
                 .claim("authorities", roles.stream()
                         .map(GrantedAuthority::getAuthority)
@@ -133,7 +133,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
                 .signWith(TokenJwt.getSecretKey())
                 .compact();
 
-        response.addHeader(HEADER_AUTHORIZATION, PREFIX_TOKEN + token);
+        response.addHeader(HEADER_AUTHORIZATION, PREFIX_TOKEN + token);//se añade en el header por el front y en formato del body mas abajo 
 
         final Map<String, String> json = new HashMap<>();
         json.put("token", token);
@@ -154,8 +154,11 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
                                              final AuthenticationException failed)
             throws IOException, ServletException {
 
-        final Object attrCorreo = request.getAttribute(ATTR_CORREO_INTENTO);
-        final String correo = (attrCorreo != null) ? attrCorreo.toString() : null;
+        final Object attrCorreo = request.getAttribute(ATTR_CORREO_INTENTO);//se obtiene el correo para mirar y intentos y eso 
+        String correo = null;
+if (attrCorreo != null) {
+    correo = attrCorreo.toString();//se debe convertir astring
+}
         final boolean estabaBloqueado = failed instanceof LockedException;
 
         if (!estabaBloqueado && correo != null && !correo.isBlank()) {
@@ -165,11 +168,11 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
         final Map<String, String> json = new HashMap<>();
 
-        if (estabaBloqueado) {
+        if (estabaBloqueado) {//manda segun si esta bloqueado o no 
             json.put(KEY_MENSAJE, "Demasiados intentos espera unos minutos");
             response.setStatus(429);
         } else {
-            json.put(KEY_MENSAJE, "Error en la autenticacion correo contraseña incorrecto");
+            json.put(KEY_MENSAJE, "Error en la autenticacion correo contraseña incorrecto");//si esta mal la contraseña 
             response.setStatus(401);
         }
 
@@ -183,14 +186,17 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
      * Registra intentos fallidos de login y aplica bloqueo temporal si supera el límite permitido
      */
     private void registrarIntentoFallido(final Usuario usuario) {
-        final int intentos = (usuario.getIntentosFallidos() != null
-                ? usuario.getIntentosFallidos() : 0) + 1;
+        int intentos = 0;
+if (usuario.getIntentosFallidos() != null) {//mira cuantos intentos para añadir o si tiene 0
+    intentos = usuario.getIntentosFallidos();
+}
+intentos = intentos + 1;
 
         usuario.setIntentosFallidos(intentos);
 
         if (intentos >= MAX_INTENTOS_FALLIDOS) {
             usuario.setBloqueadoHasta(LocalDateTime.now().plusMinutes(MINUTOS_BLOQUEO));
-            usuario.setIntentosFallidos(0);
+            usuario.setIntentosFallidos(0);//se reinicia 
         }
 
         usuarioRepo.save(usuario);

@@ -13,6 +13,7 @@ import co.edu.unbosque.mundial_2026.entity.EventoAuditoria;
 /**
  * Repositorio encargado de la gestión y consulta de los eventos de auditoría registrados en el sistema
  */
+
 public interface EventoAuditoriaRepository extends JpaRepository<EventoAuditoria, Long> {
 
     /**
@@ -73,9 +74,11 @@ public interface EventoAuditoriaRepository extends JpaRepository<EventoAuditoria
     * @param pageable configuración de paginación de la consulta
     * @return página con los eventos que cumplen los filtros aplicados
     */
+   //valida con or si llega se lo asigna si no no y la segunda es para contar cuantos hay y asi paginar
+   //igual simplemente usa any para validar que este en ellos 
    @Query(value = """
     SELECT * FROM eventos_auditoria e
-    WHERE (:usuarioId IS NULL OR e.usuario_id = :usuarioId)
+    WHERE (:usuarioId IS NULL OR e.usuario_id = :usuarioId)                      
     AND (:tipos IS NULL OR e.tipo = ANY(STRING_TO_ARRAY(:tipos, ',')))
     AND (:fechaInicio IS NULL OR e.fecha >= CAST(:fechaInicio AS TIMESTAMP))
     AND (:fechaFin IS NULL OR e.fecha <= CAST(:fechaFin AS TIMESTAMP))

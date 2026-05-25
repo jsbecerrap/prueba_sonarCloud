@@ -48,6 +48,10 @@ import co.edu.unbosque.mundial_2026.repository.RolRepository;
 import co.edu.unbosque.mundial_2026.repository.SeleccionRepository;
 import co.edu.unbosque.mundial_2026.repository.UsuarioRepository;
 
+/**
+ * Pruebas unitarias para {@link UsuarioServiceImpl}
+ * Verifica la logica de negocio del servicio de usuarios usando mocks de repositorios y servicios dependientes
+ */
 @ExtendWith(MockitoExtension.class)
 class UsuarioServiceImplTest {
 
@@ -78,18 +82,41 @@ class UsuarioServiceImplTest {
     @InjectMocks
     private UsuarioServiceImpl usuarioService;
 
+    /** Usuario de prueba activo usado como base en los tests */
     private Usuario usuario;
+
+    /** Rol de usuario estandar usado en los tests de registro y actualizacion */
     private Rol rolUsuario;
+
+    /** Correo principal del usuario de prueba usado en la mayoria de los tests */
     private static final String CORREO_TEST = "test@test.com";
-private static final String CORREO_NOPE = "nope@test.com";
-private static final String CORREO_NUEVO = "nuevo@test.com";
-private static final String CORREO_ADMIN = "admin@test.com";
-private static final String PASS_123 = "Pass123!";
-private static final String HASHED = "hashed";
-private static final String ROLE_USUARIO = "ROLE_USUARIO";
-private static final String AZTECA = "Azteca";
-private static final String ROLE_ADMIN = "ROLE_ADMIN";
-private static final String BOGOTA = "Bogota";
+
+    /** Correo inexistente usado en los tests que verifican usuario no encontrado */
+    private static final String CORREO_NOPE = "nope@test.com";
+
+    /** Correo nuevo usado en los tests de cambio de correo y registro */
+    private static final String CORREO_NUEVO = "nuevo@test.com";
+
+    /** Correo de administrador usado en los tests de registro por admin */
+    private static final String CORREO_ADMIN = "admin@test.com";
+
+    /** Contrasena de prueba en texto plano usada en los tests de registro y actualizacion */
+    private static final String PASS_123 = "Pass123!";
+
+    /** Contrasena hasheada de prueba almacenada en el usuario de prueba */
+    private static final String HASHED = "hashed";
+
+    /** Nombre del rol de usuario estandar usado en los tests de asignacion de roles */
+    private static final String ROLE_USUARIO = "ROLE_USUARIO";
+
+    /** Nombre del estadio de prueba usado en los tests de preferencias de estadios */
+    private static final String AZTECA = "Azteca";
+
+    /** Nombre del rol de administrador usado en los tests de registro por admin */
+    private static final String ROLE_ADMIN = "ROLE_ADMIN";
+
+    /** Nombre de ciudad de prueba usado en los tests de preferencias de ciudades */
+    private static final String BOGOTA = "Bogota";
 
     @BeforeEach
     void setUp() {
@@ -107,10 +134,16 @@ private static final String BOGOTA = "Bogota";
         usuario.setActivo(true);
     }
 
+    /**
+     * Tests del metodo listarTodos — cubre listado con y sin usuarios
+     */
     @Nested
     @DisplayName("listarTodos")
     class ListarTodos {
 
+        /**
+         * Verifica que cuando hay usuarios registrados se retorna la lista correctamente
+         */
         @Test
         void cuandoHayUsuarios_retornaLista() {
             when(repository.findAll()).thenReturn(List.of(usuario));
@@ -121,6 +154,9 @@ private static final String BOGOTA = "Bogota";
             assertEquals(CORREO_TEST, resultado.get(0).getCorreoUsuario());
         }
 
+        /**
+         * Verifica que cuando no hay usuarios registrados se retorna lista vacia
+         */
         @Test
         void cuandoNoHayUsuarios_retornaListaVacia() {
             when(repository.findAll()).thenReturn(Collections.emptyList());
@@ -131,10 +167,16 @@ private static final String BOGOTA = "Bogota";
         }
     }
 
+    /**
+     * Tests del metodo registrarUsuario — cubre registro exitoso, correo duplicado y rol inexistente
+     */
     @Nested
     @DisplayName("registrarUsuario")
     class RegistrarUsuario {
 
+        /**
+         * Verifica que con datos validos se registra el usuario y se audita el evento
+         */
         @Test
         void cuandoDatosValidos_registraYRetornaDTO() {
             UsuarioRequestDTO dto = new UsuarioRequestDTO();
@@ -160,6 +202,9 @@ private static final String BOGOTA = "Bogota";
             verify(auditoriaService).registrar(eq("USUARIO_REGISTRADO"), anyString(), eq(2L), anyString(), eq("Usuario"));
         }
 
+        /**
+         * Verifica que un correo ya registrado lanza {@link CorreoEnUsoException} sin persistir nada
+         */
         @Test
         void cuandoCorreoYaExiste_lanzaCorreoEnUsoException() {
             UsuarioRequestDTO dto = new UsuarioRequestDTO();
@@ -171,6 +216,9 @@ private static final String BOGOTA = "Bogota";
             verify(repository, never()).save(any());
         }
 
+        /**
+         * Verifica que un rol inexistente en el sistema lanza {@link RolNotFoundException}
+         */
         @Test
         void cuandoRolNoExiste_lanzaRolNotFoundException() {
             UsuarioRequestDTO dto = new UsuarioRequestDTO();
@@ -184,10 +232,16 @@ private static final String BOGOTA = "Bogota";
         }
     }
 
+    /**
+     * Tests del metodo obtenerUsuario — cubre obtencion exitosa y no existente por ID
+     */
     @Nested
     @DisplayName("obtenerUsuario")
     class ObtenerUsuario {
 
+        /**
+         * Verifica que un usuario existente retorna el DTO con ID y correo correctos
+         */
         @Test
         void cuandoExiste_retornaDTO() {
             when(repository.findById(1L)).thenReturn(Optional.of(usuario));
@@ -198,6 +252,9 @@ private static final String BOGOTA = "Bogota";
             assertEquals(CORREO_TEST, resultado.getCorreoUsuario());
         }
 
+        /**
+         * Verifica que un ID inexistente lanza {@link UsuarioNotFoundException}
+         */
         @Test
         void cuandoNoExiste_lanzaUsuarioNotFoundException() {
             when(repository.findById(99L)).thenReturn(Optional.empty());
@@ -206,10 +263,16 @@ private static final String BOGOTA = "Bogota";
         }
     }
 
+    /**
+     * Tests del metodo obtenerPorCorreo — cubre obtencion exitosa y no existente por correo
+     */
     @Nested
     @DisplayName("obtenerPorCorreo")
     class ObtenerPorCorreo {
 
+        /**
+         * Verifica que un correo existente retorna el DTO con el correo correcto
+         */
         @Test
         void cuandoExiste_retornaDTO() {
             when(repository.findByCorreoUsuario(CORREO_TEST)).thenReturn(Optional.of(usuario));
@@ -219,18 +282,27 @@ private static final String BOGOTA = "Bogota";
             assertEquals(CORREO_TEST, resultado.getCorreoUsuario());
         }
 
+        /**
+         * Verifica que un correo inexistente lanza {@link UsuarioNotFoundException}
+         */
         @Test
         void cuandoNoExiste_lanzaUsuarioNotFoundException() {
-            when(repository.findByCorreoUsuario(CORREO_NOPE )).thenReturn(Optional.empty());
+            when(repository.findByCorreoUsuario(CORREO_NOPE)).thenReturn(Optional.empty());
 
-            assertThrows(UsuarioNotFoundException.class, () -> usuarioService.obtenerPorCorreo(CORREO_NOPE ));
+            assertThrows(UsuarioNotFoundException.class, () -> usuarioService.obtenerPorCorreo(CORREO_NOPE));
         }
     }
 
+    /**
+     * Tests del metodo registrarUsuarioComoAdmin — cubre asignacion de roles y casos de error
+     */
     @Nested
     @DisplayName("registrarUsuarioComoAdmin")
     class RegistrarUsuarioComoAdmin {
 
+        /**
+         * Verifica que cuando se especifica un rol en el DTO se usa ese rol para el nuevo usuario
+         */
         @Test
         void cuandoRolEspecificado_usaEseRol() {
             UsuarioRequestDTO dto = new UsuarioRequestDTO();
@@ -256,6 +328,9 @@ private static final String BOGOTA = "Bogota";
             assertEquals(ROLE_ADMIN, resultado.getRol());
         }
 
+        /**
+         * Verifica que cuando el rol en el DTO es nulo se asigna ROLE_USUARIO por defecto
+         */
         @Test
         void cuandoRolNullOBlanco_usaRoleUsuarioPorDefecto() {
             UsuarioRequestDTO dto = new UsuarioRequestDTO();
@@ -277,6 +352,9 @@ private static final String BOGOTA = "Bogota";
             assertEquals(ROLE_USUARIO, resultado.getRol());
         }
 
+        /**
+         * Verifica que cuando el rol en el DTO es un string en blanco se asigna ROLE_USUARIO por defecto
+         */
         @Test
         void cuandoRolBlanco_usaRoleUsuarioPorDefecto() {
             UsuarioRequestDTO dto = new UsuarioRequestDTO();
@@ -298,6 +376,9 @@ private static final String BOGOTA = "Bogota";
             assertEquals(ROLE_USUARIO, resultado.getRol());
         }
 
+        /**
+         * Verifica que un correo ya registrado lanza {@link CorreoEnUsoException}
+         */
         @Test
         void cuandoCorreoYaExiste_lanzaCorreoEnUsoException() {
             UsuarioRequestDTO dto = new UsuarioRequestDTO();
@@ -308,6 +389,9 @@ private static final String BOGOTA = "Bogota";
             assertThrows(CorreoEnUsoException.class, () -> usuarioService.registrarUsuarioComoAdmin(dto));
         }
 
+        /**
+         * Verifica que un rol inexistente en el sistema lanza {@link RolNotFoundException}
+         */
         @Test
         void cuandoRolNoExiste_lanzaRolNotFoundException() {
             UsuarioRequestDTO dto = new UsuarioRequestDTO();
@@ -322,10 +406,16 @@ private static final String BOGOTA = "Bogota";
         }
     }
 
+    /**
+     * Tests del metodo eliminarUsuario — cubre desactivacion exitosa y usuario inexistente
+     */
     @Nested
     @DisplayName("eliminarUsuario")
     class EliminarUsuario {
 
+        /**
+         * Verifica que eliminar un usuario existente lo desactiva y registra el evento de auditoria
+         */
         @Test
         void cuandoExiste_desactivaUsuario() {
             when(repository.findById(1L)).thenReturn(Optional.of(usuario));
@@ -337,6 +427,9 @@ private static final String BOGOTA = "Bogota";
             verify(auditoriaService).registrar(eq("USUARIO_ELIMINADO"), anyString(), eq(1L), anyString(), eq("Usuario"));
         }
 
+        /**
+         * Verifica que un ID inexistente lanza {@link UsuarioNotFoundException} sin persistir nada
+         */
         @Test
         void cuandoNoExiste_lanzaUsuarioNotFoundException() {
             when(repository.findById(99L)).thenReturn(Optional.empty());
@@ -346,10 +439,16 @@ private static final String BOGOTA = "Bogota";
         }
     }
 
+    /**
+     * Tests del metodo actualizarPerfil — cubre actualizacion de campos, cambio de correo y casos de error
+     */
     @Nested
     @DisplayName("actualizarPerfil")
     class ActualizarPerfil {
 
+        /**
+         * Verifica que actualizar todos los campos a la vez funciona correctamente y notifica al usuario
+         */
         @Test
         void cuandoActualizaTodosLosCampos_funcionaCorrectamente() {
             UsuarioActualizarRequestDTO dto = new UsuarioActualizarRequestDTO();
@@ -372,6 +471,9 @@ private static final String BOGOTA = "Bogota";
             verify(notificacionService).notificarActualizacionPerfil(usuario);
         }
 
+        /**
+         * Verifica que actualizar solo el nombre no marca cambio de correo y actualiza el campo correctamente
+         */
         @Test
         void cuandoSoloActualizaNombre_noCambiaCorreo() {
             UsuarioActualizarRequestDTO dto = new UsuarioActualizarRequestDTO();
@@ -386,6 +488,9 @@ private static final String BOGOTA = "Bogota";
             assertEquals("OtroNombre", usuario.getNombre());
         }
 
+        /**
+         * Verifica que actualizar solo el apellido lo actualiza correctamente
+         */
         @Test
         void cuandoSoloActualizaApellido_funciona() {
             UsuarioActualizarRequestDTO dto = new UsuarioActualizarRequestDTO();
@@ -399,6 +504,9 @@ private static final String BOGOTA = "Bogota";
             assertEquals("OtroApellido", usuario.getApellido());
         }
 
+        /**
+         * Verifica que campos nulos o en blanco no sobreescriben los datos existentes del usuario
+         */
         @Test
         void cuandoCamposNullOBlancos_noCambia() {
             UsuarioActualizarRequestDTO dto = new UsuarioActualizarRequestDTO();
@@ -417,16 +525,22 @@ private static final String BOGOTA = "Bogota";
             assertEquals(false, resultado.get("correocambio"));
         }
 
+        /**
+         * Verifica que un correo inexistente lanza {@link UsuarioNotFoundException}
+         */
         @Test
         void cuandoUsuarioNoExiste_lanzaUsuarioNotFoundException() {
             UsuarioActualizarRequestDTO dto = new UsuarioActualizarRequestDTO();
 
-            when(repository.findByCorreoUsuario(CORREO_NOPE )).thenReturn(Optional.empty());
+            when(repository.findByCorreoUsuario(CORREO_NOPE)).thenReturn(Optional.empty());
 
             assertThrows(UsuarioNotFoundException.class,
-                    () -> usuarioService.actualizarPerfil(CORREO_NOPE , dto));
+                    () -> usuarioService.actualizarPerfil(CORREO_NOPE, dto));
         }
 
+        /**
+         * Verifica que intentar cambiar contrasena sin proporcionar la actual lanza {@link ContrasenaIncorrectaException}
+         */
         @Test
         void cuandoCambiaContrasenaSinActual_lanzaContrasenaIncorrectaException() {
             UsuarioActualizarRequestDTO dto = new UsuarioActualizarRequestDTO();
@@ -439,6 +553,9 @@ private static final String BOGOTA = "Bogota";
                     () -> usuarioService.actualizarPerfil(CORREO_TEST, dto));
         }
 
+        /**
+         * Verifica que una contrasena actual incorrecta lanza {@link ContrasenaIncorrectaException}
+         */
         @Test
         void cuandoContrasenaActualNoCoincide_lanzaContrasenaIncorrectaException() {
             UsuarioActualizarRequestDTO dto = new UsuarioActualizarRequestDTO();
@@ -452,6 +569,9 @@ private static final String BOGOTA = "Bogota";
                     () -> usuarioService.actualizarPerfil(CORREO_TEST, dto));
         }
 
+        /**
+         * Verifica que cambiar a un correo ya registrado por otro usuario lanza {@link CorreoEnUsoException}
+         */
         @Test
         void cuandoCambiaCorreoYNuevoYaExiste_lanzaCorreoEnUsoException() {
             UsuarioActualizarRequestDTO dto = new UsuarioActualizarRequestDTO();
@@ -470,10 +590,16 @@ private static final String BOGOTA = "Bogota";
         }
     }
 
+    /**
+     * Tests del metodo seleccionesUsuario — cubre listado exitoso y usuario inexistente
+     */
     @Nested
     @DisplayName("seleccionesUsuario")
     class SeleccionesUsuario {
 
+        /**
+         * Verifica que se retornan las selecciones favoritas del usuario existente
+         */
         @Test
         void cuandoExiste_retornaSelecciones() {
             Seleccion sel = new Seleccion();
@@ -489,19 +615,28 @@ private static final String BOGOTA = "Bogota";
             assertEquals("Colombia", resultado.get(0).getNombre());
         }
 
+        /**
+         * Verifica que un correo inexistente lanza {@link UsuarioNotFoundException}
+         */
         @Test
         void cuandoNoExiste_lanzaUsuarioNotFoundException() {
-            when(repository.findByCorreoUsuario(CORREO_NOPE )).thenReturn(Optional.empty());
+            when(repository.findByCorreoUsuario(CORREO_NOPE)).thenReturn(Optional.empty());
 
             assertThrows(UsuarioNotFoundException.class,
-                    () -> usuarioService.seleccionesUsuario(CORREO_NOPE ));
+                    () -> usuarioService.seleccionesUsuario(CORREO_NOPE));
         }
     }
 
+    /**
+     * Tests del metodo agregarSeleccion — cubre insercion de multiples selecciones y lista vacia
+     */
     @Nested
     @DisplayName("agregarSeleccion")
     class AgregarSeleccion {
 
+        /**
+         * Verifica que se llama insertar por cada seleccion en la lista proporcionada
+         */
         @Test
         void agregaTodasLasSelecciones() {
             when(repository.findIdByCorreo(CORREO_TEST)).thenReturn(1L);
@@ -513,6 +648,9 @@ private static final String BOGOTA = "Bogota";
             verify(repository).insertarSeleccion(1L, 12L);
         }
 
+        /**
+         * Verifica que una lista vacia no genera ninguna llamada al metodo insertar
+         */
         @Test
         void cuandoListaVacia_noLlamaInsertar() {
             when(repository.findIdByCorreo(CORREO_TEST)).thenReturn(1L);
@@ -523,10 +661,16 @@ private static final String BOGOTA = "Bogota";
         }
     }
 
+    /**
+     * Tests del metodo eliminarSeleccion — verifica eliminacion de una seleccion favorita
+     */
     @Nested
     @DisplayName("eliminarSeleccion")
     class EliminarSeleccion {
 
+        /**
+         * Verifica que se llama eliminarSeleccion con el ID de usuario y el ID de seleccion correctos
+         */
         @Test
         void eliminaLaSeleccion() {
             when(repository.findIdByCorreo(CORREO_TEST)).thenReturn(1L);
@@ -537,10 +681,16 @@ private static final String BOGOTA = "Bogota";
         }
     }
 
+    /**
+     * Tests del metodo estadiosUsuario — cubre listado exitoso y usuario inexistente
+     */
     @Nested
     @DisplayName("estadiosUsuario")
     class EstadiosUsuario {
 
+        /**
+         * Verifica que se retornan los estadios favoritos del usuario existente
+         */
         @Test
         void cuandoExiste_retornaEstadios() {
             EstadioFavorito est = new EstadioFavorito();
@@ -556,19 +706,28 @@ private static final String BOGOTA = "Bogota";
             assertEquals(AZTECA, resultado.get(0).getNombre());
         }
 
+        /**
+         * Verifica que un correo inexistente lanza {@link UsuarioNotFoundException}
+         */
         @Test
         void cuandoNoExiste_lanzaUsuarioNotFoundException() {
-            when(repository.findByCorreoUsuario(CORREO_NOPE )).thenReturn(Optional.empty());
+            when(repository.findByCorreoUsuario(CORREO_NOPE)).thenReturn(Optional.empty());
 
             assertThrows(UsuarioNotFoundException.class,
-                    () -> usuarioService.estadiosUsuario(CORREO_NOPE ));
+                    () -> usuarioService.estadiosUsuario(CORREO_NOPE));
         }
     }
 
+    /**
+     * Tests de los metodos agregarEstadio y eliminarEstadio — cubre insercion multiple y eliminacion unitaria
+     */
     @Nested
     @DisplayName("agregarEstadio y eliminarEstadio")
     class AgregarEliminarEstadio {
 
+        /**
+         * Verifica que se llama insertarEstadio por cada estadio en la lista proporcionada
+         */
         @Test
         void agregarEstadio_agregaTodos() {
             when(repository.findIdByCorreo(CORREO_TEST)).thenReturn(1L);
@@ -579,6 +738,9 @@ private static final String BOGOTA = "Bogota";
             verify(repository).insertarEstadio(1L, 21L);
         }
 
+        /**
+         * Verifica que se llama eliminarEstadio con el ID de usuario y el ID de estadio correctos
+         */
         @Test
         void eliminarEstadio_eliminaUno() {
             when(repository.findIdByCorreo(CORREO_TEST)).thenReturn(1L);
@@ -589,10 +751,16 @@ private static final String BOGOTA = "Bogota";
         }
     }
 
+    /**
+     * Tests de los metodos agregarCiudad y eliminarCiudad — cubre insercion multiple y eliminacion unitaria
+     */
     @Nested
     @DisplayName("agregarCiudad y eliminarCiudad")
     class AgregarEliminarCiudad {
 
+        /**
+         * Verifica que se llama insertarCiudad por cada ciudad en la lista proporcionada
+         */
         @Test
         void agregarCiudad_agregaTodas() {
             when(repository.findIdByCorreo(CORREO_TEST)).thenReturn(1L);
@@ -603,6 +771,9 @@ private static final String BOGOTA = "Bogota";
             verify(repository).insertarCiudad(1L, 31L);
         }
 
+        /**
+         * Verifica que se llama eliminarCiudad con el ID de usuario y el ID de ciudad correctos
+         */
         @Test
         void eliminarCiudad_eliminaUna() {
             when(repository.findIdByCorreo(CORREO_TEST)).thenReturn(1L);
@@ -613,15 +784,21 @@ private static final String BOGOTA = "Bogota";
         }
     }
 
+    /**
+     * Tests del metodo ciudadesUsuario — cubre listado exitoso y usuario inexistente
+     */
     @Nested
     @DisplayName("ciudadesUsuario")
     class CiudadesUsuario {
 
+        /**
+         * Verifica que se retornan las ciudades favoritas del usuario existente
+         */
         @Test
         void cuandoExiste_retornaCiudades() {
             CiudadFavorita c = new CiudadFavorita();
             c.setId(30L);
-            c.setNombre(BOGOTA );
+            c.setNombre(BOGOTA);
             usuario.setCiudadFavoritas(List.of(c));
 
             when(repository.findByCorreoUsuario(CORREO_TEST)).thenReturn(Optional.of(usuario));
@@ -629,22 +806,31 @@ private static final String BOGOTA = "Bogota";
             List<PreferenciaDTO> resultado = usuarioService.ciudadesUsuario(CORREO_TEST);
 
             assertEquals(1, resultado.size());
-            assertEquals(BOGOTA , resultado.get(0).getNombre());
+            assertEquals(BOGOTA, resultado.get(0).getNombre());
         }
 
+        /**
+         * Verifica que un correo inexistente lanza {@link UsuarioNotFoundException}
+         */
         @Test
         void cuandoNoExiste_lanzaUsuarioNotFoundException() {
-            when(repository.findByCorreoUsuario(CORREO_NOPE )).thenReturn(Optional.empty());
+            when(repository.findByCorreoUsuario(CORREO_NOPE)).thenReturn(Optional.empty());
 
             assertThrows(UsuarioNotFoundException.class,
-                    () -> usuarioService.ciudadesUsuario(CORREO_NOPE ));
+                    () -> usuarioService.ciudadesUsuario(CORREO_NOPE));
         }
     }
 
+    /**
+     * Tests de los metodos listarEstadios y listarCiudades — verifica listado de catalogos disponibles
+     */
     @Nested
     @DisplayName("listarEstadios y listarCiudades")
     class ListarCatalogos {
 
+        /**
+         * Verifica que listarEstadios retorna todos los estadios disponibles en el catalogo
+         */
         @Test
         void listarEstadios_retornaTodos() {
             EstadioFavorito e = new EstadioFavorito();
@@ -658,24 +844,33 @@ private static final String BOGOTA = "Bogota";
             assertEquals(AZTECA, resultado.get(0).getNombre());
         }
 
+        /**
+         * Verifica que listarCiudades retorna todas las ciudades disponibles en el catalogo
+         */
         @Test
         void listarCiudades_retornaTodas() {
             CiudadFavorita c = new CiudadFavorita();
             c.setId(1L);
-            c.setNombre(BOGOTA );
+            c.setNombre(BOGOTA);
             when(ciudadRepository.findAll()).thenReturn(List.of(c));
 
             List<PreferenciaDTO> resultado = usuarioService.listarCiudades();
 
             assertEquals(1, resultado.size());
-            assertEquals(BOGOTA , resultado.get(0).getNombre());
+            assertEquals(BOGOTA, resultado.get(0).getNombre());
         }
     }
 
+    /**
+     * Tests de los metodos obtenerEntidadPorId y obtenerEntidadPorCorreo — cubre obtencion de entidad raw
+     */
     @Nested
     @DisplayName("obtenerEntidadPorId y obtenerEntidadPorCorreo")
     class ObtenerEntidad {
 
+        /**
+         * Verifica que obtenerEntidadPorId retorna la entidad Usuario con el ID correcto
+         */
         @Test
         void obtenerEntidadPorId_cuandoExiste_retornaUsuario() {
             when(repository.findById(1L)).thenReturn(Optional.of(usuario));
@@ -685,6 +880,9 @@ private static final String BOGOTA = "Bogota";
             assertEquals(1L, resultado.getId());
         }
 
+        /**
+         * Verifica que obtenerEntidadPorId con ID inexistente lanza {@link UsuarioNotFoundException}
+         */
         @Test
         void obtenerEntidadPorId_cuandoNoExiste_lanzaUsuarioNotFoundException() {
             when(repository.findById(99L)).thenReturn(Optional.empty());
@@ -692,6 +890,9 @@ private static final String BOGOTA = "Bogota";
             assertThrows(UsuarioNotFoundException.class, () -> usuarioService.obtenerEntidadPorId(99L));
         }
 
+        /**
+         * Verifica que obtenerEntidadPorCorreo retorna la entidad Usuario con el correo correcto
+         */
         @Test
         void obtenerEntidadPorCorreo_cuandoExiste_retornaUsuario() {
             when(repository.findByCorreoUsuario(CORREO_TEST)).thenReturn(Optional.of(usuario));
@@ -701,19 +902,28 @@ private static final String BOGOTA = "Bogota";
             assertEquals(CORREO_TEST, resultado.getCorreoUsuario());
         }
 
+        /**
+         * Verifica que obtenerEntidadPorCorreo con correo inexistente lanza {@link UsuarioNotFoundException}
+         */
         @Test
         void obtenerEntidadPorCorreo_cuandoNoExiste_lanzaUsuarioNotFoundException() {
-            when(repository.findByCorreoUsuario(CORREO_NOPE )).thenReturn(Optional.empty());
+            when(repository.findByCorreoUsuario(CORREO_NOPE)).thenReturn(Optional.empty());
 
             assertThrows(UsuarioNotFoundException.class,
-                    () -> usuarioService.obtenerEntidadPorCorreo(CORREO_NOPE ));
+                    () -> usuarioService.obtenerEntidadPorCorreo(CORREO_NOPE));
         }
     }
 
+    /**
+     * Tests del metodo actualizarFcmToken — cubre primer token, token en blanco, actualizacion y usuario inexistente
+     */
     @Nested
     @DisplayName("actualizarFcmToken")
     class ActualizarFcmToken {
 
+        /**
+         * Verifica que guardar el primer token FCM del usuario dispara la notificacion de registro
+         */
         @Test
         void cuandoEsPrimerToken_notificaRegistro() {
             usuario.setFcmtoken(null);
@@ -727,6 +937,9 @@ private static final String BOGOTA = "Bogota";
             verify(notificacionService).notificarRegistro(usuario);
         }
 
+        /**
+         * Verifica que un token anterior en blanco tambien dispara la notificacion de registro
+         */
         @Test
         void cuandoTokenAnteriorBlanco_notificaRegistro() {
             usuario.setFcmtoken("   ");
@@ -738,6 +951,9 @@ private static final String BOGOTA = "Bogota";
             verify(notificacionService).notificarRegistro(usuario);
         }
 
+        /**
+         * Verifica que actualizar un token existente no dispara la notificacion de registro
+         */
         @Test
         void cuandoYaTeniaToken_noNotifica() {
             usuario.setFcmtoken("tokenViejo");
@@ -750,12 +966,15 @@ private static final String BOGOTA = "Bogota";
             verify(notificacionService, never()).notificarRegistro(any());
         }
 
+        /**
+         * Verifica que un correo inexistente lanza {@link UsuarioNotFoundException} sin persistir nada
+         */
         @Test
         void cuandoUsuarioNoExiste_lanzaUsuarioNotFoundException() {
-            when(repository.findByCorreoUsuario(CORREO_NOPE )).thenReturn(Optional.empty());
+            when(repository.findByCorreoUsuario(CORREO_NOPE)).thenReturn(Optional.empty());
 
             assertThrows(UsuarioNotFoundException.class,
-                    () -> usuarioService.actualizarFcmToken(CORREO_NOPE , "token"));
+                    () -> usuarioService.actualizarFcmToken(CORREO_NOPE, "token"));
             verify(repository, never()).save(any());
         }
     }

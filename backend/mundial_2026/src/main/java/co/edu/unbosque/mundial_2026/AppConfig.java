@@ -101,12 +101,12 @@ public CommandLineRunner cargarSelecciones(
             PartidoService partidoService) {
         return args -> {
             if (seleccionRepository.count() == 0) {
-                final List<EquipoMundialDTO> equipos = partidoService.obtenerSelecciones();
+                final List<EquipoMundialDTO> equipos = partidoService.obtenerSelecciones();//obtiene los equipos con seleccion y estadio para sacar la seleccion
                 int total = 0;
 
                 for (EquipoMundialDTO equipoDTO : equipos) {
                     final EquipoInfoDTO equipo = equipoDTO.getSeleccion();
-                    if (equipo != null && equipo.getId() != null && !seleccionRepository.existsById(equipo.getId())) {
+                    if (equipo != null && equipo.getId() != null && !seleccionRepository.existsById(equipo.getId())) {//verifica que exista y no este 
                         Seleccion s = new Seleccion();
                         s.setId(equipo.getId());
                         s.setNombre(equipo.getNombre());
@@ -140,7 +140,7 @@ public CommandLineRunner cargarSelecciones(
             if (ciudadRepository.count() == 0) {
 
                 java.util.Map<String, String> estadioCiudad = new java.util.LinkedHashMap<>();
-                estadioCiudad.put("Estadio Azteca", "Ciudad de Mexico");
+                estadioCiudad.put("Estadio Azteca", "Ciudad de Mexico");//ya que el api los devuelve vacios
                 estadioCiudad.put("Estadio Akron", "Guadalajara");
                 estadioCiudad.put("Estadio BBVA", "Monterrey");
                 estadioCiudad.put("BMO Field", "Toronto");
@@ -163,7 +163,7 @@ public CommandLineRunner cargarSelecciones(
                     final String nombreEstadio = entry.getKey();
                     final String nombreCiudad = entry.getValue();
 
-                    CiudadFavorita ciudad = ciudadesGuardadas.get(nombreCiudad);
+                    CiudadFavorita ciudad = ciudadesGuardadas.get(nombreCiudad);//retifica y guarda la ciudad(se hace asi es por si escala y una ciudad tiene 2 estadios no guardarla 2 veces)
                     if (ciudad == null) {
                         ciudad = new CiudadFavorita();
                         ciudad.setId(ciudadId);
@@ -174,7 +174,7 @@ public CommandLineRunner cargarSelecciones(
                         ciudadesGuardadas.put(nombreCiudad, ciudad);
                     }
 
-                    EstadioFavorito estadio = new EstadioFavorito();
+                    EstadioFavorito estadio = new EstadioFavorito();//guarda los estadios de igual manera secuencialmente 
                     estadio.setId(estadioId);
                     estadioId++;
                     estadio.setNombre(nombreEstadio);
@@ -197,10 +197,10 @@ if (logger.isLoggable(Level.INFO)) {
      * de fechas como timestamps y estableciendo UTC como zona horaria global
      */
     @Bean
-    public com.fasterxml.jackson.databind.ObjectMapper objectMapper() {
+    public com.fasterxml.jackson.databind.ObjectMapper objectMapper() {//traductor entre json y java 
         com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-        mapper.disable(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-        mapper.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+        mapper.disable(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);//formato correcto de mandar las fechas
+        mapper.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));//convierte las fechas a donde este ubicado el programa ejecutando mas no el servidor 
         return mapper;
     }
 }

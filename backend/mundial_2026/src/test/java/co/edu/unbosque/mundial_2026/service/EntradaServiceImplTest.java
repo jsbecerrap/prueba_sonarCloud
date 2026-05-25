@@ -22,7 +22,11 @@ import co.edu.unbosque.mundial_2026.entity.*;
 import co.edu.unbosque.mundial_2026.exception.*;
 import co.edu.unbosque.mundial_2026.repository.EntradaRepository;
 
-
+/**
+ * Pruebas unitarias para {@link EntradaServiceImpl}
+ * Verifica la logica de negocio del servicio de entradas incluyendo reserva, pago, transferencia,
+ * reembolso, expiracion de reservas y gestion de cupos por zona
+ */
 @ExtendWith(MockitoExtension.class)
 class EntradaServiceImplTest {
 
@@ -31,14 +35,27 @@ class EntradaServiceImplTest {
     @Mock private PartidoService partidoService;
     @Mock private EventoAuditoriaService auditoriaService;
     @Mock private NotificacionService notificacionService;
+
+    /** Correo del usuario principal de prueba usado en los tests de reserva y gestion de entradas */
     private static final String CORREO_USER1 = "user1@test.com";
-private static final String BARRA = "BARRA";
-private static final String RESERVADA = "RESERVADA";
-private static final String PAGADA = "PAGADA";
-private static final String DESTINO = "destino@test.com";
-private static final String CORREO_USER2 = "user2@test.com";
+
+    /** Categoria de zona barra usada como categoria por defecto en los tests de reserva */
+    private static final String BARRA = "BARRA";
+
+    /** Estado de entrada reservada usado en los tests de flujo de pago y cancelacion */
+    private static final String RESERVADA = "RESERVADA";
+
+    /** Estado de entrada pagada usado en los tests de transferencia y reembolso */
+    private static final String PAGADA = "PAGADA";
+
+    /** Correo de destino generico usado en los tests de transferencia con correo invalido */
+    private static final String DESTINO = "destino@test.com";
+
+    /** Correo del segundo usuario de prueba usado en los tests de transferencia exitosa */
+    private static final String CORREO_USER2 = "user2@test.com";
+
+    /** Instancia del servicio bajo prueba construida manualmente con dependencias mockeadas */
     private EntradaServiceImpl service;
-    
 
     @BeforeEach
     void setUp() {
@@ -93,6 +110,10 @@ private static final String CORREO_USER2 = "user2@test.com";
         return dto;
     }
 
+    /**
+     * Verifica que reservar una entrada con datos validos retorna el DTO con estado RESERVADA
+     * y descuenta la capacidad del partido
+     */
     @Test
     void reservarEntrada_exitosa_retornaDTO() {
         Usuario usuario = crearUsuario(1L);
@@ -117,6 +138,9 @@ private static final String CORREO_USER2 = "user2@test.com";
         verify(partidoService).actualizarCapacidad(1L, -2);
     }
 
+    /**
+     * Verifica que cuando la categoria en el DTO es nula se asigna BARRA como categoria por defecto
+     */
     @Test
     void reservarEntrada_categoriaNull_usaBarra() {
         Usuario usuario = crearUsuario(1L);
@@ -140,6 +164,9 @@ private static final String CORREO_USER2 = "user2@test.com";
         assertEquals(BARRA, resultado.getCategoria());
     }
 
+    /**
+     * Verifica que intentar reservar mas entradas de las disponibles lanza {@link CupoNoDisponibleException}
+     */
     @Test
     void reservarEntrada_sinCapacidad_lanzaCupoNoDisponible() {
         Usuario usuario = crearUsuario(1L);
@@ -152,7 +179,9 @@ private static final String CORREO_USER2 = "user2@test.com";
                 () -> service.reservarEntrada(CORREO_USER1, crearRequestDTO(1L, 2, BARRA)));
     }
 
-
+    /**
+     * Verifica que solicitar mas de cuatro entradas en una sola reserva lanza {@link LimiteSuperadoException}
+     */
     @Test
     void reservarEntrada_cantidadMayorACuatro_lanzaLimiteSuperado() {
         Usuario usuario = crearUsuario(1L);
@@ -165,6 +194,9 @@ private static final String CORREO_USER2 = "user2@test.com";
                 () -> service.reservarEntrada(CORREO_USER1, crearRequestDTO(1L, 5, BARRA)));
     }
 
+    /**
+     * Verifica que superar el limite diario con entradas pagadas lanza {@link LimiteSuperadoException}
+     */
     @Test
     void reservarEntrada_limiteDiarioSuperado_lanzaLimiteSuperado() {
         Usuario usuario = crearUsuario(1L);
@@ -181,6 +213,9 @@ private static final String CORREO_USER2 = "user2@test.com";
                 () -> service.reservarEntrada(CORREO_USER1, crearRequestDTO(1L, 2, BARRA)));
     }
 
+    /**
+     * Verifica que las entradas reservadas del dia tambien cuentan para el limite diario
+     */
     @Test
     void reservarEntrada_entradasHoyReservadas_contanEnLimite() {
         Usuario usuario = crearUsuario(1L);
@@ -197,6 +232,9 @@ private static final String CORREO_USER2 = "user2@test.com";
                 () -> service.reservarEntrada(CORREO_USER1, crearRequestDTO(1L, 2, BARRA)));
     }
 
+    /**
+     * Verifica que las entradas canceladas del dia no cuentan para el limite diario
+     */
     @Test
     void reservarEntrada_entradasHoyOtroEstado_noContanEnLimite() {
         Usuario usuario = crearUsuario(1L);
@@ -212,7 +250,7 @@ private static final String CORREO_USER2 = "user2@test.com";
         when(entradaRepository.sumCantidadByPartidoCategoriaYFila(eq(1L), eq(BARRA), eq("A"), anyList())).thenReturn(0);
         when(entradaRepository.maxAsientoFinByPartidoCategoriaYFila(eq(1L), eq(BARRA), eq("A"))).thenReturn(0);
         when(entradaRepository.save(any(Entrada.class))).thenAnswer(inv -> inv.getArgument(0));
-      doNothing().when(partidoService).actualizarCapacidad(any(), anyInt());
+        doNothing().when(partidoService).actualizarCapacidad(any(), anyInt());
         doNothing().when(auditoriaService).registrar(any(), any(), any(), any(), any());
         doNothing().when(notificacionService).notificarReservaCreada(any(), any());
 
@@ -221,6 +259,9 @@ private static final String CORREO_USER2 = "user2@test.com";
         assertNotNull(resultado);
     }
 
+    /**
+     * Verifica que solicitar una categoria de zona inexistente lanza {@link CupoNoDisponibleException}
+     */
     @Test
     void reservarEntrada_zonaInvalida_lanzaCupoNoDisponible() {
         Usuario usuario = crearUsuario(1L);
@@ -235,6 +276,9 @@ private static final String CORREO_USER2 = "user2@test.com";
                 () -> service.reservarEntrada(CORREO_USER1, crearRequestDTO(1L, 1, "ZONA_INEXISTENTE")));
     }
 
+    /**
+     * Verifica que cuando todas las filas de la zona estan llenas lanza {@link CupoNoDisponibleException}
+     */
     @Test
     void reservarEntrada_todasFilasLlenas_lanzaCupoNoDisponible() {
         Usuario usuario = crearUsuario(1L);
@@ -251,6 +295,9 @@ private static final String CORREO_USER2 = "user2@test.com";
                 () -> service.reservarEntrada(CORREO_USER1, crearRequestDTO(1L, 1, BARRA)));
     }
 
+    /**
+     * Verifica que partidos con selecciones top incrementan el precio base de la entrada
+     */
     @Test
     void reservarEntrada_seleccionTop_incrementaPrecio() {
         Usuario usuario = crearUsuario(1L);
@@ -266,7 +313,7 @@ private static final String CORREO_USER2 = "user2@test.com";
         when(entradaRepository.sumCantidadByPartidoCategoriaYFila(eq(1L), eq(BARRA), eq("A"), anyList())).thenReturn(0);
         when(entradaRepository.maxAsientoFinByPartidoCategoriaYFila(eq(1L), eq(BARRA), eq("A"))).thenReturn(5);
         when(entradaRepository.save(any(Entrada.class))).thenAnswer(inv -> inv.getArgument(0));
-     doNothing().when(partidoService).actualizarCapacidad(any(), anyInt());
+        doNothing().when(partidoService).actualizarCapacidad(any(), anyInt());
         doNothing().when(auditoriaService).registrar(any(), any(), any(), any(), any());
         doNothing().when(notificacionService).notificarReservaCreada(any(), any());
 
@@ -276,6 +323,10 @@ private static final String CORREO_USER2 = "user2@test.com";
         assertTrue(resultado.getPrecio() > 50000.0);
     }
 
+    /**
+     * Verifica que cancelar una reserva propia retorna el DTO con estado CANCELADA
+     * y devuelve la capacidad al partido
+     */
     @Test
     void cancelarReserva_exitosa_retornaDTO() {
         Usuario usuario = crearUsuario(1L);
@@ -295,6 +346,9 @@ private static final String CORREO_USER2 = "user2@test.com";
         verify(partidoService).actualizarCapacidad(1L, 2);
     }
 
+    /**
+     * Verifica que cancelar una entrada inexistente lanza {@link EntradaNotFoundException}
+     */
     @Test
     void cancelarReserva_entradaNoEncontrada_lanzaExcepcion() {
         Usuario usuario = crearUsuario(1L);
@@ -306,6 +360,9 @@ private static final String CORREO_USER2 = "user2@test.com";
                 () -> service.cancelarReserva(CORREO_USER1, 99L));
     }
 
+    /**
+     * Verifica que cancelar una entrada que pertenece a otro usuario lanza {@link EstadoInvalidoException}
+     */
     @Test
     void cancelarReserva_entradaNoPertenece_lanzaExcepcion() {
         Usuario usuario = crearUsuario(1L);
@@ -320,6 +377,9 @@ private static final String CORREO_USER2 = "user2@test.com";
                 () -> service.cancelarReserva(CORREO_USER1, 1L));
     }
 
+    /**
+     * Verifica que cancelar una entrada con estado no cancelable lanza {@link EstadoInvalidoException}
+     */
     @Test
     void cancelarReserva_estadoNoCancelable_lanzaExcepcion() {
         Usuario usuario = crearUsuario(1L);
@@ -333,6 +393,9 @@ private static final String CORREO_USER2 = "user2@test.com";
                 () -> service.cancelarReserva(CORREO_USER1, 1L));
     }
 
+    /**
+     * Verifica que confirmar el pago de una entrada inexistente lanza {@link EntradaNotFoundException}
+     */
     @Test
     void confirmarPago_entradaNoEncontrada_lanzaExcepcion() {
         when(entradaRepository.findById(99L)).thenReturn(Optional.empty());
@@ -341,6 +404,9 @@ private static final String CORREO_USER2 = "user2@test.com";
                 () -> service.confirmarPago(99L, "pm_test"));
     }
 
+    /**
+     * Verifica que confirmar el pago de una entrada que no esta en estado RESERVADA lanza {@link EstadoInvalidoException}
+     */
     @Test
     void confirmarPago_estadoNoReservada_lanzaExcepcion() {
         Usuario usuario = crearUsuario(1L);
@@ -353,6 +419,9 @@ private static final String CORREO_USER2 = "user2@test.com";
                 () -> service.confirmarPago(1L, "pm_test"));
     }
 
+    /**
+     * Verifica que confirmar el pago de una reserva expirada lanza {@link EstadoInvalidoException}
+     */
     @Test
     void confirmarPago_reservaExpirada_lanzaExcepcion() {
         Usuario usuario = crearUsuario(1L);
@@ -366,6 +435,9 @@ private static final String CORREO_USER2 = "user2@test.com";
                 () -> service.confirmarPago(1L, "pm_test"));
     }
 
+    /**
+     * Verifica que transferir una entrada inexistente lanza {@link EntradaNotFoundException}
+     */
     @Test
     void transferirEntrada_entradaNoEncontrada_lanzaExcepcion() {
         Usuario usuario = crearUsuario(1L);
@@ -379,6 +451,9 @@ private static final String CORREO_USER2 = "user2@test.com";
                 () -> service.transferirEntrada(99L, dto, CORREO_USER1));
     }
 
+    /**
+     * Verifica que transferir una entrada que pertenece a otro usuario lanza {@link EstadoInvalidoException}
+     */
     @Test
     void transferirEntrada_entradaNoPertenece_lanzaExcepcion() {
         Usuario usuario = crearUsuario(1L);
@@ -395,6 +470,9 @@ private static final String CORREO_USER2 = "user2@test.com";
                 () -> service.transferirEntrada(1L, dto, CORREO_USER1));
     }
 
+    /**
+     * Verifica que transferir una entrada que no esta en estado PAGADA lanza {@link EstadoInvalidoException}
+     */
     @Test
     void transferirEntrada_estadoNoPagada_lanzaExcepcion() {
         Usuario usuario = crearUsuario(1L);
@@ -410,6 +488,9 @@ private static final String CORREO_USER2 = "user2@test.com";
                 () -> service.transferirEntrada(1L, dto, CORREO_USER1));
     }
 
+    /**
+     * Verifica que superar el limite diario de transferencias lanza {@link LimiteSuperadoException}
+     */
     @Test
     void transferirEntrada_limiteDiarioSuperado_lanzaLimiteSuperado() {
         Usuario usuario = crearUsuario(1L);
@@ -430,6 +511,10 @@ private static final String CORREO_USER2 = "user2@test.com";
                 () -> service.transferirEntrada(1L, dto, CORREO_USER1));
     }
 
+    /**
+     * Verifica que transferir una entrada valida al usuario destino retorna el DTO con estado PAGADA
+     * y persiste dos entradas: la original como transferida y la nueva del destinatario
+     */
     @Test
     void transferirEntrada_exitosa_retornaDTO() {
         Usuario usuario = crearUsuario(1L);
@@ -455,6 +540,9 @@ private static final String CORREO_USER2 = "user2@test.com";
         verify(entradaRepository, times(2)).save(any(Entrada.class));
     }
 
+    /**
+     * Verifica que las entradas pagadas del dia no cuentan para el limite diario de transferencias
+     */
     @Test
     void transferirEntrada_entradasHoyNoTransferidas_noContanEnLimite() {
         Usuario usuario = crearUsuario(1L);
@@ -481,6 +569,9 @@ private static final String CORREO_USER2 = "user2@test.com";
         assertNotNull(resultado);
     }
 
+    /**
+     * Verifica que reembolsar una entrada inexistente lanza {@link EntradaNotFoundException}
+     */
     @Test
     void reembolsarEntrada_entradaNoEncontrada_lanzaExcepcion() {
         Usuario usuario = crearUsuario(1L);
@@ -492,6 +583,9 @@ private static final String CORREO_USER2 = "user2@test.com";
                 () -> service.reembolsarEntrada(CORREO_USER1, 99L));
     }
 
+    /**
+     * Verifica que reembolsar una entrada que pertenece a otro usuario lanza {@link EstadoInvalidoException}
+     */
     @Test
     void reembolsarEntrada_entradaNoPertenece_lanzaExcepcion() {
         Usuario usuario = crearUsuario(1L);
@@ -506,6 +600,9 @@ private static final String CORREO_USER2 = "user2@test.com";
                 () -> service.reembolsarEntrada(CORREO_USER1, 1L));
     }
 
+    /**
+     * Verifica que reembolsar una entrada que no esta en estado PAGADA lanza {@link EstadoInvalidoException}
+     */
     @Test
     void reembolsarEntrada_estadoNoPagada_lanzaExcepcion() {
         Usuario usuario = crearUsuario(1L);
@@ -519,6 +616,9 @@ private static final String CORREO_USER2 = "user2@test.com";
                 () -> service.reembolsarEntrada(CORREO_USER1, 1L));
     }
 
+    /**
+     * Verifica que listar entradas de un usuario retorna la lista ordenada por fecha de compra descendente
+     */
     @Test
     void listarEntradasUsuario_retornaListaOrdenada() {
         Usuario usuario = crearUsuario(1L);
@@ -538,6 +638,9 @@ private static final String CORREO_USER2 = "user2@test.com";
         assertEquals(2L, resultado.get(0).getId());
     }
 
+    /**
+     * Verifica que listar entradas de un usuario sin entradas retorna lista vacia
+     */
     @Test
     void listarEntradasUsuario_sinEntradas_retornaVacio() {
         Usuario usuario = crearUsuario(1L);
@@ -551,6 +654,9 @@ private static final String CORREO_USER2 = "user2@test.com";
         assertTrue(resultado.isEmpty());
     }
 
+    /**
+     * Verifica que obtener una entrada existente retorna el DTO con el ID correcto
+     */
     @Test
     void obtenerEntrada_existente_retornaDTO() {
         Usuario usuario = crearUsuario(1L);
@@ -565,6 +671,9 @@ private static final String CORREO_USER2 = "user2@test.com";
         assertEquals(1L, resultado.getId());
     }
 
+    /**
+     * Verifica que obtener una entrada inexistente lanza {@link EntradaNotFoundException}
+     */
     @Test
     void obtenerEntrada_noExistente_lanzaExcepcion() {
         when(entradaRepository.findById(99L)).thenReturn(Optional.empty());
@@ -572,6 +681,10 @@ private static final String CORREO_USER2 = "user2@test.com";
         assertThrows(EntradaNotFoundException.class, () -> service.obtenerEntrada(99L));
     }
 
+    /**
+     * Verifica que expirar reservas vencidas cambia su estado a EXPIRADA
+     * y devuelve la capacidad al partido correspondiente
+     */
     @Test
     void expirarReservasVencidas_conReservas_expiraYActualizaCapacidad() {
         Usuario usuario = crearUsuario(1L);
@@ -592,6 +705,9 @@ private static final String CORREO_USER2 = "user2@test.com";
         verify(notificacionService).notificarReservaExpirada(any(), any());
     }
 
+    /**
+     * Verifica que cuando no hay reservas vencidas no se persiste nada ni se actualiza capacidad
+     */
     @Test
     void expirarReservasVencidas_sinReservas_noHaceNada() {
         when(entradaRepository.findByEstadoAndTtlReservaLessThan(eq(RESERVADA), any())).thenReturn(List.of());
@@ -599,10 +715,12 @@ private static final String CORREO_USER2 = "user2@test.com";
         service.expirarReservasVencidas();
 
         verify(entradaRepository, never()).save(any());
-     
-       verify(partidoService, never()).actualizarCapacidad(any(), anyInt());
+        verify(partidoService, never()).actualizarCapacidad(any(), anyInt());
     }
 
+    /**
+     * Verifica que cuando hay reservas proximas a expirar se notifica a cada usuario correspondiente
+     */
     @Test
     void avisarReservasPorExpirar_conReservas_notificaUsuarios() {
         Usuario usuario = crearUsuario(1L);
@@ -618,6 +736,9 @@ private static final String CORREO_USER2 = "user2@test.com";
         verify(notificacionService).notificarReservaPorExpirar(any(), any());
     }
 
+    /**
+     * Verifica que cuando no hay reservas proximas a expirar no se envia ninguna notificacion
+     */
     @Test
     void avisarReservasPorExpirar_sinReservas_noNotifica() {
         when(entradaRepository.findByEstadoAndTtlReservaBetween(eq(RESERVADA), any(), any()))
@@ -628,6 +749,9 @@ private static final String CORREO_USER2 = "user2@test.com";
         verify(notificacionService, never()).notificarReservaPorExpirar(any(), any());
     }
 
+    /**
+     * Verifica que listarPartidosConCapacidad delega correctamente al servicio de partidos
+     */
     @Test
     void listarPartidosConCapacidad_delegaAPartidoService() {
         when(partidoService.listarPartidosConCapacidad()).thenReturn(List.of());
@@ -637,6 +761,9 @@ private static final String CORREO_USER2 = "user2@test.com";
         verify(partidoService).listarPartidosConCapacidad();
     }
 
+    /**
+     * Verifica que obtenerCuposPorZona retorna exactamente cuatro zonas para el partido indicado
+     */
     @Test
     void obtenerCuposPorZona_retornaCuatroZonas() {
         Partido partido = crearPartido(1L, 60000);
@@ -652,6 +779,9 @@ private static final String CORREO_USER2 = "user2@test.com";
         assertEquals(4, resultado.size());
     }
 
+    /**
+     * Verifica que cuando la capacidad del partido es nula se usa cero como valor base para los cupos
+     */
     @Test
     void obtenerCuposPorZona_capacidadNull_usaCero() {
         Partido partido = crearPartido(1L, 0);
@@ -668,6 +798,9 @@ private static final String CORREO_USER2 = "user2@test.com";
         assertEquals(4, resultado.size());
     }
 
+    /**
+     * Verifica que cuando hay entradas vendidas los cupos por zona se reportan con seis filas por zona
+     */
     @Test
     void obtenerCuposPorZona_conVendidos_reportaCorrectamente() {
         Partido partido = crearPartido(1L, 58000);

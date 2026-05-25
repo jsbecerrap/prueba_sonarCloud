@@ -44,7 +44,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
      */
     @Override
     public UserDetails loadUserByUsername(String correo) throws UsernameNotFoundException {
-        final Usuario usuario = usuarioRepository.findByCorreoUsuarioConRol(correo)
+        final Usuario usuario = usuarioRepository.findByCorreoUsuarioConRol(correo)//como se autentica le decimos que valores entonces busca el correo con el rol 
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + correo));
 
         if (!usuario.isActivo()) {
@@ -54,6 +54,6 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         return new User(
                 usuario.getCorreoUsuario(),
                 usuario.getContrasena(),
-                List.of(new SimpleGrantedAuthority(usuario.getRol().getNombre())));
+                List.of(new SimpleGrantedAuthority(usuario.getRol().getNombre())));//ya lo devuelve para que simplemente haga la validacion
     }
 }

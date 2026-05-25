@@ -23,7 +23,9 @@ public interface EntradaRepository extends JpaRepository<Entrada, Long> {
      */
     @Query("SELECT e FROM Entrada e JOIN FETCH e.partido WHERE e.usuario.id = :usuarioId")
     List<Entrada> findByUsuarioId(@Param("usuarioId") Long usuarioId);
-
+// JOIN FETCH: trae la entrada y su partido en una sola query,
+// evitando queries extras por cada entrada (problema N+1)
+// Ejemplo: 10 entradas tiene 1 sola query en vez de 11 es decir no pide entrada de partido una por una si no carga todas
     /**
      * Busca las entradas que coinciden con un estado específico y cuyo tiempo de vida de la reserva sea menor a la fecha límite proporcionada
      * 
@@ -53,7 +55,7 @@ public interface EntradaRepository extends JpaRepository<Entrada, Long> {
     @Query("SELECT COALESCE(SUM(e.cantidad), 0) FROM Entrada e " +
            "WHERE e.partido.id = :partidoId AND e.estado IN :estados")
     int sumCantidadByPartidoAndEstados(@Param("partidoId") Long partidoId,
-                                       @Param("estados") List<String> estados);
+                                       @Param("estados") List<String> estados);//ciertos estados como pagado o demas para ver si esta ocupado
 
     /**
      * Suma la cantidad de entradas para un partido según una categoría específica convertida a mayúsculas y que pertenezcan a los estados indicados
@@ -80,6 +82,7 @@ public interface EntradaRepository extends JpaRepository<Entrada, Long> {
      * @return listado de entradas con reservas programadas en ese espacio de tiempo
      */
     List<Entrada> findByEstadoAndTtlReservaBetween(String estado, LocalDateTime inicio, LocalDateTime fin);
+
 
     /**
      * Obtiene la sumatoria de las cantidades de entradas vendidas o reservadas filtrando por partido categoría y una fila específica del estadio
@@ -108,7 +111,7 @@ public interface EntradaRepository extends JpaRepository<Entrada, Long> {
      * @param fila hilera de asientos analizada
      * @return el índice del último asiento asignado o cero si no hay registros válidos
      */
-    @Query("SELECT COALESCE(MAX(e.asientoInicio + e.cantidad - 1), 0) FROM Entrada e " +
+    @Query("SELECT COALESCE(MAX(e.asientoInicio + e.cantidad - 1), 0) FROM Entrada e " +//calcula el ultimo asiento asignado para asignar el siguiente
            "WHERE e.partido.id = :partidoId " +
            "AND UPPER(e.categoria) = :categoria " +
            "AND UPPER(e.fila) = :fila " +
@@ -152,5 +155,5 @@ public interface EntradaRepository extends JpaRepository<Entrada, Long> {
            "WHERE e.fechaPago IS NOT NULL " +
            "GROUP BY e.usuario.id, e.usuario.nombre, e.usuario.apellido, e.usuario.correoUsuario " +
            "ORDER BY COALESCE(SUM(e.precio), 0.0) DESC")
-    List<Object[]> findTopUsuariosEntrada(Pageable pageable);
+    List<Object[]> findTopUsuariosEntrada(Pageable pageable);//object ya que no hay entidad que reciba si no se hace cast
 }

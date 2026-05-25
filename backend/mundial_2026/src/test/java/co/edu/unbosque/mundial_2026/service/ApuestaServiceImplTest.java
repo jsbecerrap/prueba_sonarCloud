@@ -50,6 +50,10 @@ import co.edu.unbosque.mundial_2026.repository.ApuestaRepository;
 import co.edu.unbosque.mundial_2026.repository.ParticipacionRepository;
 import co.edu.unbosque.mundial_2026.repository.PronosticoRepository;
 
+/**
+ * Pruebas unitarias para {@link ApuestaServiceImpl}
+ * Verifica la logica de negocio del servicio de apuestas usando mocks de repositorios y servicios dependientes
+ */
 @ExtendWith(MockitoExtension.class)
 class ApuestaServiceImplTest {
 
@@ -77,16 +81,36 @@ class ApuestaServiceImplTest {
     @InjectMocks
     private ApuestaServiceImpl apuestaService;
 
+    /** Usuario de prueba usado como creador y participante en los tests */
     private Usuario usuario;
+
+    /** Apuesta de prueba en estado abierto usada como base en los tests */
     private Apuesta apuesta;
+
+    /** Partido de prueba con fecha futura usado en los tests de pronosticos */
     private Partido partido;
+
+    /** Participacion de prueba que vincula el usuario con la apuesta en los tests */
     private Participacion participacion;
+
+    /** Correo del usuario de prueba usado en validaciones de propietario */
     private static final String CORREO_TEST = "test@test.com";
-private static final String LOCAL = "LOCAL";
-private static final String CERRADA = "CERRADA";
-private static final String ABIERTA = "ABIERTA";
-private static final String POLLA_TEST = "Polla Test";
-private static final String CODIGO = "CODE-001";
+
+    /** Resultado de partido local usado como constante en pronosticos de prueba */
+    private static final String LOCAL = "LOCAL";
+
+    /** Estado cerrado de apuesta usado en los tests que validan transiciones de estado */
+    private static final String CERRADA = "CERRADA";
+
+    /** Estado abierto de apuesta usado en los tests que validan transiciones de estado */
+    private static final String ABIERTA = "ABIERTA";
+
+    /** Nombre de la apuesta de prueba usado en verificaciones de datos */
+    private static final String POLLA_TEST = "Polla Test";
+
+    /** Codigo de invitacion de prueba usado en los tests de union a apuesta */
+    private static final String CODIGO = "CODE-001";
+
     @BeforeEach
     void setUp() {
         usuario = new Usuario();
@@ -116,10 +140,16 @@ private static final String CODIGO = "CODE-001";
         participacion.setPuntos(0);
     }
 
+    /**
+     * Tests del metodo crearApuesta — cubre creacion exitosa, fecha pasada y fecha nula
+     */
     @Nested
     @DisplayName("crearApuesta")
     class CrearApuesta {
 
+        /**
+         * Verifica que con datos validos se crea la apuesta y se registra la participacion del creador
+         */
         @Test
         void cuandoDatosValidos_creaApuestaYParticipacion() {
             ApuestaRequestDTO dto = new ApuestaRequestDTO();
@@ -143,6 +173,10 @@ private static final String CODIGO = "CODE-001";
             verify(auditoriaService).registrar(eq("APUESTA_CREADA"), anyString(), eq(1L), anyString(), eq("Apuesta"));
         }
 
+        /**
+         * Verifica que una fecha de cierre en el pasado lanza {@link ApuestaCerradaException}
+         * y no persiste la apuesta
+         */
         @Test
         void cuandoFechaEsPasada_lanzaApuestaCerradaException() {
             ApuestaRequestDTO dto = new ApuestaRequestDTO();
@@ -156,6 +190,9 @@ private static final String CODIGO = "CODE-001";
             verify(apuestaRepository, never()).save(any());
         }
 
+        /**
+         * Verifica que una fecha de cierre nula se acepta sin validacion de fecha
+         */
         @Test
         void cuandoFechaEsNull_creaSinValidarFecha() {
             ApuestaRequestDTO dto = new ApuestaRequestDTO();
@@ -172,10 +209,16 @@ private static final String CODIGO = "CODE-001";
         }
     }
 
+    /**
+     * Tests del metodo registrarPronostico — cubre registro exitoso y multiples casos de error
+     */
     @Nested
     @DisplayName("registrarPronostico")
     class RegistrarPronostico {
 
+        /**
+         * Verifica que con datos validos se registra el pronostico y se audita el evento
+         */
         @Test
         void cuandoDatosValidos_registraPronostico() {
             PronosticoRequestDTO dto = new PronosticoRequestDTO();
@@ -205,6 +248,9 @@ private static final String CODIGO = "CODE-001";
                     eq("Pronostico"));
         }
 
+        /**
+         * Verifica que una apuesta inexistente lanza {@link ApuestaNotFoundException}
+         */
         @Test
         void cuandoApuestaNoExiste_lanzaApuestaNotFoundException() {
             PronosticoRequestDTO dto = new PronosticoRequestDTO();
@@ -217,6 +263,9 @@ private static final String CODIGO = "CODE-001";
             assertThrows(ApuestaNotFoundException.class, () -> apuestaService.registrarPronostico(dto));
         }
 
+        /**
+         * Verifica que una apuesta cerrada lanza {@link ApuestaCerradaException}
+         */
         @Test
         void cuandoApuestaCerrada_lanzaApuestaCerradaException() {
             apuesta.setEstado(CERRADA);
@@ -231,6 +280,9 @@ private static final String CODIGO = "CODE-001";
             assertThrows(ApuestaCerradaException.class, () -> apuestaService.registrarPronostico(dto));
         }
 
+        /**
+         * Verifica que un usuario que no participa en la apuesta lanza {@link ParticipacionNotFoundException}
+         */
         @Test
         void cuandoUsuarioNoEsParticipante_lanzaParticipacionNotFoundException() {
             PronosticoRequestDTO dto = new PronosticoRequestDTO();
@@ -246,6 +298,9 @@ private static final String CODIGO = "CODE-001";
                     () -> apuestaService.registrarPronostico(dto));
         }
 
+        /**
+         * Verifica que un partido a menos de 5 minutos de iniciar lanza {@link PartidoYaIniciadoException}
+         */
         @Test
         void cuandoPartidoYaIniciado_lanzaPartidoYaIniciadoException() {
             partido.setFecha(LocalDateTime.now().plusMinutes(2));
@@ -266,10 +321,16 @@ private static final String CODIGO = "CODE-001";
         }
     }
 
+    /**
+     * Tests del metodo unirseApuesta — cubre union exitosa, codigo invalido y usuario duplicado
+     */
     @Nested
     @DisplayName("unirseApuesta")
     class UnirseApuesta {
 
+        /**
+         * Verifica que con codigo valido y usuario nuevo se registra la participacion y se notifica
+         */
         @Test
         void cuandoCodigoValidoYUsuarioNoEsta_seUne() {
             when(usuarioService.obtenerEntidadPorId(1L)).thenReturn(usuario);
@@ -282,10 +343,13 @@ private static final String CODIGO = "CODE-001";
             assertNotNull(resultado);
             assertEquals(POLLA_TEST, resultado.getNombre());
             verify(participacionRepository).save(any(Participacion.class));
-           verify(notificacionService).notificarApuestaUnirse(usuario, usuario, POLLA_TEST);
+            verify(notificacionService).notificarApuestaUnirse(usuario, usuario, POLLA_TEST);
             verify(auditoriaService).registrar(eq("APUESTA_UNIRSE"), anyString(), eq(1L), anyString(), eq("Apuesta"));
         }
 
+        /**
+         * Verifica que un codigo de invitacion inexistente lanza {@link CodigoInvalidoException}
+         */
         @Test
         void cuandoCodigoNoExiste_lanzaCodigoInvalidoException() {
             when(usuarioService.obtenerEntidadPorId(1L)).thenReturn(usuario);
@@ -295,6 +359,9 @@ private static final String CODIGO = "CODE-001";
                     () -> apuestaService.unirseApuesta("MAL", 1L));
         }
 
+        /**
+         * Verifica que un usuario que ya pertenece a la apuesta lanza {@link UsuarioYaEnApuestaException}
+         */
         @Test
         void cuandoUsuarioYaEstaEnLaApuesta_lanzaUsuarioYaEnApuestaException() {
             when(usuarioService.obtenerEntidadPorId(1L)).thenReturn(usuario);
@@ -307,10 +374,16 @@ private static final String CODIGO = "CODE-001";
         }
     }
 
+    /**
+     * Tests del metodo editarPronostico — cubre edicion exitosa, resultado nulo, no existente y permisos
+     */
     @Nested
     @DisplayName("editarPronostico")
     class EditarPronostico {
 
+        /**
+         * Verifica que con pronostico propio y apuesta abierta se actualizan correctamente los datos
+         */
         @Test
         void cuandoEsDelUsuarioYApuestaAbierta_editaPronostico() {
             Pronostico pronostico = construirPronostico();
@@ -331,6 +404,9 @@ private static final String CODIGO = "CODE-001";
             assertEquals("VISITANTE", pronostico.getResultadoPronosticado());
         }
 
+        /**
+         * Verifica que si el resultado en el DTO es nulo se conserva el resultado anterior del pronostico
+         */
         @Test
         void cuandoResultadoEnDTOEsNull_mantieneElAnterior() {
             Pronostico pronostico = construirPronostico();
@@ -348,6 +424,9 @@ private static final String CODIGO = "CODE-001";
             assertEquals(LOCAL, pronostico.getResultadoPronosticado());
         }
 
+        /**
+         * Verifica que un pronostico inexistente lanza {@link PronosticoNotFoundException}
+         */
         @Test
         void cuandoNoExiste_lanzaPronosticoNotFoundException() {
             PronosticoRequestDTO dto = new PronosticoRequestDTO();
@@ -357,6 +436,9 @@ private static final String CODIGO = "CODE-001";
                     () -> apuestaService.editarPronostico(999L, dto, CORREO_TEST));
         }
 
+        /**
+         * Verifica que intentar editar un pronostico de otro usuario lanza {@link ApuestaCerradaException}
+         */
         @Test
         void cuandoNoEsDelUsuario_lanzaApuestaCerradaException() {
             Pronostico pronostico = construirPronostico();
@@ -369,6 +451,9 @@ private static final String CODIGO = "CODE-001";
                     () -> apuestaService.editarPronostico(500L, dto, "otro@test.com"));
         }
 
+        /**
+         * Verifica que intentar editar un pronostico en una apuesta cerrada lanza {@link ApuestaCerradaException}
+         */
         @Test
         void cuandoApuestaCerrada_lanzaApuestaCerradaException() {
             Pronostico pronostico = construirPronostico();
@@ -383,10 +468,16 @@ private static final String CODIGO = "CODE-001";
         }
     }
 
+    /**
+     * Tests del metodo eliminarPronostico — cubre eliminacion exitosa, no existente y permisos
+     */
     @Nested
     @DisplayName("eliminarPronostico")
     class EliminarPronostico {
 
+        /**
+         * Verifica que con pronostico propio y apuesta abierta se elimina y se audita el evento
+         */
         @Test
         void cuandoEsDelUsuarioYApuestaAbierta_eliminaPronostico() {
             Pronostico pronostico = construirPronostico();
@@ -399,6 +490,9 @@ private static final String CODIGO = "CODE-001";
                     eq("Pronostico"));
         }
 
+        /**
+         * Verifica que un pronostico inexistente lanza {@link PronosticoNotFoundException}
+         */
         @Test
         void cuandoNoExiste_lanzaPronosticoNotFoundException() {
             when(pronosticoRepository.findById(999L)).thenReturn(Optional.empty());
@@ -407,6 +501,9 @@ private static final String CODIGO = "CODE-001";
                     () -> apuestaService.eliminarPronostico(999L, CORREO_TEST));
         }
 
+        /**
+         * Verifica que intentar eliminar un pronostico de otro usuario lanza {@link ApuestaCerradaException}
+         */
         @Test
         void cuandoNoEsDelUsuario_lanzaApuestaCerradaException() {
             Pronostico pronostico = construirPronostico();
@@ -416,6 +513,9 @@ private static final String CODIGO = "CODE-001";
                     () -> apuestaService.eliminarPronostico(500L, "otro@test.com"));
         }
 
+        /**
+         * Verifica que intentar eliminar un pronostico en una apuesta cerrada lanza {@link ApuestaCerradaException}
+         */
         @Test
         void cuandoApuestaCerrada_lanzaApuestaCerradaException() {
             Pronostico pronostico = construirPronostico();
@@ -427,10 +527,16 @@ private static final String CODIGO = "CODE-001";
         }
     }
 
+    /**
+     * Tests del metodo obtenerRanking — verifica ordenamiento por puntos
+     */
     @Nested
     @DisplayName("obtenerRanking")
     class ObtenerRanking {
 
+        /**
+         * Verifica que las participaciones se retornan ordenadas por puntos descendente
+         */
         @Test
         void retornaParticipacionesOrdenadasPorPuntos() {
             participacion.setPuntos(20);
@@ -446,10 +552,16 @@ private static final String CODIGO = "CODE-001";
         }
     }
 
+    /**
+     * Tests del metodo calcularPuntos — cubre multiples escenarios de puntaje y casos de error
+     */
     @Nested
     @DisplayName("calcularPuntos")
     class CalcularPuntos {
 
+        /**
+         * Verifica que una apuesta inexistente lanza {@link ApuestaNotFoundException}
+         */
         @Test
         void cuandoApuestaNoExiste_lanzaApuestaNotFoundException() {
             when(apuestaRepository.findById(99L)).thenReturn(Optional.empty());
@@ -457,6 +569,9 @@ private static final String CODIGO = "CODE-001";
             assertThrows(ApuestaNotFoundException.class, () -> apuestaService.calcularPuntos(99L));
         }
 
+        /**
+         * Verifica que calcular puntos en una apuesta no cerrada lanza {@link EstadoInvalidoException}
+         */
         @Test
         void cuandoApuestaNoCerrada_lanzaEstadoInvalidoException() {
             when(apuestaRepository.findById(10L)).thenReturn(Optional.of(apuesta));
@@ -464,6 +579,9 @@ private static final String CODIGO = "CODE-001";
             assertThrows(EstadoInvalidoException.class, () -> apuestaService.calcularPuntos(10L));
         }
 
+        /**
+         * Verifica que acertar resultado y marcador exacto otorga 6 puntos al pronostico
+         */
         @Test
         void cuandoAciertaResultadoExacto_otorga6Puntos() {
             apuesta.setEstado(CERRADA);
@@ -499,6 +617,9 @@ private static final String CODIGO = "CODE-001";
                     eq("Apuesta"));
         }
 
+        /**
+         * Verifica que acertar solo el resultado sin el marcador exacto otorga 2 puntos
+         */
         @Test
         void cuandoSoloAciertaResultado_otorga2Puntos() {
             apuesta.setEstado(CERRADA);
@@ -529,6 +650,9 @@ private static final String CODIGO = "CODE-001";
             assertEquals(2, pronostico.getPuntosObtenidos());
         }
 
+        /**
+         * Verifica que acertar solo el total de goles sin el resultado otorga 1 punto
+         */
         @Test
         void cuandoSoloAciertaTotalGoles_otorga1Punto() {
             apuesta.setEstado(CERRADA);
@@ -559,6 +683,9 @@ private static final String CODIGO = "CODE-001";
             assertEquals(1, pronostico.getPuntosObtenidos());
         }
 
+        /**
+         * Verifica que acertar victoria visitante con marcador exacto otorga 6 puntos
+         */
         @Test
         void cuandoPartidoVisitanteGana_resultadoEsVisitante() {
             apuesta.setEstado(CERRADA);
@@ -589,6 +716,9 @@ private static final String CODIGO = "CODE-001";
             assertEquals(6, pronostico.getPuntosObtenidos());
         }
 
+        /**
+         * Verifica que acertar empate con marcador exacto otorga 6 puntos
+         */
         @Test
         void cuandoPartidoEmpate_resultadoEsEmpate() {
             apuesta.setEstado(CERRADA);
@@ -619,6 +749,9 @@ private static final String CODIGO = "CODE-001";
             assertEquals(6, pronostico.getPuntosObtenidos());
         }
 
+        /**
+         * Verifica que un partido sin goles registrados omite el pronostico y retorna lista vacia
+         */
         @Test
         void cuandoPartidoSinGoles_omitePronostico() {
             apuesta.setEstado(CERRADA);
@@ -648,6 +781,9 @@ private static final String CODIGO = "CODE-001";
             assertEquals(0, pronostico.getPuntosObtenidos());
         }
 
+        /**
+         * Verifica que una participacion inexistente al calcular puntos lanza {@link ParticipacionNotFoundException}
+         */
         @Test
         void cuandoParticipacionNoExiste_lanzaParticipacionNotFoundException() {
             apuesta.setEstado(CERRADA);
@@ -676,10 +812,16 @@ private static final String CODIGO = "CODE-001";
         }
     }
 
+    /**
+     * Tests del metodo cerrarApuesta — cubre cierre exitoso, no existente y ya cerrada
+     */
     @Nested
     @DisplayName("cerrarApuesta")
     class CerrarApuesta {
 
+        /**
+         * Verifica que una apuesta abierta cambia su estado a cerrada correctamente
+         */
         @Test
         void cuandoEstaAbierta_laCierra() {
             when(apuestaRepository.findById(10L)).thenReturn(Optional.of(apuesta));
@@ -691,6 +833,9 @@ private static final String CODIGO = "CODE-001";
             assertEquals(CERRADA, apuesta.getEstado());
         }
 
+        /**
+         * Verifica que una apuesta inexistente lanza {@link ApuestaNotFoundException}
+         */
         @Test
         void cuandoNoExiste_lanzaApuestaNotFoundException() {
             when(apuestaRepository.findById(99L)).thenReturn(Optional.empty());
@@ -698,6 +843,9 @@ private static final String CODIGO = "CODE-001";
             assertThrows(ApuestaNotFoundException.class, () -> apuestaService.cerrarApuesta(99L));
         }
 
+        /**
+         * Verifica que intentar cerrar una apuesta ya cerrada lanza {@link ApuestaCerradaException}
+         */
         @Test
         void cuandoYaCerrada_lanzaApuestaCerradaException() {
             apuesta.setEstado(CERRADA);
@@ -707,10 +855,16 @@ private static final String CODIGO = "CODE-001";
         }
     }
 
+    /**
+     * Tests del metodo obtenerApuesta — cubre obtencion exitosa y no existente
+     */
     @Nested
     @DisplayName("obtenerApuesta")
     class ObtenerApuesta {
 
+        /**
+         * Verifica que una apuesta existente retorna el DTO con los datos correctos
+         */
         @Test
         void cuandoExiste_retornaDTO() {
             when(apuestaRepository.findById(10L)).thenReturn(Optional.of(apuesta));
@@ -721,6 +875,9 @@ private static final String CODIGO = "CODE-001";
             assertEquals(POLLA_TEST, resultado.getNombre());
         }
 
+        /**
+         * Verifica que una apuesta inexistente lanza {@link ApuestaNotFoundException}
+         */
         @Test
         void cuandoNoExiste_lanzaApuestaNotFoundException() {
             when(apuestaRepository.findById(99L)).thenReturn(Optional.empty());
@@ -729,10 +886,16 @@ private static final String CODIGO = "CODE-001";
         }
     }
 
+    /**
+     * Tests del metodo listarParticipantes — verifica listado de participantes de una apuesta
+     */
     @Nested
     @DisplayName("listarParticipantes")
     class ListarParticipantes {
 
+        /**
+         * Verifica que se retornan los participantes asociados a la apuesta indicada
+         */
         @Test
         void retornaParticipantesDeLaApuesta() {
             when(participacionRepository.findByApuestaId(10L)).thenReturn(List.of(participacion));
@@ -743,10 +906,16 @@ private static final String CODIGO = "CODE-001";
         }
     }
 
+    /**
+     * Tests del metodo listarApuestasPorUsuario — cubre listado con y sin apuestas
+     */
     @Nested
     @DisplayName("listarApuestasPorUsuario")
     class ListarApuestasPorUsuario {
 
+        /**
+         * Verifica que se retornan las apuestas en las que el usuario participa
+         */
         @Test
         void retornaApuestasDelUsuario() {
             when(participacionRepository.findByUsuarioId(1L)).thenReturn(List.of(participacion));
@@ -757,6 +926,9 @@ private static final String CODIGO = "CODE-001";
             assertEquals(POLLA_TEST, resultado.get(0).getNombre());
         }
 
+        /**
+         * Verifica que un usuario sin apuestas retorna lista vacia
+         */
         @Test
         void cuandoNoTiene_retornaListaVacia() {
             when(participacionRepository.findByUsuarioId(1L)).thenReturn(Collections.emptyList());
@@ -767,10 +939,16 @@ private static final String CODIGO = "CODE-001";
         }
     }
 
+    /**
+     * Tests del metodo verificarPronostico — cubre obtencion exitosa y no existente
+     */
     @Nested
     @DisplayName("verificarPronostico")
     class VerificarPronostico {
 
+        /**
+         * Verifica que un pronostico existente retorna el DTO con el ID correcto
+         */
         @Test
         void cuandoExiste_retornaDTO() {
             Pronostico pronostico = construirPronostico();
@@ -782,6 +960,9 @@ private static final String CODIGO = "CODE-001";
             assertEquals(500L, resultado.getId());
         }
 
+        /**
+         * Verifica que un pronostico inexistente lanza {@link PronosticoNotFoundException}
+         */
         @Test
         void cuandoNoExiste_lanzaPronosticoNotFoundException() {
             when(pronosticoRepository.findById(999L)).thenReturn(Optional.empty());
@@ -791,10 +972,16 @@ private static final String CODIGO = "CODE-001";
         }
     }
 
+    /**
+     * Tests del metodo calcularPuntosAutomatico — verifica calculo automatico de apuestas pendientes
+     */
     @Nested
     @DisplayName("calcularPuntosAutomatico")
     class CalcularPuntosAutomatico {
 
+        /**
+         * Verifica que las apuestas cerradas sin puntos calculados son procesadas y guardadas
+         */
         @Test
         void cuandoHayApuestasCerradasSinCalcular_lasCalcula() {
             apuesta.setEstado(CERRADA);
@@ -812,6 +999,9 @@ private static final String CODIGO = "CODE-001";
             verify(apuestaRepository).save(apuesta);
         }
 
+        /**
+         * Verifica que si no hay apuestas pendientes no se realiza ninguna operacion de guardado
+         */
         @Test
         void cuandoNoHayApuestas_noHaceNada() {
             when(apuestaRepository.findByEstadoAndPuntosCalculadosFalse(CERRADA))
@@ -823,10 +1013,16 @@ private static final String CODIGO = "CODE-001";
         }
     }
 
+    /**
+     * Tests del metodo cerrarApuestasVencidas — verifica cierre automatico por fecha de vencimiento
+     */
     @Nested
     @DisplayName("cerrarApuestasVencidas")
     class CerrarApuestasVencidas {
 
+        /**
+         * Verifica que las apuestas cuya fecha de cierre ya paso cambian su estado a cerrada
+         */
         @Test
         void cuandoHayVencidas_lasCierra() {
             when(apuestaRepository.findByEstadoAndFechaCierreBefore(eq(ABIERTA), any(LocalDateTime.class)))
@@ -839,6 +1035,9 @@ private static final String CODIGO = "CODE-001";
             assertEquals(CERRADA, apuesta.getEstado());
         }
 
+        /**
+         * Verifica que si no hay apuestas vencidas no se realiza ninguna operacion de guardado
+         */
         @Test
         void cuandoNoHayVencidas_noHaceNada() {
             when(apuestaRepository.findByEstadoAndFechaCierreBefore(eq(ABIERTA), any(LocalDateTime.class)))
@@ -850,10 +1049,16 @@ private static final String CODIGO = "CODE-001";
         }
     }
 
+    /**
+     * Tests del metodo misPronosticos — verifica listado de pronosticos por usuario y apuesta
+     */
     @Nested
     @DisplayName("misPronosticos")
     class MisPronosticos {
 
+        /**
+         * Verifica que se retornan los pronosticos del usuario en la apuesta indicada
+         */
         @Test
         void retornaPronosticosDelUsuario() {
             Pronostico p = construirPronostico();
@@ -865,10 +1070,16 @@ private static final String CODIGO = "CODE-001";
         }
     }
 
+    /**
+     * Tests del metodo calcularPuntosParciales — cubre calculo parcial, omision y errores
+     */
     @Nested
     @DisplayName("calcularPuntosParciales")
     class CalcularPuntosParciales {
 
+        /**
+         * Verifica que una apuesta inexistente lanza {@link ApuestaNotFoundException}
+         */
         @Test
         void cuandoApuestaNoExiste_lanzaApuestaNotFoundException() {
             when(apuestaRepository.findById(99L)).thenReturn(Optional.empty());
@@ -877,6 +1088,9 @@ private static final String CODIGO = "CODE-001";
                     () -> apuestaService.calcularPuntosParciales(99L));
         }
 
+        /**
+         * Verifica que un partido con goles registrados calcula y actualiza los puntos de la participacion
+         */
         @Test
         void cuandoPartidoConGoles_calculaYActualizaParticipacion() {
             partido.setGolesLocal(2);
@@ -905,6 +1119,9 @@ private static final String CODIGO = "CODE-001";
             assertEquals(6, pronostico.getPuntosObtenidos());
         }
 
+        /**
+         * Verifica que un partido sin goles registrados omite el pronostico y retorna lista vacia
+         */
         @Test
         void cuandoPartidoSinGoles_omiteProtnostico() {
             partido.setGolesLocal(null);
@@ -927,6 +1144,9 @@ private static final String CODIGO = "CODE-001";
             assertTrue(resultado.isEmpty());
         }
 
+        /**
+         * Verifica que un pronostico con puntos ya calculados es omitido sin modificar su valor
+         */
         @Test
         void cuandoPronosticoYaCalculado_loOmite() {
             partido.setGolesLocal(2);
@@ -950,6 +1170,9 @@ private static final String CODIGO = "CODE-001";
             assertEquals(5, pronostico.getPuntosObtenidos());
         }
 
+        /**
+         * Verifica que una participacion inexistente al calcular parciales lanza {@link ParticipacionNotFoundException}
+         */
         @Test
         void cuandoParticipacionNoExiste_lanzaParticipacionNotFoundException() {
             partido.setGolesLocal(2);
@@ -975,10 +1198,16 @@ private static final String CODIGO = "CODE-001";
         }
     }
 
+    /**
+     * Tests del metodo listarTodas — cubre listado completo y vacio
+     */
     @Nested
     @DisplayName("listarTodas")
     class ListarTodas {
 
+        /**
+         * Verifica que se retornan todas las apuestas existentes en el sistema
+         */
         @Test
         void retornaTodasLasApuestas() {
             when(apuestaRepository.findAll()).thenReturn(List.of(apuesta));
@@ -989,6 +1218,9 @@ private static final String CODIGO = "CODE-001";
             assertEquals(POLLA_TEST, resultado.get(0).getNombre());
         }
 
+        /**
+         * Verifica que si no hay apuestas en el sistema se retorna lista vacia
+         */
         @Test
         void cuandoNoHay_retornaListaVacia() {
             when(apuestaRepository.findAll()).thenReturn(Collections.emptyList());
@@ -999,10 +1231,16 @@ private static final String CODIGO = "CODE-001";
         }
     }
 
+    /**
+     * Tests del metodo eliminarApuesta — cubre eliminacion exitosa y no existente
+     */
     @Nested
     @DisplayName("eliminarApuesta")
     class EliminarApuesta {
 
+        /**
+         * Verifica que eliminar una apuesta existente borra sus pronosticos, participaciones y la apuesta
+         */
         @Test
         void cuandoExiste_eliminaPronosticosParticipacionesYApuesta() {
             when(apuestaRepository.findById(10L)).thenReturn(Optional.of(apuesta));
@@ -1014,6 +1252,10 @@ private static final String CODIGO = "CODE-001";
             verify(apuestaRepository).delete(apuesta);
         }
 
+        /**
+         * Verifica que una apuesta inexistente lanza {@link ApuestaNotFoundException}
+         * y no se intenta ninguna eliminacion
+         */
         @Test
         void cuandoNoExiste_lanzaApuestaNotFoundException() {
             when(apuestaRepository.findById(99L)).thenReturn(Optional.empty());
@@ -1023,10 +1265,16 @@ private static final String CODIGO = "CODE-001";
         }
     }
 
+    /**
+     * Tests del metodo listarApuestasPorUsuarioCompleto — cubre listado con participantes y vacio
+     */
     @Nested
     @DisplayName("listarApuestasPorUsuarioCompleto")
     class ListarApuestasPorUsuarioCompleto {
 
+        /**
+         * Verifica que se retornan las apuestas del usuario con la informacion de todos sus participantes
+         */
         @Test
         void retornaApuestasConParticipantes() {
             when(participacionRepository.findByUsuarioIdConApuesta(1L))
@@ -1041,6 +1289,9 @@ private static final String CODIGO = "CODE-001";
             assertEquals(POLLA_TEST, resultado.get(0).getNombre());
         }
 
+        /**
+         * Verifica que un usuario sin apuestas retorna lista vacia
+         */
         @Test
         void cuandoNoTieneApuestas_retornaListaVacia() {
             when(participacionRepository.findByUsuarioIdConApuesta(1L))

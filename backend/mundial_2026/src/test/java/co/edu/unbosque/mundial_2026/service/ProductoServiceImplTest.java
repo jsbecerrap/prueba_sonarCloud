@@ -38,29 +38,66 @@ import co.edu.unbosque.mundial_2026.exception.ProductoNotFoundException;
 import co.edu.unbosque.mundial_2026.repository.ProductoRepository;
 import co.edu.unbosque.mundial_2026.repository.VarianteProductoRepository;
 
+/**
+ * Pruebas unitarias para ProductoServiceImpl
+ */
 @ExtendWith(MockitoExtension.class)
 class ProductoServiceImplTest {
 
+    /**
+     * Mock del repositorio de productos
+     */
     @Mock
     private ProductoRepository productoRepository;
 
+    /**
+     * Mock del repositorio de variantes
+     */
     @Mock
     private VarianteProductoRepository varianteRepository;
 
+    /**
+     * Mock del servicio de categorías
+     */
     @Mock
     private CategoriaService categoriaService;
 
+    /**
+     * Mock del servicio de auditoría
+     */
     @Mock
     private EventoAuditoriaService auditoriaService;
 
+    /**
+     * Servicio bajo prueba
+     */
     @InjectMocks
     private ProductoServiceImpl productoService;
+
+    /**
+     * Constante de imagen de prueba
+     */
 private static final String IMG_JPG = "img.jpg";
+
+    /**
+     * Categoría de prueba
+     */
     private Categoria categoria;
+
+    /**
+     * Producto de prueba
+     */
     private Producto producto;
+
+    /**
+     * Variante de prueba
+     */
     private VarianteProducto variante;
     
 
+    /**
+     * Configura los datos iniciales antes de cada prueba
+     */
     @BeforeEach
     void setUp() {
         categoria = new Categoria();
@@ -89,10 +126,16 @@ private static final String IMG_JPG = "img.jpg";
         producto.setVariantes(variantes);
     }
 
+    /**
+     * Pruebas para reactivar
+     */
     @Nested
     @DisplayName("reactivar")
     class Reactivar {
 
+        /**
+         * Verifica que se reactive un producto existente
+         */
         @Test
         void cuandoExiste_reactivaProducto() {
             producto.setActivo(false);
@@ -104,6 +147,9 @@ private static final String IMG_JPG = "img.jpg";
             verify(productoRepository).save(producto);
         }
 
+        /**
+         * Verifica excepción cuando el producto no existe
+         */
         @Test
         void cuandoNoExiste_lanzaProductoNotFoundException() {
             when(productoRepository.findById(99L)).thenReturn(Optional.empty());
@@ -113,10 +159,16 @@ private static final String IMG_JPG = "img.jpg";
         }
     }
 
+    /**
+     * Pruebas para crear
+     */
     @Nested
     @DisplayName("crear")
     class Crear {
 
+        /**
+         * Verifica creación con variantes
+         */
         @Test
         void cuandoTieneVariantes_creaProductoYVariantes() {
             ProductoRequestDTO dto = new ProductoRequestDTO();
@@ -155,6 +207,9 @@ private static final String IMG_JPG = "img.jpg";
             verify(auditoriaService).registrar(eq("PRODUCTO_CREADO"), anyString(), eq(null), anyString(), eq("Producto"));
         }
 
+        /**
+         * Verifica creación sin variantes
+         */
         @Test
         void cuandoSinVariantes_creaProductoSolo() {
             ProductoRequestDTO dto = new ProductoRequestDTO();
@@ -173,10 +228,16 @@ private static final String IMG_JPG = "img.jpg";
         }
     }
 
+    /**
+     * Pruebas para actualizar
+     */
     @Nested
     @DisplayName("actualizar")
     class Actualizar {
 
+        /**
+         * Verifica actualización de todos los campos
+         */
         @Test
         void actualizaTodosLosCampos() {
             ProductoActualizarRequestDTO dto = new ProductoActualizarRequestDTO();
@@ -203,6 +264,9 @@ private static final String IMG_JPG = "img.jpg";
             assertNotNull(resultado);
         }
 
+        /**
+         * Verifica que campos null no actualicen
+         */
         @Test
         void cuandoCamposNull_noActualiza() {
             ProductoActualizarRequestDTO dto = new ProductoActualizarRequestDTO();
@@ -216,6 +280,9 @@ private static final String IMG_JPG = "img.jpg";
             assertEquals(IMG_JPG , producto.getImagenUrl());
         }
 
+        /**
+         * Verifica que campos en blanco no actualicen
+         */
         @Test
         void cuandoCamposBlancos_noActualiza() {
             ProductoActualizarRequestDTO dto = new ProductoActualizarRequestDTO();
@@ -235,6 +302,9 @@ private static final String IMG_JPG = "img.jpg";
             assertEquals("BRA-2026", producto.getCodigoProducto());
         }
 
+        /**
+         * Verifica excepción cuando no existe
+         */
         @Test
         void cuandoNoExiste_lanzaProductoNotFoundException() {
             ProductoActualizarRequestDTO dto = new ProductoActualizarRequestDTO();
@@ -244,10 +314,16 @@ private static final String IMG_JPG = "img.jpg";
         }
     }
 
+    /**
+     * Pruebas para listarTodos
+     */
     @Nested
     @DisplayName("listarTodos")
     class ListarTodos {
 
+        /**
+         * Verifica listado de activos con variantes
+         */
         @Test
         void retornaSoloActivosConVariantes() {
             when(productoRepository.findByActivoTrueWithVariantes()).thenReturn(List.of(producto));
@@ -259,6 +335,9 @@ private static final String IMG_JPG = "img.jpg";
             assertEquals(10, resultado.get(0).getStockTotal());
         }
 
+        /**
+         * Verifica listado con solo activos
+         */
         @Test
         void conSoloActivosTrue_usaActivos() {
             when(productoRepository.findByActivoTrueWithVariantes()).thenReturn(List.of(producto));
@@ -268,6 +347,9 @@ private static final String IMG_JPG = "img.jpg";
             assertEquals(1, resultado.size());
         }
 
+        /**
+         * Verifica listado de todos
+         */
         @Test
         void conSoloActivosFalse_usaTodos() {
             when(productoRepository.findAllWithVariantes()).thenReturn(List.of(producto));
@@ -277,6 +359,9 @@ private static final String IMG_JPG = "img.jpg";
             assertEquals(1, resultado.size());
         }
 
+        /**
+         * Verifica lista vacía cuando no hay productos
+         */
         @Test
         void cuandoNoHay_retornaListaVacia() {
             when(productoRepository.findByActivoTrueWithVariantes()).thenReturn(Collections.emptyList());
@@ -287,10 +372,16 @@ private static final String IMG_JPG = "img.jpg";
         }
     }
 
+    /**
+     * Pruebas para listarPorCategoria
+     */
     @Nested
     @DisplayName("listarPorCategoria")
     class ListarPorCategoria {
 
+        /**
+         * Verifica listado por categoría
+         */
         @Test
         void retornaProductosDeLaCategoria() {
             when(categoriaService.obtenerEntidadPorId(1L)).thenReturn(categoria);
@@ -302,10 +393,16 @@ private static final String IMG_JPG = "img.jpg";
         }
     }
 
+    /**
+     * Pruebas para obtenerPorId
+     */
     @Nested
     @DisplayName("obtenerPorId")
     class ObtenerPorId {
 
+        /**
+         * Verifica retorno cuando existe y está activo
+         */
         @Test
         void cuandoExisteYActivo_retornaDTO() {
             when(productoRepository.findById(10L)).thenReturn(Optional.of(producto));
@@ -315,6 +412,9 @@ private static final String IMG_JPG = "img.jpg";
             assertEquals(10L, resultado.getId());
         }
 
+        /**
+         * Verifica excepción cuando no existe
+         */
         @Test
         void cuandoNoExiste_lanzaProductoNotFoundException() {
             when(productoRepository.findById(99L)).thenReturn(Optional.empty());
@@ -322,6 +422,9 @@ private static final String IMG_JPG = "img.jpg";
             assertThrows(ProductoNotFoundException.class, () -> productoService.obtenerPorId(99L));
         }
 
+        /**
+         * Verifica excepción cuando está inactivo
+         */
         @Test
         void cuandoExistePeroInactivo_lanzaProductoNotFoundException() {
             producto.setActivo(false);
@@ -331,10 +434,16 @@ private static final String IMG_JPG = "img.jpg";
         }
     }
 
+    /**
+     * Pruebas para obtenerEntidadPorId
+     */
     @Nested
     @DisplayName("obtenerEntidadPorId")
     class ObtenerEntidadPorId {
 
+        /**
+         * Verifica retorno del producto
+         */
         @Test
         void cuandoExiste_retornaProducto() {
             when(productoRepository.findById(10L)).thenReturn(Optional.of(producto));
@@ -344,6 +453,9 @@ private static final String IMG_JPG = "img.jpg";
             assertEquals(10L, resultado.getId());
         }
 
+        /**
+         * Verifica excepción cuando no existe
+         */
         @Test
         void cuandoNoExiste_lanzaProductoNotFoundException() {
             when(productoRepository.findById(99L)).thenReturn(Optional.empty());
@@ -352,10 +464,16 @@ private static final String IMG_JPG = "img.jpg";
         }
     }
 
+    /**
+     * Pruebas para actualizarStock
+     */
     @Nested
     @DisplayName("actualizarStock")
     class ActualizarStock {
 
+        /**
+         * Verifica descuento de stock
+         */
         @Test
         void cuandoExiste_descuentaStock() {
             when(varianteRepository.findById(100L)).thenReturn(Optional.of(variante));
@@ -366,6 +484,9 @@ private static final String IMG_JPG = "img.jpg";
             verify(varianteRepository).save(variante);
         }
 
+        /**
+         * Verifica excepción cuando no existe
+         */
         @Test
         void cuandoNoExiste_lanzaProductoNotFoundException() {
             when(varianteRepository.findById(999L)).thenReturn(Optional.empty());
@@ -375,10 +496,16 @@ private static final String IMG_JPG = "img.jpg";
         }
     }
 
+    /**
+     * Pruebas para listarTodosLiviano
+     */
     @Nested
     @DisplayName("listarTodosLiviano")
     class ListarTodosLiviano {
 
+        /**
+         * Verifica listado liviano
+         */
         @Test
         void retornaListadoLiviano() {
             ProductoListadoDTO lite = new ProductoListadoDTO(10L, "Camiseta", "Desc", 50.0,
@@ -391,10 +518,16 @@ private static final String IMG_JPG = "img.jpg";
         }
     }
 
+    /**
+     * Pruebas para activarLote
+     */
     @Nested
     @DisplayName("activarLote")
     class ActivarLote {
 
+        /**
+         * Verifica activación de productos en lote
+         */
         @Test
         void activaTodosLosProductos() {
             Producto p1 = new Producto();
@@ -413,6 +546,9 @@ private static final String IMG_JPG = "img.jpg";
             verify(productoRepository, times(2)).save(any(Producto.class));
         }
 
+        /**
+         * Verifica que no haga nada con lista vacía
+         */
         @Test
         void cuandoListaVacia_noHaceNada() {
             when(productoRepository.findAllById(Collections.emptyList())).thenReturn(Collections.emptyList());
@@ -423,10 +559,16 @@ private static final String IMG_JPG = "img.jpg";
         }
     }
 
+    /**
+     * Pruebas para eliminar
+     */
     @Nested
     @DisplayName("eliminar")
     class Eliminar {
 
+        /**
+         * Verifica desactivación de producto
+         */
         @Test
         void cuandoExiste_desactivaProducto() {
             when(productoRepository.findById(10L)).thenReturn(Optional.of(producto));
@@ -438,6 +580,9 @@ private static final String IMG_JPG = "img.jpg";
             verify(auditoriaService).registrar(eq("PRODUCTO_DESACTIVADO"), anyString(), eq(null), anyString(), eq("Producto"));
         }
 
+        /**
+         * Verifica excepción cuando no existe
+         */
         @Test
         void cuandoNoExiste_lanzaProductoNotFoundException() {
             when(productoRepository.findById(99L)).thenReturn(Optional.empty());

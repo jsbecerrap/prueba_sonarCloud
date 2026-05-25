@@ -23,6 +23,11 @@ import co.edu.unbosque.mundial_2026.entity.Rol;
 import co.edu.unbosque.mundial_2026.entity.Usuario;
 import co.edu.unbosque.mundial_2026.repository.UsuarioRepository;
 
+/**
+ * Pruebas unitarias para {@link UserDetailsServiceImpl}.
+ * Verifica el comportamiento del servicio encargado de cargar usuarios
+ * para autenticación.
+ */
 @ExtendWith(MockitoExtension.class)
 class UserDetailsServiceImplTest {
 
@@ -33,9 +38,13 @@ class UserDetailsServiceImplTest {
     private UserDetailsServiceImpl userDetailsService;
 
     private Usuario usuario;
-private static final String CORREO_TEST = "test@test.com";
-private static final String ROLE_USUARIO = "ROLE_USUARIO";
-private static final String CORREO_NOPE = "nope@test.com";
+    private static final String CORREO_TEST = "test@test.com";
+    private static final String ROLE_USUARIO = "ROLE_USUARIO";
+    private static final String CORREO_NOPE = "nope@test.com";
+
+    /**
+     * Configura los datos base antes de cada prueba.
+     */
     @BeforeEach
     void setUp() {
         Rol rol = new Rol();
@@ -50,10 +59,17 @@ private static final String CORREO_NOPE = "nope@test.com";
         usuario.setActivo(true);
     }
 
+    /**
+     * Grupo de pruebas para el método loadUserByUsername.
+     */
     @Nested
     @DisplayName("loadUserByUsername")
     class LoadUserByUsername {
 
+        /**
+         * Verifica que si el usuario existe y está activo,
+         * se retorne correctamente un UserDetails.
+         */
         @Test
         void cuandoUsuarioExisteYActivo_retornaUserDetails() {
             when(usuarioRepository.findByCorreoUsuarioConRol(CORREO_TEST))
@@ -65,10 +81,14 @@ private static final String CORREO_NOPE = "nope@test.com";
             assertEquals(CORREO_TEST, resultado.getUsername());
             assertEquals("hashedPass", resultado.getPassword());
             assertEquals(1, resultado.getAuthorities().size());
-         assertTrue(resultado.getAuthorities().stream()
-        .anyMatch(a -> ROLE_USUARIO.equals(a.getAuthority())));
+            assertTrue(resultado.getAuthorities().stream()
+                    .anyMatch(a -> ROLE_USUARIO.equals(a.getAuthority())));
         }
 
+        /**
+         * Verifica que si el usuario no existe,
+         * se lance UsernameNotFoundException.
+         */
         @Test
         void cuandoUsuarioNoExiste_lanzaUsernameNotFoundException() {
             when(usuarioRepository.findByCorreoUsuarioConRol(CORREO_NOPE))
@@ -78,6 +98,10 @@ private static final String CORREO_NOPE = "nope@test.com";
                     () -> userDetailsService.loadUserByUsername(CORREO_NOPE));
         }
 
+        /**
+         * Verifica que si el usuario está inactivo,
+         * se lance UsernameNotFoundException.
+         */
         @Test
         void cuandoUsuarioInactivo_lanzaUsernameNotFoundException() {
             usuario.setActivo(false);
@@ -88,6 +112,10 @@ private static final String CORREO_NOPE = "nope@test.com";
                     () -> userDetailsService.loadUserByUsername(CORREO_TEST));
         }
 
+        /**
+         * Verifica que si el usuario tiene rol administrador,
+         * se retorne correctamente la autoridad ROLE_ADMIN.
+         */
         @Test
         void cuandoUsuarioConRolAdmin_retornaAuthorityAdmin() {
             Rol rolAdmin = new Rol();
@@ -100,7 +128,7 @@ private static final String CORREO_NOPE = "nope@test.com";
             UserDetails resultado = userDetailsService.loadUserByUsername(CORREO_TEST);
 
             assertTrue(resultado.getAuthorities().stream()
-        .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority())));
+                    .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority())));
         }
     }
 }

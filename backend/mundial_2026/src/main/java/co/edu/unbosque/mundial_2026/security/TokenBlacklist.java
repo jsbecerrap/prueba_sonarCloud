@@ -52,6 +52,6 @@ public class TokenBlacklist {
      */
     private void limpiarExpirados() {
         final long ahora = System.currentTimeMillis();
-        tokens.entrySet().removeIf(entry -> entry.getValue() < ahora);
+        tokens.entrySet().removeIf(entry -> entry.getValue() < ahora);//obtiene el valor osea cuando vence y ya si ve que se vencio lo limpia 
     }
 }
