@@ -68,7 +68,7 @@ public class MetodoPagoServiceImpl implements MetodoPagoService {
         metodo.setTipo(dto.getType());
         metodo.setLabel(dto.getLabel());
         metodo.setDetails(dto.getDetails());
-        metodo.setDefault(esElPrimero);
+        metodo.setDefault(esElPrimero);//lo agregar si sale que si 
         metodo.setCreatedAt(LocalDateTime.now().toString());
 
         metodoPagoRepository.save(metodo);

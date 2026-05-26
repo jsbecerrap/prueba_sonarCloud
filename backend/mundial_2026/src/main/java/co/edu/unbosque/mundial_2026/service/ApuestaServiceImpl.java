@@ -256,9 +256,12 @@ public class ApuestaServiceImpl implements ApuestaService {
                 final int golesLocalAnterior = pronostico.getGolesLocalPronosticados();
                 final int golesVisitanteAnterior = pronostico.getGolesVisitantePronosticados();
 
-                final String resultadoPronosticado = dto.getResultadoPronosticado() != null
-                                ? dto.getResultadoPronosticado()
-                                : pronostico.getResultadoPronosticado();
+                final String resultadoPronosticado;
+if (dto.getResultadoPronosticado() != null) {
+    resultadoPronosticado = dto.getResultadoPronosticado();
+} else {
+    resultadoPronosticado = pronostico.getResultadoPronosticado();
+}
 
                 pronostico.setGolesLocalPronosticados(dto.getGolesLocalPronosticados());
                 pronostico.setGolesVisitantePronosticados(dto.getGolesVisitantePronosticados());

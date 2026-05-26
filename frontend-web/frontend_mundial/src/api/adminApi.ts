@@ -301,6 +301,7 @@ export type ProductoActualizarPayload = {
   imagenUrl?: string;
   descripcion?: string;
   codigoProducto?: string;
+  variantes?: { id: number; especificacion: string; stock: number }[];
 };
 export async function adminGetCategorias(): Promise<Categoria[]> {
   if (!USE_MOCK) {

@@ -51,7 +51,7 @@ public class EventoAuditoriaServiceImpl implements EventoAuditoriaService {
                 tipo, descripcion, LocalDateTime.now(),
                 idCorrelacion, entidadCorrelacion, null);
 
-        // Solo asignar referencia, NO cargar el usuario completo
+        
         if (usuarioId != null) {
             Usuario refUsuario = new Usuario();
             refUsuario.setId(usuarioId);
@@ -154,14 +154,27 @@ public class EventoAuditoriaServiceImpl implements EventoAuditoriaService {
      * @return página de {@link EventoAuditoriaDTO} con los eventos que cumplan los filtros
      */
     @Override
-    @Transactional(readOnly = true)
-    public Page<EventoAuditoriaDTO> buscarConFiltros(Long usuarioId, String tipos,
-            LocalDateTime fechaInicio, LocalDateTime fechaFin, Pageable pageable) {
-        String fi = fechaInicio != null ? fechaInicio.toString() : null;
-        String ff = fechaFin != null ? fechaFin.toString() : null;
-        return repository.buscarConFiltros(usuarioId, tipos, fi, ff, pageable)
-                .map(this::toDTO);
+@Transactional(readOnly = true)
+public Page<EventoAuditoriaDTO> buscarConFiltros(Long usuarioId, String tipos,
+        LocalDateTime fechaInicio, LocalDateTime fechaFin, Pageable pageable) {
+
+    String fi;
+    if (fechaInicio != null) {
+        fi = fechaInicio.toString();
+    } else {
+        fi = null;
     }
+
+    String ff;
+    if (fechaFin != null) {
+        ff = fechaFin.toString();
+    } else {
+        ff = null;
+    }
+
+    return repository.buscarConFiltros(usuarioId, tipos, fi, ff, pageable)
+            .map(this::toDTO);
+}
 
     /**
      * Convierte una entidad {@link EventoAuditoria} a su representación DTO.

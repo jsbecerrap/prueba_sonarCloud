@@ -38,11 +38,14 @@ import co.edu.unbosque.mundial_2026.exception.PagoStripeException;
 import co.edu.unbosque.mundial_2026.repository.EntradaRepository;
 
 /**
- * Implementación del servicio encargado de gestionar el ciclo de vida completo de las entradas
+ * Implementación del servicio encargado de gestionar el ciclo de vida completo
+ * de las entradas
  * para los partidos del Mundial 2026.
- * Cubre reserva, confirmación de pago con Stripe, cancelación, transferencia entre usuarios,
+ * Cubre reserva, confirmación de pago con Stripe, cancelación, transferencia
+ * entre usuarios,
  * reembolso y expiración automática de reservas vencidas.
- * El precio de cada entrada se calcula dinámicamente según la ronda del partido,
+ * El precio de cada entrada se calcula dinámicamente según la ronda del
+ * partido,
  * la zona seleccionada y si alguna de las selecciones es considerada top.
  * La capacidad del estadio se distribuye automáticamente en zonas y filas,
  * y cada operación queda registrada en auditoría con notificación al usuario
@@ -70,9 +73,8 @@ public class EntradaServiceImpl implements EntradaService {
     private static final String LOG_ZONA = " | Zona: ";
     private static final String LOG_VALOR = " | Valor: $";
     private static final String LOG_VS = " vs ";
-    private static final int MAX_ENTRADAS_TRANSACCION=4;
-    private static final int MAX_ENTRADAS_DIARIAS=12;
-
+    private static final int MAX_ENTRADAS_TRANSACCION = 4;
+    private static final int MAX_ENTRADAS_DIARIAS = 12;
 
     private final NotificacionService notificacionService;
 
@@ -122,11 +124,11 @@ public class EntradaServiceImpl implements EntradaService {
     private static final List<String> ESTADOS_ACTIVOS = List.of(ESTADO_RESERVADA, ESTADO_PAGADA);
 
     public EntradaServiceImpl(EntradaRepository entradaRepository,
-        UsuarioService usuarioService,
-        PartidoService partidoService,
-        EventoAuditoriaService auditoriaService,
-        NotificacionService notificacionService,
-        @Value("${stripe.api.key}") String stripeApiKey) {
+            UsuarioService usuarioService,
+            PartidoService partidoService,
+            EventoAuditoriaService auditoriaService,
+            NotificacionService notificacionService,
+            @Value("${stripe.api.key}") String stripeApiKey) {
         this.entradaRepository = entradaRepository;
         this.usuarioService = usuarioService;
         this.partidoService = partidoService;
@@ -136,18 +138,24 @@ public class EntradaServiceImpl implements EntradaService {
     }
 
     /**
-     * Reserva una o varias entradas para un partido. Valida que haya cupo disponible,
-     * que la cantidad no supere el límite de 4 por transacción y el límite diario de 12 entradas.
+     * Reserva una o varias entradas para un partido. Valida que haya cupo
+     * disponible,
+     * que la cantidad no supere el límite de 4 por transacción y el límite diario
+     * de 12 entradas.
      * Asigna automáticamente la zona, fila y asiento según disponibilidad.
-     * El precio se calcula según la ronda, zona y si hay selecciones top en el partido.
+     * El precio se calcula según la ronda, zona y si hay selecciones top en el
+     * partido.
      * La reserva tiene un tiempo de vida de 15 minutos para completar el pago.
      * Se notifica al usuario y se registra en auditoría
      *
      * @param correo correo del usuario que realiza la reserva
-     * @param dto    datos de la reserva: id del partido, cantidad, zona y sector deseados
+     * @param dto    datos de la reserva: id del partido, cantidad, zona y sector
+     *               deseados
      * @return {@link EntradaResponseDTO} con la información de la entrada reservada
-     * @throws CupoNoDisponibleException si no hay cupo en el partido o en la zona solicitada
-     * @throws LimiteSuperadoException   si se supera el límite de 4 por transacción o 12 diarias
+     * @throws CupoNoDisponibleException si no hay cupo en el partido o en la zona
+     *                                   solicitada
+     * @throws LimiteSuperadoException   si se supera el límite de 4 por transacción
+     *                                   o 12 diarias
      */
     @Transactional
     @Override
@@ -168,7 +176,8 @@ public class EntradaServiceImpl implements EntradaService {
         LocalDateTime inicioDia = LocalDateTime.now().toLocalDate().atStartOfDay();
         LocalDateTime finDia = inicioDia.plusDays(1);
 
-        List<Entrada> entradasHoy = entradaRepository.findByUsuarioIdAndFechaCompraBetween(usuarioId, inicioDia, finDia);
+        List<Entrada> entradasHoy = entradaRepository.findByUsuarioIdAndFechaCompraBetween(usuarioId, inicioDia,
+                finDia);
 
         int compradasHoy = 0;
         for (Entrada entrada : entradasHoy) {
@@ -181,16 +190,22 @@ public class EntradaServiceImpl implements EntradaService {
             throw new LimiteSuperadoException("Límite diario de 12 entradas alcanzado");
         }
 
-        String categoria = (dto.getCategoria() != null && !dto.getCategoria().isBlank())
-                ? dto.getCategoria().toUpperCase(Locale.ROOT)
-                : ZONA_BARRA;
-        String sector = (dto.getSector() != null && !dto.getSector().isBlank())
-                ? dto.getSector()
-                : "Norte";
+        String categoria;
+        if (dto.getCategoria() != null && !dto.getCategoria().isBlank()) {
+            categoria = dto.getCategoria().toUpperCase(Locale.ROOT);
+        } else {
+            categoria = ZONA_BARRA;
+        }
+
+        String sector;
+        if (dto.getSector() != null && !dto.getSector().isBlank()) {
+            sector = dto.getSector();
+        } else {
+            sector = "Norte";
+        }
 
         int totalVendidoPartido = entradaRepository.sumCantidadByPartidoAndEstados(
-            partido.getId(), ESTADOS_ACTIVOS
-        );
+                partido.getId(), ESTADOS_ACTIVOS);
         int capacidadTotal = partido.getCapacidadDisponible() + totalVendidoPartido;
 
         Map<String, Map<String, Integer>> distribucion = calcularDistribucion(capacidadTotal);
@@ -202,14 +217,12 @@ public class EntradaServiceImpl implements EntradaService {
         String fila = asignarFilaDisponible(partido.getId(), categoria, dto.getCantidad(), cuposPorFila);
         if (fila == null) {
             throw new CupoNoDisponibleException(
-                "No hay cupos disponibles en la zona " + categoria +
-                " para " + dto.getCantidad() + " entrada(s)."
-            );
+                    "No hay cupos disponibles en la zona " + categoria +
+                            " para " + dto.getCantidad() + " entrada(s).");
         }
 
         int ultimoAsiento = entradaRepository.maxAsientoFinByPartidoCategoriaYFila(
-            partido.getId(), categoria, fila
-        );
+                partido.getId(), categoria, fila);
         int asientoInicio = ultimoAsiento + 1;
 
         Entrada entrada = new Entrada();
@@ -229,16 +242,15 @@ public class EntradaServiceImpl implements EntradaService {
         partidoService.actualizarCapacidad(partido.getId(), -dto.getCantidad());
 
         auditoriaService.registrar(
-            "ENTRADA_RESERVADA",
-            u.getNombre() + " " + u.getApellido() + LOG_ID + usuarioId + ") reservó "
-            + dto.getCantidad() + LOG_ENTRADAS
-            + partido.getSeleccionLocal() + LOG_VS + partido.getSeleccionVisitante()
-            + LOG_ZONA + categoria + " | Sector: " + sector + " | Fila: " + fila
-            + LOG_VALOR + entrada.getPrecio(),
-            usuarioId,
-            String.valueOf(entrada.getId()),
-            TIPO_ENTRADA
-        );
+                "ENTRADA_RESERVADA",
+                u.getNombre() + " " + u.getApellido() + LOG_ID + usuarioId + ") reservó "
+                        + dto.getCantidad() + LOG_ENTRADAS
+                        + partido.getSeleccionLocal() + LOG_VS + partido.getSeleccionVisitante()
+                        + LOG_ZONA + categoria + " | Sector: " + sector + " | Fila: " + fila
+                        + LOG_VALOR + entrada.getPrecio(),
+                usuarioId,
+                String.valueOf(entrada.getId()),
+                TIPO_ENTRADA);
 
         String nombrePartido = partido.getSeleccionLocal() + LOG_VS + partido.getSeleccionVisitante();
         notificacionService.notificarReservaCreada(u, nombrePartido);
@@ -247,17 +259,23 @@ public class EntradaServiceImpl implements EntradaService {
     }
 
     /**
-     * Confirma el pago de una entrada reservada procesando el cobro a través de Stripe.
-     * Valida que la entrada esté en estado RESERVADA y que la reserva no haya expirado.
-     * Si el pago es exitoso, cambia el estado a PAGADA y guarda la referencia del pago.
-     * Si Stripe falla, registra el error en auditoría, notifica al usuario y lanza excepción
+     * Confirma el pago de una entrada reservada procesando el cobro a través de
+     * Stripe.
+     * Valida que la entrada esté en estado RESERVADA y que la reserva no haya
+     * expirado.
+     * Si el pago es exitoso, cambia el estado a PAGADA y guarda la referencia del
+     * pago.
+     * Si Stripe falla, registra el error en auditoría, notifica al usuario y lanza
+     * excepción
      *
      * @param entradaId  id de la entrada a pagar
      * @param paymentRef referencia del método de pago de Stripe (paymentMethod ID)
      * @return {@link EntradaResponseDTO} con el estado actualizado a PAGADA
      * @throws EntradaNotFoundException si la entrada no existe
-     * @throws EstadoInvalidoException  si la entrada no está en RESERVADA o la reserva expiró
-     * @throws PagoStripeException      si Stripe rechaza o falla al procesar el pago
+     * @throws EstadoInvalidoException  si la entrada no está en RESERVADA o la
+     *                                  reserva expiró
+     * @throws PagoStripeException      si Stripe rechaza o falla al procesar el
+     *                                  pago
      */
     @Transactional
     @Override
@@ -275,17 +293,17 @@ public class EntradaServiceImpl implements EntradaService {
 
         try {
             PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
-                .setAmount((long)(entrada.getPrecio() * 100))
-                .setCurrency("usd")
-                .setConfirm(true)
-                .setPaymentMethod(paymentRef)
-                .setAutomaticPaymentMethods(
-                    PaymentIntentCreateParams.AutomaticPaymentMethods.builder()
-                        .setEnabled(true)
-                        .setAllowRedirects(PaymentIntentCreateParams.AutomaticPaymentMethods.AllowRedirects.NEVER)
-                        .build()
-                )
-                .build();
+                    .setAmount((long) (entrada.getPrecio() * 100))
+                    .setCurrency("usd")
+                    .setConfirm(true)
+                    .setPaymentMethod(paymentRef)
+                    .setAutomaticPaymentMethods(
+                            PaymentIntentCreateParams.AutomaticPaymentMethods.builder()
+                                    .setEnabled(true)
+                                    .setAllowRedirects(
+                                            PaymentIntentCreateParams.AutomaticPaymentMethods.AllowRedirects.NEVER)
+                                    .build())
+                    .build();
 
             PaymentIntent intent = PaymentIntent.create(params);
 
@@ -296,42 +314,43 @@ public class EntradaServiceImpl implements EntradaService {
             entradaRepository.save(entrada);
 
             auditoriaService.registrar(
-                "ENTRADA_PAGADA",
-                entrada.getUsuario().getNombre() + " " + entrada.getUsuario().getApellido()
-                + LOG_ID + entrada.getUsuario().getId() + ") confirmó pago de "
-                + entrada.getCantidad() + LOG_ENTRADAS
-                + entrada.getPartido().getSeleccionLocal() + LOG_VS + entrada.getPartido().getSeleccionVisitante()
-                + LOG_ZONA + entrada.getCategoria()
-                + " | Valor total: $" + entrada.getPrecio()
-                + " | Ref. pago: " + intent.getId(),
-                entrada.getUsuario().getId(),
-                String.valueOf(entradaId),
-                TIPO_ENTRADA
-            );
-            String nombrePartido = entrada.getPartido().getSeleccionLocal() + LOG_VS + entrada.getPartido().getSeleccionVisitante();
+                    "ENTRADA_PAGADA",
+                    entrada.getUsuario().getNombre() + " " + entrada.getUsuario().getApellido()
+                            + LOG_ID + entrada.getUsuario().getId() + ") confirmó pago de "
+                            + entrada.getCantidad() + LOG_ENTRADAS
+                            + entrada.getPartido().getSeleccionLocal() + LOG_VS
+                            + entrada.getPartido().getSeleccionVisitante()
+                            + LOG_ZONA + entrada.getCategoria()
+                            + " | Valor total: $" + entrada.getPrecio()
+                            + " | Ref. pago: " + intent.getId(),
+                    entrada.getUsuario().getId(),
+                    String.valueOf(entradaId),
+                    TIPO_ENTRADA);
+            String nombrePartido = entrada.getPartido().getSeleccionLocal() + LOG_VS
+                    + entrada.getPartido().getSeleccionVisitante();
             notificacionService.notificarEntradaPagada(
-                entrada.getUsuario(),
-                nombrePartido,
-                entrada.getCategoria(),
-                entrada.getSector(),
-                entrada.getFila()
-            );
+                    entrada.getUsuario(),
+                    nombrePartido,
+                    entrada.getCategoria(),
+                    entrada.getSector(),
+                    entrada.getFila());
 
         } catch (StripeException e) {
             auditoriaService.registrar(
-                "ENTRADA_PAGO_FALLIDO",
-                "Pago fallido — " + entrada.getUsuario().getNombre() + " " + entrada.getUsuario().getApellido()
-                + LOG_ID + entrada.getUsuario().getId() + ") | "
-                + entrada.getPartido().getSeleccionLocal() + LOG_VS + entrada.getPartido().getSeleccionVisitante()
-                + LOG_ZONA + entrada.getCategoria()
-                + LOG_VALOR + entrada.getPrecio()
-                + " | Error: " + e.getMessage(),
-                entrada.getUsuario().getId(),
-                String.valueOf(entradaId),
-                TIPO_ENTRADA
-            );
+                    "ENTRADA_PAGO_FALLIDO",
+                    "Pago fallido — " + entrada.getUsuario().getNombre() + " " + entrada.getUsuario().getApellido()
+                            + LOG_ID + entrada.getUsuario().getId() + ") | "
+                            + entrada.getPartido().getSeleccionLocal() + LOG_VS
+                            + entrada.getPartido().getSeleccionVisitante()
+                            + LOG_ZONA + entrada.getCategoria()
+                            + LOG_VALOR + entrada.getPrecio()
+                            + " | Error: " + e.getMessage(),
+                    entrada.getUsuario().getId(),
+                    String.valueOf(entradaId),
+                    TIPO_ENTRADA);
             notificacionService.notificarEntradaPagoFallido(entrada.getUsuario());
-            throw new PagoStripeException("Error al procesar el pago. Revisa los datos de tu tarjeta e intenta de nuevo.", e);
+            throw new PagoStripeException(
+                    "Error al procesar el pago. Revisa los datos de tu tarjeta e intenta de nuevo.", e);
         }
 
         return toDTO(entrada);
@@ -346,7 +365,8 @@ public class EntradaServiceImpl implements EntradaService {
      * @param entradaId id de la entrada a cancelar
      * @return {@link EntradaResponseDTO} con el estado actualizado a CANCELADA
      * @throws EntradaNotFoundException si la entrada no existe
-     * @throws EstadoInvalidoException  si la entrada no pertenece al usuario o no está en RESERVADA
+     * @throws EstadoInvalidoException  si la entrada no pertenece al usuario o no
+     *                                  está en RESERVADA
      */
     @Transactional
     @Override
@@ -371,33 +391,38 @@ public class EntradaServiceImpl implements EntradaService {
         partidoService.actualizarCapacidad(entrada.getPartido().getId(), entrada.getCantidad());
 
         auditoriaService.registrar(
-            "ENTRADA_CANCELADA",
-            u.getNombre() + " " + u.getApellido() + LOG_ID + usuarioId + ") canceló "
-            + entrada.getCantidad() + LOG_ENTRADAS
-            + entrada.getPartido().getSeleccionLocal() + LOG_VS + entrada.getPartido().getSeleccionVisitante()
-            + LOG_ZONA + entrada.getCategoria() + " | Sector: " + entrada.getSector(),
-            usuarioId,
-            String.valueOf(entradaId),
-            TIPO_ENTRADA
-        );
+                "ENTRADA_CANCELADA",
+                u.getNombre() + " " + u.getApellido() + LOG_ID + usuarioId + ") canceló "
+                        + entrada.getCantidad() + LOG_ENTRADAS
+                        + entrada.getPartido().getSeleccionLocal() + LOG_VS
+                        + entrada.getPartido().getSeleccionVisitante()
+                        + LOG_ZONA + entrada.getCategoria() + " | Sector: " + entrada.getSector(),
+                usuarioId,
+                String.valueOf(entradaId),
+                TIPO_ENTRADA);
 
         return toDTO(entrada);
     }
 
     /**
      * Transfiere una entrada pagada a otro usuario identificado por su correo.
-     * La entrada original queda marcada como TRANSFERIDA y se crea una nueva entrada
+     * La entrada original queda marcada como TRANSFERIDA y se crea una nueva
+     * entrada
      * idéntica a nombre del destinatario con estado PAGADA y los mismos asientos.
      * Valida que el límite diario de transferencias no supere 12 entradas.
      * Ambos usuarios reciben notificación de la operación
      *
      * @param entradaId id de la entrada a transferir
-     * @param dto       datos de la transferencia, incluyendo el correo del destinatario
+     * @param dto       datos de la transferencia, incluyendo el correo del
+     *                  destinatario
      * @param correo    correo del usuario que transfiere
-     * @return {@link EntradaResponseDTO} con la nueva entrada creada a nombre del destinatario
+     * @return {@link EntradaResponseDTO} con la nueva entrada creada a nombre del
+     *         destinatario
      * @throws EntradaNotFoundException si la entrada no existe
-     * @throws EstadoInvalidoException  si la entrada no pertenece al usuario o no está en PAGADA
-     * @throws LimiteSuperadoException  si se supera el límite diario de transferencias
+     * @throws EstadoInvalidoException  si la entrada no pertenece al usuario o no
+     *                                  está en PAGADA
+     * @throws LimiteSuperadoException  si se supera el límite diario de
+     *                                  transferencias
      */
     @Transactional
     @Override
@@ -419,7 +444,8 @@ public class EntradaServiceImpl implements EntradaService {
         LocalDateTime inicioDia = LocalDateTime.now().toLocalDate().atStartOfDay();
         LocalDateTime finDia = inicioDia.plusDays(1);
 
-        List<Entrada> transferenciasHoy = entradaRepository.findByUsuarioIdAndFechaCompraBetween(usuarioId, inicioDia, finDia);
+        List<Entrada> transferenciasHoy = entradaRepository.findByUsuarioIdAndFechaCompraBetween(usuarioId, inicioDia,
+                finDia);
         int totalTransferidas = 0;
         for (Entrada entradaActual : transferenciasHoy) {
             if (ESTADO_TRANSFERIDA.equals(entradaActual.getEstado())) {
@@ -449,18 +475,19 @@ public class EntradaServiceImpl implements EntradaService {
         entradaRepository.save(nuevaEntrada);
 
         auditoriaService.registrar(
-            "ENTRADA_TRANSFERIDA",
-            u.getNombre() + " " + u.getApellido() + LOG_ID + usuarioId + ") transfirió "
-            + entrada.getCantidad() + LOG_ENTRADAS
-            + entrada.getPartido().getSeleccionLocal() + LOG_VS + entrada.getPartido().getSeleccionVisitante()
-            + LOG_ZONA + entrada.getCategoria()
-            + " | Destinatario: " + dto.getCorreoDestino(),
-            usuarioId,
-            String.valueOf(entradaId),
-            TIPO_ENTRADA
-        );
+                "ENTRADA_TRANSFERIDA",
+                u.getNombre() + " " + u.getApellido() + LOG_ID + usuarioId + ") transfirió "
+                        + entrada.getCantidad() + LOG_ENTRADAS
+                        + entrada.getPartido().getSeleccionLocal() + LOG_VS
+                        + entrada.getPartido().getSeleccionVisitante()
+                        + LOG_ZONA + entrada.getCategoria()
+                        + " | Destinatario: " + dto.getCorreoDestino(),
+                usuarioId,
+                String.valueOf(entradaId),
+                TIPO_ENTRADA);
 
-        String nombrePartido = entrada.getPartido().getSeleccionLocal() + LOG_VS + entrada.getPartido().getSeleccionVisitante();
+        String nombrePartido = entrada.getPartido().getSeleccionLocal() + LOG_VS
+                + entrada.getPartido().getSeleccionVisitante();
         notificacionService.notificarEntradaTransferida(u, dto.getCorreoDestino(), nombrePartido);
         notificacionService.notificarEntradaRecibida(usuarioRecibe, u.getCorreoUsuario(), nombrePartido);
 
@@ -468,15 +495,19 @@ public class EntradaServiceImpl implements EntradaService {
     }
 
     /**
-     * Procesa el reembolso de una entrada pagada a través de Stripe y devuelve los cupos al partido.
-     * Si Stripe falla, registra el error en auditoría, notifica al usuario y lanza excepción.
-     * Solo se pueden reembolsar entradas en estado PAGADA que pertenezcan al usuario
+     * Procesa el reembolso de una entrada pagada a través de Stripe y devuelve los
+     * cupos al partido.
+     * Si Stripe falla, registra el error en auditoría, notifica al usuario y lanza
+     * excepción.
+     * Solo se pueden reembolsar entradas en estado PAGADA que pertenezcan al
+     * usuario
      *
      * @param correo    correo del usuario que solicita el reembolso
      * @param entradaId id de la entrada a reembolsar
      * @return {@link EntradaResponseDTO} con el estado actualizado a REEMBOLSADA
      * @throws EntradaNotFoundException si la entrada no existe
-     * @throws EstadoInvalidoException  si la entrada no pertenece al usuario o no está en PAGADA
+     * @throws EstadoInvalidoException  si la entrada no pertenece al usuario o no
+     *                                  está en PAGADA
      * @throws PagoStripeException      si Stripe falla al procesar el reembolso
      */
     @Transactional
@@ -498,8 +529,8 @@ public class EntradaServiceImpl implements EntradaService {
 
         try {
             RefundCreateParams params = RefundCreateParams.builder()
-                .setPaymentIntent(entrada.getPaymentRef())
-                .build();
+                    .setPaymentIntent(entrada.getPaymentRef())
+                    .build();
 
             Refund.create(params);
 
@@ -510,31 +541,31 @@ public class EntradaServiceImpl implements EntradaService {
             partidoService.actualizarCapacidad(entrada.getPartido().getId(), entrada.getCantidad());
 
             auditoriaService.registrar(
-                "ENTRADA_REEMBOLSADA",
-                u.getNombre() + " " + u.getApellido() + LOG_ID + usuarioId + ") reembolsó "
-                + entrada.getCantidad() + LOG_ENTRADAS
-                + entrada.getPartido().getSeleccionLocal() + LOG_VS + entrada.getPartido().getSeleccionVisitante()
-                + LOG_ZONA + entrada.getCategoria()
-                + " | Valor reembolsado: $" + entrada.getPrecio(),
-                usuarioId,
-                String.valueOf(entradaId),
-                TIPO_ENTRADA
-            );
+                    "ENTRADA_REEMBOLSADA",
+                    u.getNombre() + " " + u.getApellido() + LOG_ID + usuarioId + ") reembolsó "
+                            + entrada.getCantidad() + LOG_ENTRADAS
+                            + entrada.getPartido().getSeleccionLocal() + LOG_VS
+                            + entrada.getPartido().getSeleccionVisitante()
+                            + LOG_ZONA + entrada.getCategoria()
+                            + " | Valor reembolsado: $" + entrada.getPrecio(),
+                    usuarioId,
+                    String.valueOf(entradaId),
+                    TIPO_ENTRADA);
             notificacionService.notificarEntradaReembolsada(u, entradaId);
 
         } catch (StripeException e) {
             auditoriaService.registrar(
-                "ENTRADA_REEMBOLSO_FALLIDO",
-                "Reembolso fallido — " + u.getNombre() + " " + u.getApellido()
-                + LOG_ID + usuarioId + ") | "
-                + entrada.getPartido().getSeleccionLocal() + LOG_VS + entrada.getPartido().getSeleccionVisitante()
-                + LOG_ZONA + entrada.getCategoria()
-                + LOG_VALOR + entrada.getPrecio()
-                + " | Error: " + e.getMessage(),
-                usuarioId,
-                String.valueOf(entradaId),
-                TIPO_ENTRADA
-            );
+                    "ENTRADA_REEMBOLSO_FALLIDO",
+                    "Reembolso fallido — " + u.getNombre() + " " + u.getApellido()
+                            + LOG_ID + usuarioId + ") | "
+                            + entrada.getPartido().getSeleccionLocal() + LOG_VS
+                            + entrada.getPartido().getSeleccionVisitante()
+                            + LOG_ZONA + entrada.getCategoria()
+                            + LOG_VALOR + entrada.getPrecio()
+                            + " | Error: " + e.getMessage(),
+                    usuarioId,
+                    String.valueOf(entradaId),
+                    TIPO_ENTRADA);
             notificacionService.notificarEntradaReembolsoFallido(u, entradaId);
             throw new PagoStripeException("Error al procesar el reembolso. Intenta de nuevo más tarde.", e);
         }
@@ -543,20 +574,22 @@ public class EntradaServiceImpl implements EntradaService {
     }
 
     /**
-     * Retorna todas las entradas de un usuario ordenadas de la más reciente a la más antigua
+     * Retorna todas las entradas de un usuario ordenadas de la más reciente a la
+     * más antigua
      *
      * @param correo correo del usuario
-     * @return lista de {@link EntradaResponseDTO} ordenada por fecha de compra descendente
+     * @return lista de {@link EntradaResponseDTO} ordenada por fecha de compra
+     *         descendente
      */
     @Transactional(readOnly = true)
     @Override
     public List<EntradaResponseDTO> listarEntradasUsuario(String correo) {
         Usuario u = usuarioService.obtenerEntidadPorCorreo(correo);
         return entradaRepository.findByUsuarioId(u.getId())
-            .stream()
-            .sorted((a, b) -> b.getFechaCompra().compareTo(a.getFechaCompra()))
-            .map(this::toDTO)
-            .toList();
+                .stream()
+                .sorted((a, b) -> b.getFechaCompra().compareTo(a.getFechaCompra()))
+                .map(this::toDTO)
+                .toList();
     }
 
     /**
@@ -569,19 +602,22 @@ public class EntradaServiceImpl implements EntradaService {
     @Transactional(readOnly = true)
     @Override
     public EntradaResponseDTO obtenerEntrada(Long entradaId) {
-        Entrada entrada = entradaRepository.findById(entradaId).orElseThrow(() -> new EntradaNotFoundException(ENTRADA_NO_ENCONTRADA));
+        Entrada entrada = entradaRepository.findById(entradaId)
+                .orElseThrow(() -> new EntradaNotFoundException(ENTRADA_NO_ENCONTRADA));
         return toDTO(entrada);
     }
 
     /**
-     * Método ejecutado automáticamente (scheduled) que busca todas las reservas cuyo tiempo
+     * Método ejecutado automáticamente (scheduled) que busca todas las reservas
+     * cuyo tiempo
      * de vida venció y las marca como EXPIRADAS, devolviendo los cupos al partido.
      * Notifica a cada usuario afectado
      */
     @Transactional
     @Override
     public void expirarReservasVencidas() {
-        List<Entrada> vencidas = entradaRepository.findByEstadoAndTtlReservaLessThan(ESTADO_RESERVADA, LocalDateTime.now());
+        List<Entrada> vencidas = entradaRepository.findByEstadoAndTtlReservaLessThan(ESTADO_RESERVADA,
+                LocalDateTime.now());
 
         for (Entrada entrada : vencidas) {
             entrada.setEstado("EXPIRADA");
@@ -590,17 +626,18 @@ public class EntradaServiceImpl implements EntradaService {
             partidoService.actualizarCapacidad(entrada.getPartido().getId(), entrada.getCantidad());
 
             auditoriaService.registrar(
-                "ENTRADA_EXPIRADA",
-                "Reserva expirada — " + entrada.getUsuario().getNombre() + " " + entrada.getUsuario().getApellido()
-                + LOG_ID + entrada.getUsuario().getId() + ") | "
-                + entrada.getCantidad() + LOG_ENTRADAS
-                + entrada.getPartido().getSeleccionLocal() + LOG_VS + entrada.getPartido().getSeleccionVisitante()
-                + LOG_ZONA + entrada.getCategoria(),
-                entrada.getUsuario().getId(),
-                String.valueOf(entrada.getId()),
-                TIPO_ENTRADA
-            );
-            String nombrePartido = entrada.getPartido().getSeleccionLocal() + LOG_VS + entrada.getPartido().getSeleccionVisitante();
+                    "ENTRADA_EXPIRADA",
+                    "Reserva expirada — " + entrada.getUsuario().getNombre() + " " + entrada.getUsuario().getApellido()
+                            + LOG_ID + entrada.getUsuario().getId() + ") | "
+                            + entrada.getCantidad() + LOG_ENTRADAS
+                            + entrada.getPartido().getSeleccionLocal() + LOG_VS
+                            + entrada.getPartido().getSeleccionVisitante()
+                            + LOG_ZONA + entrada.getCategoria(),
+                    entrada.getUsuario().getId(),
+                    String.valueOf(entrada.getId()),
+                    TIPO_ENTRADA);
+            String nombrePartido = entrada.getPartido().getSeleccionLocal() + LOG_VS
+                    + entrada.getPartido().getSeleccionVisitante();
             notificacionService.notificarReservaExpirada(entrada.getUsuario(), nombrePartido);
         }
     }
@@ -616,10 +653,12 @@ public class EntradaServiceImpl implements EntradaService {
         LocalDateTime ahora = LocalDateTime.now();
         LocalDateTime en6Minutos = ahora.plusMinutes(6);
         LocalDateTime en4Minutos = ahora.plusMinutes(4);
-        List<Entrada> porExpirar = entradaRepository.findByEstadoAndTtlReservaBetween(ESTADO_RESERVADA, en4Minutos, en6Minutos);
+        List<Entrada> porExpirar = entradaRepository.findByEstadoAndTtlReservaBetween(ESTADO_RESERVADA, en4Minutos,
+                en6Minutos);
 
         for (Entrada entrada : porExpirar) {
-            String nombrePartido = entrada.getPartido().getSeleccionLocal() + LOG_VS + entrada.getPartido().getSeleccionVisitante();
+            String nombrePartido = entrada.getPartido().getSeleccionLocal() + LOG_VS
+                    + entrada.getPartido().getSeleccionVisitante();
             notificacionService.notificarReservaPorExpirar(entrada.getUsuario(), nombrePartido);
         }
     }
@@ -659,7 +698,8 @@ public class EntradaServiceImpl implements EntradaService {
     /**
      * Retorna la lista de partidos con su capacidad disponible actual
      *
-     * @return lista de {@link PartidoCapacidadDTO} con cada partido y sus cupos restantes
+     * @return lista de {@link PartidoCapacidadDTO} con cada partido y sus cupos
+     *         restantes
      */
     @Transactional(readOnly = true)
     @Override
@@ -668,8 +708,10 @@ public class EntradaServiceImpl implements EntradaService {
     }
 
     /**
-     * Calcula el precio de una entrada según la ronda del partido, la zona seleccionada
-     * y si alguna de las selecciones es considerada top. Si hay selección top, el precio
+     * Calcula el precio de una entrada según la ronda del partido, la zona
+     * seleccionada
+     * y si alguna de las selecciones es considerada top. Si hay selección top, el
+     * precio
      * base se incrementa un 50%. Luego se aplica el multiplicador de zona
      *
      * @param partido   partido para el que se calcula el precio
@@ -679,19 +721,26 @@ public class EntradaServiceImpl implements EntradaService {
     private Double calcularPrecio(Partido partido, String categoria) {
         Long precioBase = PRECIO_POR_RONDA.getOrDefault(partido.getRonda(), 50000L);
         boolean hayTop = SELECCIONES_TOP.contains(partido.getSeleccionLocal())
-                      || SELECCIONES_TOP.contains(partido.getSeleccionVisitante());
+                || SELECCIONES_TOP.contains(partido.getSeleccionVisitante());
         if (hayTop) {
-            precioBase = (long)(precioBase * 1.5);
+            precioBase = (long) (precioBase * 1.5);
         }
-        Double multiplicador = MULTIPLICADOR_CATEGORIA.getOrDefault(
-            categoria != null ? categoria.toUpperCase(Locale.ROOT) : ZONA_BARRA, 1.0
-        );
-        return precioBase * multiplicador;
+        String categoriaFinal;
+if (categoria != null) {
+    categoriaFinal = categoria.toUpperCase(Locale.ROOT);
+} else {
+    categoriaFinal = ZONA_BARRA;
+}
+
+Double multiplicador = MULTIPLICADOR_CATEGORIA.getOrDefault(categoriaFinal, 1.0);
+return precioBase * multiplicador;
     }
 
     /**
-     * Retorna la disponibilidad de cupos por zona y fila para un partido específico.
-     * Calcula la distribución teórica de la capacidad total del estadio y la compara
+     * Retorna la disponibilidad de cupos por zona y fila para un partido
+     * específico.
+     * Calcula la distribución teórica de la capacidad total del estadio y la
+     * compara
      * con las entradas ya vendidas para mostrar cuántos cupos quedan en cada fila
      *
      * @param partidoId id del partido a consultar
@@ -703,11 +752,13 @@ public class EntradaServiceImpl implements EntradaService {
         Partido partido = partidoService.obtenerPartidoEntidadPorId(partidoId);
 
         int totalVendido = entradaRepository.sumCantidadByPartidoAndEstados(
-            partidoId, ESTADOS_ACTIVOS
-        );
-        int capacidadDisponible = partido.getCapacidadDisponible() != null
-                ? partido.getCapacidadDisponible()
-                : 0;
+                partidoId, ESTADOS_ACTIVOS);
+        int capacidadDisponible;
+if (partido.getCapacidadDisponible() != null) {
+    capacidadDisponible = partido.getCapacidadDisponible();
+} else {
+    capacidadDisponible = 0;
+}
         int capacidadTotal = capacidadDisponible + totalVendido;
 
         Map<String, Map<String, Integer>> distribucion = calcularDistribucion(capacidadTotal);
@@ -717,15 +768,13 @@ public class EntradaServiceImpl implements EntradaService {
             Map<String, Integer> cuposPorFila = distribucion.get(zona);
             int limiteZona = cuposPorFila.values().stream().mapToInt(Integer::intValue).sum();
             int vendidosZona = entradaRepository.sumCantidadByPartidoAndCategoriaAndEstados(
-                partidoId, zona, ESTADOS_ACTIVOS
-            );
+                    partidoId, zona, ESTADOS_ACTIVOS);
 
             List<CuposFilaDTO> filasDTO = new ArrayList<>();
             for (String nombreFila : FILAS) {
                 int limiteFila = cuposPorFila.get(nombreFila);
                 int vendidosFila = entradaRepository.sumCantidadByPartidoCategoriaYFila(
-                    partidoId, zona, nombreFila, ESTADOS_ACTIVOS
-                );
+                        partidoId, zona, nombreFila, ESTADOS_ACTIVOS);
                 filasDTO.add(new CuposFilaDTO(nombreFila, limiteFila, vendidosFila));
             }
 
@@ -742,7 +791,8 @@ public class EntradaServiceImpl implements EntradaService {
      *
      * @param capacidadTotal capacidad total del estadio para el partido
      * @return mapa con cada zona y su distribución de cupos por fila
-     * @throws IllegalStateException si la suma de cupos distribuidos no coincide con la capacidad total
+     * @throws IllegalStateException si la suma de cupos distribuidos no coincide
+     *                               con la capacidad total
      */
     private Map<String, Map<String, Integer>> calcularDistribucion(int capacidadTotal) {
         Map<String, Map<String, Integer>> resultado = new LinkedHashMap<>();
@@ -752,7 +802,7 @@ public class EntradaServiceImpl implements EntradaService {
             String zona = ZONAS.get(i);
             int cupoZona;
             if (i < ZONAS.size() - 1) {
-                cupoZona = (int)(capacidadTotal * PORCENTAJE_ZONA.get(zona));
+                cupoZona = (int) (capacidadTotal * PORCENTAJE_ZONA.get(zona));
                 asignadoZonas += cupoZona;
             } else {
                 cupoZona = capacidadTotal - asignadoZonas;
@@ -765,9 +815,8 @@ public class EntradaServiceImpl implements EntradaService {
                 .sum();
         if (sumaZonas != capacidadTotal) {
             throw new IllegalStateException(
-                "Distribución incoherente: suma de zonas=" + sumaZonas +
-                " ≠ capacidad=" + capacidadTotal
-            );
+                    "Distribución incoherente: suma de zonas=" + sumaZonas +
+                            " ≠ capacidad=" + capacidadTotal);
         }
 
         return resultado;
@@ -809,15 +858,15 @@ public class EntradaServiceImpl implements EntradaService {
      * @param categoria    zona donde se busca disponibilidad
      * @param cantidad     número de entradas a ubicar juntas
      * @param cuposPorFila mapa con el límite de cupos por fila en esa zona
-     * @return nombre de la fila disponible, o null si no hay ninguna con espacio suficiente
+     * @return nombre de la fila disponible, o null si no hay ninguna con espacio
+     *         suficiente
      */
     private String asignarFilaDisponible(Long partidoId, String categoria, int cantidad,
-                                         Map<String, Integer> cuposPorFila) {
+            Map<String, Integer> cuposPorFila) {
         for (String fila : FILAS) {
             int limiteFila = cuposPorFila.get(fila);
             int vendidosFila = entradaRepository.sumCantidadByPartidoCategoriaYFila(
-                partidoId, categoria, fila, ESTADOS_ACTIVOS
-            );
+                    partidoId, categoria, fila, ESTADOS_ACTIVOS);
             if (vendidosFila + cantidad <= limiteFila) {
                 return fila;
             }

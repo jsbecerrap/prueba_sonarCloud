@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import co.edu.unbosque.mundial_2026.dto.request.ProductoActualizarRequestDTO;
 import co.edu.unbosque.mundial_2026.dto.request.ProductoRequestDTO;
+import co.edu.unbosque.mundial_2026.dto.request.VarianteActualizarDTO;
 import co.edu.unbosque.mundial_2026.dto.response.ProductoListadoDTO;
 import co.edu.unbosque.mundial_2026.dto.response.ProductoResponseDTO;
 import co.edu.unbosque.mundial_2026.dto.response.ProductoResponseDTO.VarianteResponseDTO;
@@ -113,52 +114,68 @@ public class ProductoServiceImpl implements ProductoService {
      * @throws ProductoNotFoundException si el producto no existe
      */
     @Override
-    @Transactional
-    public ProductoResponseDTO actualizar(Long id, ProductoActualizarRequestDTO dto) {
-        Producto producto = productoRepository.findById(id)
-                .orElseThrow(() -> new ProductoNotFoundException(PRODUCTO_NO_ENCONTRADO));
+@Transactional
+public ProductoResponseDTO actualizar(Long id, ProductoActualizarRequestDTO dto) {
+    Producto producto = productoRepository.findById(id)
+            .orElseThrow(() -> new ProductoNotFoundException(PRODUCTO_NO_ENCONTRADO));
 
-        final StringBuilder cambios = new StringBuilder(128);
-        if (dto.getPrecio() != null) {
-            cambios.append(" | precio: ").append(producto.getPrecio()).append(" -> ").append(dto.getPrecio());
-            producto.setPrecio(dto.getPrecio());
-        }
-        if (dto.getImagenUrl() != null && !dto.getImagenUrl().isBlank()) {
-            cambios.append(" | imagenUrl actualizada");
-            producto.setImagenUrl(dto.getImagenUrl());
-        }
-        if (dto.getDescripcion() != null && !dto.getDescripcion().isBlank()) {
-            cambios.append(" | descripcion actualizada");
-            producto.setDescripcion(dto.getDescripcion());
-        }
-        if (dto.getCodigoProducto() != null && !dto.getCodigoProducto().isBlank()) {
-            cambios.append(" | codigo: ").append(dto.getCodigoProducto());
-            producto.setCodigoProducto(dto.getCodigoProducto());
-        }
-        if (dto.getEquipo() != null && !dto.getEquipo().isBlank()) {
-            cambios.append(" | equipo: ").append(dto.getEquipo());
-            producto.setEquipo(dto.getEquipo());
-        }
-        if (dto.getBandera() != null && !dto.getBandera().isBlank()) {
-            cambios.append(" | bandera actualizada");
-            producto.setBandera(dto.getBandera());
-        }
-        if (dto.getDestacado() != null) {
-            cambios.append(" | destacado: ").append(dto.getDestacado());
-            producto.setDestacado(dto.getDestacado());
-        }
-
-        productoRepository.save(producto);
-
-        auditoriaService.registrar(
-                "PRODUCTO_ACTUALIZADO",
-                "Producto actualizado: '" + producto.getNombre() + "'" + cambios,
-                null,
-                UUID.randomUUID().toString(),
-                ENTIDAD_PRODUCTO);
-
-        return toDTO(producto);
+    final StringBuilder cambios = new StringBuilder(128);
+    if (dto.getPrecio() != null) {
+        cambios.append(" | precio: ").append(producto.getPrecio()).append(" -> ").append(dto.getPrecio());
+        producto.setPrecio(dto.getPrecio());
     }
+    if (dto.getImagenUrl() != null && !dto.getImagenUrl().isBlank()) {
+        cambios.append(" | imagenUrl actualizada");
+        producto.setImagenUrl(dto.getImagenUrl());
+    }
+    if (dto.getDescripcion() != null && !dto.getDescripcion().isBlank()) {
+        cambios.append(" | descripcion actualizada");
+        producto.setDescripcion(dto.getDescripcion());
+    }
+    if (dto.getCodigoProducto() != null && !dto.getCodigoProducto().isBlank()) {
+        cambios.append(" | codigo: ").append(dto.getCodigoProducto());
+        producto.setCodigoProducto(dto.getCodigoProducto());
+    }
+    if (dto.getEquipo() != null && !dto.getEquipo().isBlank()) {
+        cambios.append(" | equipo: ").append(dto.getEquipo());
+        producto.setEquipo(dto.getEquipo());
+    }
+    if (dto.getBandera() != null && !dto.getBandera().isBlank()) {
+        cambios.append(" | bandera actualizada");
+        producto.setBandera(dto.getBandera());
+    }
+    if (dto.getDestacado() != null) {
+        cambios.append(" | destacado: ").append(dto.getDestacado());
+        producto.setDestacado(dto.getDestacado());
+    }
+    if (dto.getVariantes() != null && !dto.getVariantes().isEmpty()) {
+        for (VarianteActualizarDTO vDto : dto.getVariantes()) {
+            varianteRepository.findById(vDto.getId()).ifPresent(variante -> {
+                if (vDto.getStock() != null) {
+                    cambios.append(" | stock ").append(variante.getEspecificacion())
+                           .append(": ").append(variante.getStock())
+                           .append(" -> ").append(vDto.getStock());
+                    variante.setStock(vDto.getStock());
+                }
+                if (vDto.getEspecificacion() != null && !vDto.getEspecificacion().isBlank()) {
+                    variante.setEspecificacion(vDto.getEspecificacion());
+                }
+                varianteRepository.save(variante);
+            });
+        }
+    }
+
+    productoRepository.save(producto);
+
+    auditoriaService.registrar(
+            "PRODUCTO_ACTUALIZADO",
+            "Producto actualizado: '" + producto.getNombre() + "'" + cambios,
+            null,
+            UUID.randomUUID().toString(),
+            ENTIDAD_PRODUCTO);
+
+    return toDTO(producto);
+}
 
     /**
      * Retorna todos los productos activos con sus variantes de stock
@@ -183,17 +200,22 @@ public class ProductoServiceImpl implements ProductoService {
      * @return lista de {@link ProductoResponseDTO} según el filtro indicado
      */
     @Override
-    @Transactional(readOnly = true)
-    public List<ProductoResponseDTO> listarTodos(boolean soloActivos) {
-        List<Producto> productos = soloActivos
-                ? productoRepository.findByActivoTrueWithVariantes()
-                : productoRepository.findAllWithVariantes();
-        List<ProductoResponseDTO> responseDTOs = new ArrayList<>();
-        for (Producto p : productos) {
-            responseDTOs.add(toDTO(p));
-        }
-        return responseDTOs;
+@Transactional(readOnly = true)
+public List<ProductoResponseDTO> listarTodos(boolean soloActivos) {
+    List<Producto> productos;
+
+    if (soloActivos) {
+        productos = productoRepository.findByActivoTrueWithVariantes();
+    } else {
+        productos = productoRepository.findAllWithVariantes();
     }
+
+    List<ProductoResponseDTO> responseDTOs = new ArrayList<>();
+    for (Producto p : productos) {
+        responseDTOs.add(toDTO(p));
+    }
+    return responseDTOs;
+}
 
     /**
      * Retorna todos los productos activos que pertenecen a una categoría específica

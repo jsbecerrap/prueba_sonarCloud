@@ -1,5 +1,7 @@
 package co.edu.unbosque.mundial_2026.dto.request;
 
+import java.util.List;
+
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -77,7 +79,26 @@ public class ProductoActualizarRequestDTO {
 
     /** Indica si el producto debe ser marcado como destacado en el catálogo. */
     private Boolean destacado;
+    /**
+ * Lista de variantes a actualizar. Cada elemento contiene el id de la variante
+ * junto con los campos a modificar: especificación y/o stock.
+ * Si es nulo o vacío, no se modifican las variantes del producto.
+ */
+private List<VarianteActualizarDTO> variantes;
 
+/**
+ * Retorna la lista de variantes a actualizar.
+ *
+ * @return lista de {@link VarianteActualizarDTO}
+ */
+public List<VarianteActualizarDTO> getVariantes() { return variantes; }
+
+/**
+ * Establece la lista de variantes a actualizar.
+ *
+ * @param variantes lista de variantes con sus nuevos valores
+ */
+public void setVariantes(List<VarianteActualizarDTO> variantes) { this.variantes = variantes; }
     /**
      * Obtiene el nuevo precio del producto.
      *

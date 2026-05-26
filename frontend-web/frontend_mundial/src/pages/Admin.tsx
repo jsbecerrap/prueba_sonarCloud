@@ -551,6 +551,13 @@ const onActualizarProducto = async () => {
   precio: editProdPrecio ? Number(editProdPrecio) : undefined,
   descripcion: editProdDesc || undefined,
   imagenUrl: editProdImagenUrl || undefined,
+  variantes: editProdVariantes
+    .filter(v => v.id !== undefined)
+    .map(v => ({
+      id: v.id!,
+      especificacion: v.especificacion,
+      stock: Number(v.stock)
+    }))
 });
     setEditProducto(null); setEditProdPrecio(""); setEditProdVariantes([]); setEditProdDesc(""); setEditProdImagenUrl("");
     setMsg({ text: "Producto actualizado.", severity: "success" });

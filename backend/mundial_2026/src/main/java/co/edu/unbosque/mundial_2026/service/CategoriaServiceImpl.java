@@ -89,7 +89,7 @@ public class CategoriaServiceImpl implements CategoriaService {
         Categoria categoria = categoriaRepository.findByIdAndActivoTrue(id)
                 .orElseThrow(() -> new CategoriaNotFoundException(CATEGORIA_NO_ENCONTRADA + id));
 
-        final StringBuilder cambios = new StringBuilder(100);
+        final StringBuilder cambios = new StringBuilder(100);//Se pone 100 para resevar esa memoria, se puede ampliar
         if (dto.getNombre() != null && !dto.getNombre().isBlank()) {
             Optional<Categoria> existente = categoriaRepository.findByNombre(dto.getNombre());
             if (existente.isPresent() && !existente.get().getId().equals(id)) {

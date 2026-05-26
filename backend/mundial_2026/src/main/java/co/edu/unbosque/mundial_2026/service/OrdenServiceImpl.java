@@ -244,12 +244,18 @@ public class OrdenServiceImpl implements OrdenService {
             throw new MetodoPagoInvalidoException("El método de pago no pertenece al usuario");
         }
         for (ItemOrden item : items) {
-            if (item.getVariante().getStock() < item.getCantidad()) {
-                throw new StockInsuficienteException("Stock insuficiente para " + item.getProducto().getNombre()
-                        + (item.getVariante().getEspecificacion() != null
-                                ? " (" + item.getVariante().getEspecificacion() + ")"
-                                : ""));
-            }
+    if (item.getVariante().getStock() < item.getCantidad()) {
+        String especificacion;
+        if (item.getVariante().getEspecificacion() != null) {
+            especificacion = " (" + item.getVariante().getEspecificacion() + ")";
+        } else {
+            especificacion = "";
+        }
+        throw new StockInsuficienteException("Stock insuficiente para " 
+                + item.getProducto().getNombre() 
+                + especificacion);
+    }
+
         }
         try {
            long totalCentavos = Math.round(ordenAPagar.getTotal() * 100);
@@ -406,7 +412,11 @@ public class OrdenServiceImpl implements OrdenService {
             dto.setFechaCreacion(o.getFechaCreacion());
             dto.setFechaPago(o.getFechaPago());
             dto.setPaymentRef(o.getPaymentRef());
-            dto.setMetodoPagoLabel(o.getMetodoPago() != null ? o.getMetodoPago().getLabel() : null);
+            if (o.getMetodoPago() != null) {
+    dto.setMetodoPagoLabel(o.getMetodoPago().getLabel());
+} else {
+    dto.setMetodoPagoLabel(null);
+}
             List<OrdenHistorialDTO.ItemHistorialDTO> items = new ArrayList<>();
             for (ItemOrden item : o.getItems()) {
                 OrdenHistorialDTO.ItemHistorialDTO itemDto = new OrdenHistorialDTO.ItemHistorialDTO();

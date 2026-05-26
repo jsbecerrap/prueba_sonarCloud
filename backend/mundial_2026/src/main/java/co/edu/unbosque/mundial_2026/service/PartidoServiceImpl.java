@@ -281,16 +281,26 @@ private static final String POR_CONFIRMAR = "Por confirmar";
      * @return lista de {@link PartidoDTO} con los partidos de sus selecciones favoritas
      */
     @Transactional(readOnly = true)
-    @Override
-    public List<PartidoDTO> obtenerPartidosPorSeleccionesFav(String correo) {
-        final Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
-        final List<PartidoDTO> listaPartidos = new ArrayList<>();
-        for (int i = 0; i < usuario.getSeleccionesU().size(); i++) {
-            List<PartidoDTO> partidos = obtenerPartidosPorEquipo(usuario.getSeleccionesU().get(i).getId());
+@Override
+public List<PartidoDTO> obtenerPartidosPorSeleccionesFav(String correo) {
+    final Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
+    final List<PartidoDTO> listaPartidos = new ArrayList<>();
+    for (int i = 0; i < usuario.getSeleccionesU().size(); i++) {
+        try {
+            List<PartidoDTO> partidos = obtenerPartidosPorEquipo(
+                usuario.getSeleccionesU().get(i).getId());
             listaPartidos.addAll(partidos);
+        } catch (RestClientException e) {
+            logger.warning("API caída en selecciones fav, usando BD local: " + e.getMessage());
+            String nombreSeleccion = usuario.getSeleccionesU().get(i).getNombre();
+            partidoRepository.findBySeleccion(nombreSeleccion)
+                .stream()
+                .map(this::partidoADTO)
+                .forEach(listaPartidos::add);
         }
-        return listaPartidos;
     }
+    return listaPartidos;
+}
 
     /**
      * Retorna todos los partidos que se juegan en los estadios favoritos del usuario,
@@ -299,11 +309,12 @@ private static final String POR_CONFIRMAR = "Por confirmar";
      * @param correo correo del usuario
      * @return lista de {@link PartidoDTO} con los partidos en sus estadios favoritos
      */
-    @Transactional(readOnly = true)
-    @Override
-    public List<PartidoDTO> obtenerPartidosPorEstadiosFav(final String correo) {
-        final Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
-        final List<PartidoDTO> listaPartidos = new ArrayList<>();
+   @Transactional(readOnly = true)
+@Override
+public List<PartidoDTO> obtenerPartidosPorEstadiosFav(final String correo) {
+    final Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
+    final List<PartidoDTO> listaPartidos = new ArrayList<>();
+    try {
         final PartidoResponseDTO response = footballClient.get()
                 .uri(BASE_FIXTURES)
                 .retrieve()
@@ -317,9 +328,18 @@ private static final String POR_CONFIRMAR = "Por confirmar";
                     })
                     .forEach(listaPartidos::add);
         }
-        return listaPartidos;
+    } catch (RestClientException e) {
+        logger.warning("API caída en estadios fav, usando BD local: " + e.getMessage());
+        for (int i = 0; i < usuario.getPreferenciasu().size(); i++) {
+            String nombreEstadio = usuario.getPreferenciasu().get(i).getNombre();
+            partidoRepository.findByEstadio(nombreEstadio)
+                .stream()
+                .map(this::partidoADTO)
+                .forEach(listaPartidos::add);
+        }
     }
-
+    return listaPartidos;
+}
     /**
      * Retorna todos los partidos que se juegan en ciudades favoritas del usuario.
      * Usa el mapa de estadios a ciudades para determinar en qué ciudad se juega cada partido
@@ -327,16 +347,16 @@ private static final String POR_CONFIRMAR = "Por confirmar";
      * @param correo correo del usuario
      * @return lista de {@link PartidoDTO} con los partidos en sus ciudades favoritas
      */
-    @Transactional(readOnly = true)
-    @Override
-    public List<PartidoDTO> obtenerPartidosPorCiudadesFav(final String correo) {
-        final Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
-        final List<PartidoDTO> listaPartidos = new ArrayList<>();
+   @Transactional(readOnly = true)
+@Override
+public List<PartidoDTO> obtenerPartidosPorCiudadesFav(final String correo) {
+    final Usuario usuario = usuarioService.obtenerEntidadPorCorreo(correo);
+    final List<PartidoDTO> listaPartidos = new ArrayList<>();
+    try {
         final PartidoResponseDTO response = footballClient.get()
                 .uri(BASE_FIXTURES)
                 .retrieve()
                 .body(PartidoResponseDTO.class);
-
         for (int i = 0; i < usuario.getCiudadFavoritas().size(); i++) {
             final String nombreCiudad = usuario.getCiudadFavoritas().get(i).getNombre();
             for (int j = 0; j < response.getPartidos().size(); j++) {
@@ -350,8 +370,18 @@ private static final String POR_CONFIRMAR = "Por confirmar";
                 }
             }
         }
-        return listaPartidos;
+    } catch (RestClientException e) {
+        logger.warning("API caída en ciudades fav, usando BD local: " + e.getMessage());
+        for (int i = 0; i < usuario.getCiudadFavoritas().size(); i++) {
+            String nombreCiudad = usuario.getCiudadFavoritas().get(i).getNombre();
+            filtrarPorCiudad(nombreCiudad)
+                .stream()
+                .map(this::partidoADTO)
+                .forEach(listaPartidos::add);
+        }
     }
+    return listaPartidos;
+}
 
     /**
      * Filtra los partidos almacenados en la base de datos local por el nombre de una selección,
